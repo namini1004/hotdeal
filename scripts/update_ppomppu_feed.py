@@ -26,34 +26,53 @@ def pick(pattern: str, text: str) -> str:
 def parse_items():
     s = requests.Session()
     s.headers.update(HEADERS)
-    list_html = s.get(LIST_URL, timeout=20).text
-    blocks = re.findall(r'<li class="none-border bbs_list_thumbnail new_sk "[\s\S]*?</li>', list_html)
+
+    # 페이지를 순회해서(더보기 포함) 링크를 충분히 수집
+    link_rows = []
+    seen_links = set()
+    for page in range(1, 6):
+        page_url = LIST_URL if page == 1 else f"{LIST_URL}&page={page}"
+        list_html = s.get(page_url, timeout=20).text
+        blocks = re.findall(r'<li class="none-border bbs_list_thumbnail new_sk "[\s\S]*?</li>', list_html)
+        if not blocks:
+            break
+
+        new_in_page = 0
+        for b in blocks:
+            href_m = re.search(r'<a href="([^"]*bbs_view\.php[^"]+)"', b)
+            title_m = re.search(r'<span class="cont"[^>]*>([\s\S]*?)</span>', b)
+            img_m = re.search(r'<img src="([^"]+)"', b)
+            cat_m = re.search(r'<li class="names">\[([^\]]+)\]', b)
+            if not href_m or not title_m:
+                continue
+
+            href = urljoin(BASE, href_m.group(1))
+            if href in seen_links:
+                continue
+            seen_links.add(href)
+            new_in_page += 1
+
+            raw_title = re.sub(r'<[^>]+>', '', title_m.group(1))
+            raw_title = html.unescape(raw_title).strip()
+
+            img = img_m.group(1) if img_m else ""
+            if img.startswith('//'):
+                img = 'https:' + img
+            elif img.startswith('/'):
+                img = urljoin(BASE, img)
+
+            category = cat_m.group(1).strip() if cat_m else "기타"
+            link_rows.append({"href": href, "raw_title": raw_title, "img": img, "category": category})
+
+        if new_in_page == 0:
+            break
 
     items = []
-    seen = set()
-    for b in blocks:
-        href_m = re.search(r'<a href="([^"]*bbs_view\.php[^"]+)"', b)
-        title_m = re.search(r'<span class="cont"[^>]*>([\s\S]*?)</span>', b)
-        img_m = re.search(r'<img src="([^"]+)"', b)
-        cat_m = re.search(r'<li class="names">\[([^\]]+)\]', b)
-        if not href_m or not title_m:
-            continue
-
-        href = urljoin(BASE, href_m.group(1))
-        if href in seen:
-            continue
-        seen.add(href)
-
-        raw_title = re.sub(r'<[^>]+>', '', title_m.group(1))
-        raw_title = html.unescape(raw_title).strip()
-
-        img = img_m.group(1) if img_m else ""
-        if img.startswith('//'):
-            img = 'https:' + img
-        elif img.startswith('/'):
-            img = urljoin(BASE, img)
-
-        category = cat_m.group(1).strip() if cat_m else "기타"
+    for row in link_rows:
+        href = row['href']
+        raw_title = row['raw_title']
+        img = row['img']
+        category = row['category']
 
         detail = s.get(href, timeout=20).text
         og_title = pick(r'<meta property="og:title" content="([^"]*)"', detail) or raw_title
