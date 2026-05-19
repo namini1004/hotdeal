@@ -31,6 +31,7 @@
     .action-sheet.show{visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);transition:transform .22s ease}
     .sheet-btn{width:100%;height:52px;border:none;border-radius:12px;background:#f4f6f8;color:#111827;font-size:16px;font-weight:800;cursor:pointer}
     .sheet-btn + .sheet-btn{margin-top:8px}
+    .sheet-btn.edit{background:var(--brand);color:#fff}
     .sheet-btn.delete{background:#fff1f2;color:#dc2626}
     .bottom-cta{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:12px 16px calc(env(safe-area-inset-bottom) + 12px);background:#fff;border-top:1px solid var(--line);z-index:10}
     .buy-bottom{width:100%;height:54px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:var(--brand);color:#fff;text-decoration:none;font-size:17px;font-weight:900;box-shadow:0 10px 24px rgba(var(--brand-rgb),.32)}
@@ -90,6 +91,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="sheet-backdrop" id="sheetBackdrop"></div>
   <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-label="게시물 메뉴">
+    <button class="sheet-btn edit" id="editBtn" type="button">편집하기</button>
     <button class="sheet-btn delete" id="deleteBtn" type="button">삭제하기</button>
     <button class="sheet-btn" id="closeSheetBtn" type="button">닫기</button>
   </div>
@@ -109,13 +111,14 @@
         time: item.time || item.date || '',
         category: item.category || '핫딜',
         price: item.price || '-',
-        desc: item.desc || '상품 설명이 아직 등록되지 않았습니다.',
+        desc: item.desc ?? '',
         img: item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80',
         buyLink: item.buyLink || '',
         sourceLink: item.sourceLink || '',
         date: item.date || '',
         registeredAt: item.registeredAt || '',
-        source: item.source || ''
+        source: item.source || '',
+        edited: Boolean(item.edited)
       }));
     }
 
@@ -130,7 +133,7 @@
 
     function getUserItems(){
       return [...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]
-        .filter(item => item.source === 'user' || String(item.id || '').startsWith('local-'));
+        .filter(item => item.source === 'user' || item.edited || String(item.id || '').startsWith('local-'));
     }
 
     function dedupeItems(items){
@@ -233,6 +236,12 @@
       }, 450);
     }
 
+    function editCurrentDeal(){
+      if(!currentItem) return;
+      closeSheet();
+      location.href = `create.html?editId=${encodeURIComponent(currentItem.id)}`;
+    }
+
     async function copyShareUrl(url){
       if(navigator.clipboard?.writeText){
         await navigator.clipboard.writeText(url);
@@ -302,6 +311,7 @@
     document.getElementById('sheetBackdrop').addEventListener('click', closeSheet);
     document.getElementById('closeSheetBtn').addEventListener('click', closeSheet);
     document.getElementById('deleteBtn').addEventListener('click', deleteCurrentDeal);
+    document.getElementById('editBtn').addEventListener('click', editCurrentDeal);
     init();
   </script>
 </body>

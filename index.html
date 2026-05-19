@@ -117,7 +117,8 @@
         comments: Number(item.comments || 0),
         date: item.date || '',
         registeredAt: item.registeredAt || '',
-        source: item.source || ''
+        source: item.source || '',
+        edited: Boolean(item.edited)
       }));
     }
 
@@ -132,7 +133,7 @@
 
     function getUserItems(){
       return [...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]
-        .filter(item => item.source === 'user' || String(item.id || '').startsWith('local-'));
+        .filter(item => item.source === 'user' || item.edited || String(item.id || '').startsWith('local-'));
     }
 
     function dedupeItems(items){

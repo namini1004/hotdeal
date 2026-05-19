@@ -64,7 +64,7 @@
   <div class="app">
     <header class="top">
       <a class="back" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
-      <div class="title">오늘의 핫딜 작성</div>
+      <div class="title" id="pageTitle">오늘의 핫딜 작성</div>
       <div class="top-spacer" aria-hidden="true"></div>
     </header>
 
@@ -82,7 +82,7 @@
 
       <div class="field">
         <label for="desc">자세한 설명</label>
-        <textarea id="desc" placeholder="상품 상태, 구성품, 거래 조건 등을 자세히 적어주세요." required></textarea>
+        <textarea id="desc" placeholder="상품 상태, 구성품, 거래 조건 등을 자세히 적어주세요."></textarea>
         <div class="hint">서로 믿고 거래할 수 있도록 자세히 적어주세요.<br>허위 과장 정보는 제한될 수 있습니다.</div>
       </div>
 
@@ -98,7 +98,7 @@
 
       <div class="field">
         <label for="price">가격</label>
-        <input id="price" inputmode="numeric" placeholder="가격을 입력해주세요. (숫자만)" required />
+        <input id="price" inputmode="numeric" placeholder="가격을 입력해주세요. (비워두면 0원)" />
       </div>
 
       <div class="field">
@@ -116,9 +116,11 @@
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
+    const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
     let selectedCategory = '디지털';
     let selectedImage = '';
     let sharedImage = '';
+    let editItem = null;
 
     document.getElementById('catRow').addEventListener('click',(e)=>{
       const btn = e.target.closest('.chip');
@@ -130,14 +132,36 @@
 
     function formatPrice(value){
       const num = Number(String(value).replace(/[^0-9]/g,''));
-      if(!num) return '';
+      if(!num) return '0원';
       return num.toLocaleString('ko-KR') + '원';
+    }
+
+    function normalizeItems(items){
+      return (items || []).map((item, idx) => ({
+        id: String(item.id ?? idx + 1),
+        title: item.title || '',
+        area: item.area || '오늘의 핫딜',
+        dist: item.dist || '기타',
+        time: item.time || item.date || '',
+        price: item.price || '0원',
+        category: item.category || '디지털',
+        desc: item.desc ?? '',
+        img: item.img || '',
+        sourceLink: item.sourceLink || '',
+        buyLink: item.buyLink || '',
+        views: Number(item.views || 0),
+        comments: Number(item.comments || 0),
+        date: item.date || '',
+        registeredAt: item.registeredAt || '',
+        source: item.source || '',
+        edited: Boolean(item.edited)
+      }));
     }
 
     function readStoredItems(key){
       try{
         const parsed = JSON.parse(localStorage.getItem(key) || '[]');
-        return Array.isArray(parsed) ? parsed : parsed.items || parsed.today || parsed.grouped?.today || [];
+        return normalizeItems(Array.isArray(parsed) ? parsed : parsed.items || parsed.today || parsed.grouped?.today || []);
       }catch(_){
         return [];
       }
@@ -152,6 +176,27 @@
       return /^https?:\/\/\S+/i.test(value || '');
     }
 
+    function getDealKey(item){
+      if(item?.sourceLink) return item.sourceLink;
+      if(item?.id) return `id:${item.id}:${item.date || ''}`;
+      return `title:${item?.title || ''}:${item?.date || ''}`;
+    }
+
+    function dedupeItems(items){
+      const seen = new Set();
+      return (items || []).filter(item => {
+        const key = getDealKey(item);
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function extractPriceText(text){
+      const match = String(text || '').match(/(\d{1,3}(?:,\d{3})+|\d+)\s*원/);
+      return match ? match[1].replace(/,/g, '') : '';
+    }
+
     function setPhotoPreview(src){
       if(!src) return;
       sharedImage = src;
@@ -162,9 +207,15 @@
     function prefillSharedHotdeal(data){
       if(!data) return;
       const title = document.getElementById('title');
+      const desc = document.getElementById('desc');
+      const price = document.getElementById('price');
       const dealUrl = document.getElementById('dealUrl');
       if(data.url && !dealUrl.value) dealUrl.value = data.url;
       if(data.title && !title.value) title.value = data.title;
+      const description = data.desc || data.description || '';
+      if(description && !desc.value) desc.value = description;
+      const priceText = data.price || extractPriceText(`${data.title || ''} ${description}`);
+      if(priceText && !price.value) price.value = priceText;
       if(data.image && !selectedImage) setPhotoPreview(data.image);
     }
 
@@ -194,8 +245,47 @@
     prefillSharedHotdeal({
       url: new URLSearchParams(location.search).get('sharedUrl') || '',
       title: new URLSearchParams(location.search).get('sharedTitle') || '',
-      image: new URLSearchParams(location.search).get('sharedImage') || ''
+      image: new URLSearchParams(location.search).get('sharedImage') || '',
+      desc: new URLSearchParams(location.search).get('sharedDesc') || '',
+      price: new URLSearchParams(location.search).get('sharedPrice') || ''
     });
+
+    function setActiveCategory(category){
+      const target = [...document.querySelectorAll('.chip')].find(btn => btn.dataset.cat === category) || document.querySelector('.chip');
+      if(!target) return;
+      document.querySelectorAll('.chip').forEach(v=>v.classList.remove('active'));
+      target.classList.add('active');
+      selectedCategory = target.dataset.cat;
+    }
+
+    function fillForm(item){
+      editItem = item;
+      document.getElementById('pageTitle').textContent = '핫딜 편집';
+      document.querySelector('.submit').textContent = '수정 완료';
+      document.getElementById('title').value = item.title || '';
+      document.getElementById('desc').value = item.desc || '';
+      document.getElementById('price').value = String(item.price || '').replace(/[^0-9]/g, '');
+      document.getElementById('dealUrl').value = item.buyLink || item.sourceLink || '';
+      setActiveCategory(item.category || '디지털');
+      if(item.img) setPhotoPreview(item.img);
+    }
+
+    async function loadEditItem(){
+      const editId = new URLSearchParams(location.search).get('editId');
+      if(!editId) return;
+      const localItems = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
+      let item = localItems.find(v => String(v.id) === String(editId));
+      if(!item){
+        try{
+          const res = await fetch(FEED_PATH, { cache: 'no-store' });
+          if(res.ok){
+            const data = await res.json();
+            item = normalizeItems(data.items || data.grouped?.today || []).find(v => String(v.id) === String(editId));
+          }
+        }catch(_){ }
+      }
+      if(item) fillForm(item);
+    }
 
     document.getElementById('form').addEventListener('submit', (e)=>{
       e.preventDefault();
@@ -203,8 +293,8 @@
       const desc = document.getElementById('desc').value.trim();
       const price = formatPrice(document.getElementById('price').value);
       const dealUrl = document.getElementById('dealUrl').value.trim();
-      const img = selectedImage || sharedImage || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
-      if(!title || !desc || !price) return;
+      const img = selectedImage || sharedImage || editItem?.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
+      if(!title) return;
       if(dealUrl && !isHttpUrl(dealUrl)){
         alert('핫딜주소는 http 또는 https로 시작해야 합니다.');
         return;
@@ -213,28 +303,33 @@
       const items = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
       const now = new Date();
       const newItem = {
-        id: `local-${Date.now()}`,
+        ...(editItem || {}),
+        id: editItem?.id || `local-${Date.now()}`,
         title,
-        area:'오늘의 핫딜',
-        dist:'방금 등록',
-        time:'방금 전',
+        area: editItem?.area || '오늘의 핫딜',
+        dist: editItem ? (editItem.dist || '수정됨') : '방금 등록',
+        time: editItem ? (editItem.time || '수정됨') : '방금 전',
         price,
-        likes:0,
-        views:0,
-        comments:0,
+        likes: editItem?.likes || 0,
+        views: editItem?.views || 0,
+        comments: editItem?.comments || 0,
         category:selectedCategory,
         desc,
         img,
         buyLink:dealUrl,
-        sourceLink:dealUrl,
+        sourceLink:dealUrl || editItem?.sourceLink || '',
         source:'user',
-        date: now.toISOString().slice(0, 10),
-        registeredAt: now.toISOString()
+        edited: Boolean(editItem) || undefined,
+        date: editItem?.date || now.toISOString().slice(0, 10),
+        registeredAt: editItem?.registeredAt || now.toISOString(),
+        updatedAt: now.toISOString()
       };
-      items.unshift(newItem);
-      saveItems(items);
-      location.href = 'index.html?posted=1';
+      const nextItems = [newItem, ...items.filter(item => String(item.id) !== String(newItem.id) && getDealKey(item) !== getDealKey(newItem))];
+      saveItems(dedupeItems(nextItems));
+      location.href = editItem ? `detail.html?id=${encodeURIComponent(newItem.id)}` : 'index.html?posted=1';
     });
+
+    loadEditItem();
   </script>
 </body>
 </html>
