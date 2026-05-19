@@ -32,6 +32,7 @@
     .thumb{width:98px;height:98px;border-radius:12px;object-fit:cover;background:#f3f4f6}
     .item-title{font-size:17px;font-weight:600;line-height:1.35;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .meta{margin-top:5px;color:var(--muted);font-size:13px}
+    .stats{margin-top:6px;color:#6b7280;font-size:13px;font-weight:600}
     .price{margin-top:8px;font-size:18px;font-weight:800;letter-spacing:-.02em}
     .empty{padding:40px 8px;color:#6b7280;font-size:14px}
 
@@ -53,6 +54,7 @@
       .thumb{width:132px;height:132px;border-radius:14px}
       .item-title{font-size:18px;-webkit-line-clamp:3}
       .meta{font-size:14px}
+      .stats{font-size:14px}
       .price{font-size:20px}
       .empty{grid-column:1/-1;padding:72px 16px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:16px}
       .fab{right:calc(50% - 532px);bottom:32px;padding:13px 20px}
@@ -108,8 +110,15 @@
         img: item.img || '',
         sourceLink: item.sourceLink || '',
         buyLink: item.buyLink || '',
+        views: Number(item.views || 0),
+        comments: Number(item.comments || 0),
         date: item.date || ''
       }));
+    }
+
+    function formatCount(value){
+      const num = Number(value || 0);
+      return num.toLocaleString('ko-KR');
     }
 
     function getFilteredItems(){
@@ -132,6 +141,7 @@
           <div>
             <div class="item-title">${item.title}</div>
             <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
+            <div class="stats">조회 ${formatCount(item.views)} · 댓글 ${formatCount(item.comments)}</div>
             <div class="price">${item.price}</div>
           </div>
         </a>

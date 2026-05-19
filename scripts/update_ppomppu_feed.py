@@ -23,6 +23,47 @@ def pick(pattern: str, text: str) -> str:
     return html.unescape(m.group(1)).strip() if m else ""
 
 
+def parse_int(value: str) -> int:
+    value = re.sub(r'[^0-9]', '', value or '')
+    return int(value) if value else 0
+
+
+def parse_registered_at(detail: str):
+    # Mobile pages expose the post date in .hi, while some views label it as "등록일".
+    patterns = [
+        r'<span class="hi">\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})\s*</span>',
+        r'등록일\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})',
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, detail)
+        if not m:
+            continue
+        try:
+            return datetime.strptime(m.group(1), '%Y-%m-%d %H:%M').replace(tzinfo=KST)
+        except ValueError:
+            pass
+
+    ts_m = re.search(r'G_BBS_REG_DATE\s*=\s*"(\d+)"', detail)
+    if ts_m:
+        ts = int(ts_m.group(1))
+        if ts > 1000000000:
+            return datetime.fromtimestamp(ts, tz=KST)
+    return None
+
+
+def parse_post_stats(detail: str) -> tuple[int, int]:
+    views = 0
+    views_m = re.search(r'조회\s*:\s*([0-9,]+)', detail)
+    if views_m:
+        views = parse_int(views_m.group(1))
+
+    comments = 0
+    comments_m = re.search(r'<span class="list_comment">\s*([0-9,]+)\s*</span>', detail)
+    if comments_m:
+        comments = parse_int(comments_m.group(1))
+    return views, comments
+
+
 def parse_items():
     s = requests.Session()
     s.headers.update(HEADERS)
@@ -79,13 +120,9 @@ def parse_items():
         og_desc = pick(r'<meta property="og:description" content="([^"]*)"', detail)
         og_img = pick(r'<meta property="og:image" content="([^"]*)"', detail) or img
 
-        ts_m = re.search(r'G_BBS_REG_DATE\s*=\s*"(\d+)"', detail)
-        dt = None
-        if ts_m:
-            ts = int(ts_m.group(1))
-            if ts > 1000000000:
-                dt = datetime.fromtimestamp(ts, tz=KST)
+        dt = parse_registered_at(detail)
         date_label = dt.strftime('%Y-%m-%d') if dt else ""
+        views, comments = parse_post_stats(detail)
 
         # 사러가기 URL (상단 닉네임 아래 링크의 실제 target)
         buy_link = ""
@@ -111,6 +148,8 @@ def parse_items():
             "time": date_label,
             "price": price,
             "likes": 0,
+            "views": views,
+            "comments": comments,
             "category": category,
             "desc": og_desc or "",
             "img": og_img,

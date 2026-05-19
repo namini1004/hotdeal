@@ -1,0 +1,3 @@
+codex_prompt.txt
+__pycache__/
+*.py[cod]
