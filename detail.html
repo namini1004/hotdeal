@@ -140,11 +140,15 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if(!raw) return;
       try{
-        const grouped = JSON.parse(raw);
-        for(const tab of ['today', 'yesterday']){
-          grouped[tab] = (grouped[tab] || []).filter(item => getDealKey(item) !== key);
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)){
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed.filter(item => getDealKey(item) !== key)));
+          return;
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(grouped));
+        for(const tab of ['today', 'yesterday']){
+          parsed[tab] = (parsed[tab] || []).filter(item => getDealKey(item) !== key);
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
       }catch(_){ }
     }
 
@@ -157,8 +161,8 @@
         const res = await fetch(FEED_PATH, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
-          const all = normalizeItems([...(data.grouped?.today || []), ...(data.grouped?.yesterday || [])]);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({today:data.grouped?.today||[], yesterday:data.grouped?.yesterday||[]}));
+          const all = normalizeItems(data.items || data.grouped?.today || []);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
           return all;
         }
       }catch(_){ }
@@ -167,7 +171,7 @@
       if(raw){
         try{
           const parsed = JSON.parse(raw);
-          return normalizeItems([...(parsed.today || []), ...(parsed.yesterday || [])]);
+          return normalizeItems(Array.isArray(parsed) ? parsed : parsed.items || parsed.today || parsed.grouped?.today || []);
         }catch(_){ }
       }
       return [];

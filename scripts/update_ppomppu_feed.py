@@ -142,6 +142,7 @@ def parse_items():
 
         dt = parse_registered_at(detail)
         date_label = dt.strftime('%Y-%m-%d') if dt else ""
+        registered_at = dt.isoformat() if dt else ""
         views, comments = parse_post_stats(detail)
 
         # 사러가기 URL (상단 닉네임 아래 링크의 실제 target)
@@ -166,6 +167,7 @@ def parse_items():
             "area": "뽐뿌 핫딜",
             "dist": category,
             "time": date_label,
+            "registeredAt": registered_at,
             "price": price,
             "likes": 0,
             "views": views,
@@ -178,34 +180,32 @@ def parse_items():
             "date": date_label,
         })
 
-    today = datetime.now(KST).date()
-    yesterday = today - timedelta(days=1)
+    now = datetime.now(KST)
+    since = now - timedelta(hours=48)
 
     hidden = load_hidden_hotdeals()
     filtered = [
         it for it in items
-        if it.get('date') in {str(today), str(yesterday)}
+        if it.get('registeredAt')
+        and datetime.fromisoformat(it['registeredAt']) >= since
         and it.get('sourceLink') not in hidden["sourceLinks"]
         and bbs_no_from_url(it.get('sourceLink', '')) not in hidden["bbsNos"]
     ]
     for i, it in enumerate(filtered, 1):
         it['id'] = str(i)
 
-    grouped = {"today": [], "yesterday": []}
-    for it in filtered:
-        if it['date'] == str(today):
-            grouped['today'].append(it)
-        elif it['date'] == str(yesterday):
-            grouped['yesterday'].append(it)
+    grouped = {"today": filtered, "yesterday": []}
 
     out = {
         "source": LIST_URL,
-        "generatedAt": datetime.now(KST).isoformat(),
-        "today": str(today),
-        "yesterday": str(yesterday),
+        "generatedAt": now.isoformat(),
+        "rangeHours": 48,
+        "since": since.isoformat(),
+        "today": str(now.date()),
+        "yesterday": str((now - timedelta(days=1)).date()),
         "counts": {
-            "today": len(grouped["today"]),
-            "yesterday": len(grouped["yesterday"]),
+            "today": len(filtered),
+            "yesterday": 0,
             "total": len(filtered),
         },
         "items": filtered,

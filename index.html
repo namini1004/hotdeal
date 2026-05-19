@@ -82,11 +82,10 @@
         <button class="icon-btn" id="searchToggle" aria-label="검색"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
       </div>
       <div class="search-wrap" id="searchWrap">
-        <input class="search-input" id="searchInput" type="text" placeholder="오늘/어제 상품 제목 검색" />
+        <input class="search-input" id="searchInput" type="text" placeholder="최근 48시간 핫딜 검색" />
       </div>
       <div class="chips">
-        <button class="chip active" data-tab="today">오늘의 핫딜</button>
-        <button class="chip" data-tab="yesterday">어제의 핫딜</button>
+        <button class="chip active" type="button">오늘의 핫딜</button>
       </div>
     </header>
     <main class="list" id="list"></main>
@@ -98,7 +97,7 @@
     const STORAGE_KEY = 'hotdeal_items_v3';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
-    let state = { tab: 'today', grouped: { today: [], yesterday: [] }, keyword: '' };
+    let state = { items: [], keyword: '' };
 
     function normalizeItems(items){
       return (items || []).map((item, idx) => ({
@@ -144,10 +143,9 @@
     }
 
     function getFilteredItems(){
-      const tabItems = state.grouped[state.tab] || [];
       const kw = state.keyword.trim().toLowerCase();
-      if(!kw) return tabItems;
-      return tabItems.filter(i => (i.title || '').toLowerCase().includes(kw));
+      if(!kw) return state.items;
+      return state.items.filter(i => (i.title || '').toLowerCase().includes(kw));
     }
 
     function render(){
@@ -158,7 +156,7 @@
         return;
       }
       list.innerHTML = items.map(item => `
-        <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}&tab=${state.tab}">
+        <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}">
           <img class="thumb" src="${item.img}" alt="${item.title}">
           <div>
             <div class="item-title">${item.title}</div>
@@ -168,17 +166,6 @@
           </div>
         </a>
       `).join('');
-    }
-
-    function bindTabs(){
-      document.querySelectorAll('[data-tab]').forEach(el => {
-        el.addEventListener('click', () => {
-          state.tab = el.dataset.tab;
-          document.querySelectorAll('[data-tab]').forEach(c => c.classList.remove('active'));
-          el.classList.add('active');
-          render();
-        });
-      });
     }
 
     function bindSearch(){
@@ -199,29 +186,22 @@
         const res = await fetch(FEED_PATH, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
-          const grouped = {
-            today: filterDeleted(normalizeItems(data.grouped?.today || [])),
-            yesterday: filterDeleted(normalizeItems(data.grouped?.yesterday || []))
-          };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(grouped));
-          state.grouped = grouped;
+          const items = filterDeleted(normalizeItems(data.items || data.grouped?.today || []));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+          state.items = items;
         }
       }catch(_){ }
 
-      if(!state.grouped.today.length && !state.grouped.yesterday.length){
+      if(!state.items.length){
         const raw = localStorage.getItem(STORAGE_KEY);
         if(raw){
           try{
-            const grouped = JSON.parse(raw);
-            state.grouped = {
-              today: filterDeleted(normalizeItems(grouped.today || [])),
-              yesterday: filterDeleted(normalizeItems(grouped.yesterday || []))
-            };
+            const parsed = JSON.parse(raw);
+            state.items = filterDeleted(normalizeItems(Array.isArray(parsed) ? parsed : parsed.items || parsed.today || parsed.grouped?.today || []));
           }catch(_){ }
         }
       }
 
-      bindTabs();
       bindSearch();
       render();
     }
