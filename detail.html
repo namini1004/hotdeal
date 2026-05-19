@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>핫딜 상세</title>
+  <style>
+    :root{--line:#efefef;--muted:#8a8a8a;--brand:#ff6f0f}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;color:#111;background:#fff}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:98px}
+    .hero{position:relative}
+    .hero img{width:100%;height:380px;object-fit:cover;display:block;background:#eee}
+    .topbtns{position:absolute;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;color:#fff;font-size:28px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+    .count{position:absolute;right:14px;bottom:14px;background:rgba(0,0,0,.5);color:#fff;padding:4px 10px;border-radius:999px;font-size:14px}
+    .seller{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
+    .seller-left{display:flex;gap:10px;align-items:center}
+    .avatar{width:44px;height:44px;border-radius:50%;background:#e5e7eb}
+    .name{font-size:30px;font-weight:700;letter-spacing:-0.02em}
+    .sub{font-size:22px;color:var(--muted)}
+    .temp{font-size:36px;color:#ef5c22;font-weight:800}
+    .content{padding:18px 16px}
+    h1{margin:0 0 10px;font-size:48px;line-height:1.22;letter-spacing:-0.03em}
+    .price{font-size:56px;font-weight:900;letter-spacing:-0.035em}
+    .meta{font-size:22px;color:var(--muted);margin:10px 0 16px}
+    .desc{font-size:34px;line-height:1.5;letter-spacing:-0.02em;white-space:pre-line}
+    .bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:12px 14px calc(env(safe-area-inset-bottom) + 12px);border-top:1px solid var(--line);background:#fff;display:flex;gap:10px;align-items:center}
+    .heart{width:46px;height:46px;border:1px solid #ddd;border-radius:50%;display:grid;place-items:center;color:#aaa}
+    .chat{flex:1;border:none;background:var(--brand);color:#fff;border-radius:14px;height:52px;font-size:26px;font-weight:800}
+    a{text-decoration:none;color:inherit}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <img id="img" alt="상품 이미지">
+      <div class="topbtns"><a href="index.html">‹</a><div>⌂  ⤴  ⋮</div></div>
+      <div class="count">1 / 5</div>
+    </section>
+
+    <section class="seller">
+      <div class="seller-left">
+        <div class="avatar"></div>
+        <div>
+          <div class="name" id="seller">굿파스타</div>
+          <div class="sub" id="area">영통2동</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="temp">55℃ 🥕</div>
+        <div class="sub">매너온도</div>
+      </div>
+    </section>
+
+    <section class="content">
+      <h1 id="title"></h1>
+      <div class="price" id="price"></div>
+      <div class="meta" id="meta"></div>
+      <div class="desc" id="desc"></div>
+    </section>
+  </div>
+
+  <div class="bottom">
+    <div class="heart">♡</div>
+    <button class="chat">채팅하기</button>
+  </div>
+
+  <script>
+    const items = {
+      1:{title:'NEEKE 핸드폰 태블릿 거치대',price:'12,000원',area:'영통2동',meta:'생활가전 · 끌올 3시간 전',img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1400&q=80',desc:'아기가 누워 있을 때 조부모님과 영상통화 할 때 쓰려고 샀는데 이제 걸어다녀서 필요 없어졌어요.\n\n실사용 적어서 상태 좋고, 흔들림 없이 튼튼합니다.'},
+      2:{title:'캡슐 커피머신 스타터 세트',price:'114,000원',area:'망포1동',meta:'주방가전 · 28분 전',img:'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=1400&q=80',desc:'캡슐머신 본체 + 샘플 캡슐 구성입니다.\n깨끗하게 사용했고 바로 사용 가능해요.'},
+      3:{title:'무선 노이즈캔슬링 헤드폰',price:'109,000원',area:'매탄동',meta:'디지털기기 · 1시간 전',img:'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1400&q=80',desc:'출퇴근용으로 잠깐 사용했습니다.\n케이스 포함, 배터리 상태 양호합니다.'},
+      4:{title:'논스틱 프라이팬 2종 세트',price:'39,600원',area:'원천동',meta:'생활/주방 · 2시간 전',img:'https://images.unsplash.com/photo-1584990347449-ae2f5c79f8c0?auto=format&fit=crop&w=1400&q=80',desc:'소형/중형 세트로 실사용 적습니다.\n코팅 상태 좋아요.'},
+      5:{title:'방수 데일리 백팩 24L',price:'54,900원',area:'망포동',meta:'패션잡화 · 12분 전',img:'https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?auto=format&fit=crop&w=1400&q=80',desc:'수납공간 넉넉하고 노트북 포켓 있습니다.\n비 오는 날 사용하기 좋아요.'},
+      6:{title:'무선 핸디 청소기',price:'59,000원',area:'인계동',meta:'생활가전 · 50분 전',img:'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&w=1400&q=80',desc:'차량/책상 주변 청소용으로 좋습니다.\n흡입력 준수하고 필터 여분 포함입니다.'}
+    };
+
+    const id = new URLSearchParams(location.search).get('id') || '1';
+    const item = items[id] || items[1];
+
+    document.getElementById('title').textContent = item.title;
+    document.getElementById('price').textContent = item.price;
+    document.getElementById('area').textContent = item.area;
+    document.getElementById('meta').textContent = item.meta;
+    document.getElementById('img').src = item.img;
+    document.getElementById('img').alt = item.title;
+    document.getElementById('desc').textContent = item.desc;
+  </script>
+</body>
+</html>
