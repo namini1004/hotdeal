@@ -12,7 +12,7 @@
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:92px}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:24px}
     .top{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
     .row{display:flex;align-items:center;justify-content:space-between}
     .title-app{font-size:28px;font-weight:800;letter-spacing:-.03em}
@@ -30,15 +30,11 @@
     .price{margin-top:8px;font-size:18px;font-weight:800;letter-spacing:-.02em}
     .stats{display:flex;justify-content:flex-end;margin-top:6px;color:#b0b8c1;font-size:12px}
 
-    .fab{position:fixed;right:calc(50% - 196px);bottom:86px;border:none;background:var(--brand);color:#fff;
+    .fab{position:fixed;right:calc(50% - 196px);bottom:24px;border:none;background:var(--brand);color:#fff;
       border-radius:999px;padding:12px 18px;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(255,111,15,.34);cursor:pointer}
 
-    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;border-top:1px solid var(--line);
-      background:#fff;display:grid;grid-template-columns:repeat(5,1fr);padding:10px 0 calc(env(safe-area-inset-bottom) + 8px)}
-    .nav div{text-align:center;color:var(--nav);font-size:12px}
-    .nav .on{color:#111827;font-weight:700}
 
-    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:156px;background:#111827;color:#fff;
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:86px;background:#111827;color:#fff;
       font-size:13px;padding:9px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s}
     .toast.show{opacity:1}
   </style>
@@ -63,10 +59,6 @@
 
   <button class="fab" id="writeBtn">+ 글쓰기</button>
   <div class="toast" id="toast">새 글이 등록됐어요.</div>
-
-  <nav class="nav">
-    <div class="on">홈</div><div>커뮤니티</div><div>동네생활</div><div>채팅</div><div>마이</div>
-  </nav>
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v2';
