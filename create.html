@@ -101,10 +101,6 @@
         <input id="price" inputmode="numeric" placeholder="가격을 입력해주세요. (숫자만)" required />
       </div>
 
-      <div class="field">
-        <label for="img">이미지 URL</label>
-        <input id="img" placeholder="https://... (비워두면 기본 이미지 사용)" />
-      </div>
     </form>
   </div>
 
@@ -164,7 +160,7 @@
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const price = formatPrice(document.getElementById('price').value);
-      const img = selectedImage || document.getElementById('img').value.trim() || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
+      const img = selectedImage || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
       if(!title || !desc || !price) return;
 
       const items = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
