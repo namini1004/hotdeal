@@ -6,10 +6,7 @@
   <title>오늘의 핫딜</title>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
-    :root{
-      --bg:#ffffff;--text:#111827;--muted:#8b95a1;--line:#eef1f4;--chip:#f4f6f8;--chip-active:#1f2937;
-      --brand:#ff6f0f;--nav:#9ca3af
-    }
+    :root{--bg:#fff;--text:#111827;--muted:#8b95a1;--line:#eef1f4;--chip:#f4f6f8;--chip-active:#1f2937;--brand:#ff6f0f}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:24px}
@@ -19,7 +16,7 @@
     .icons{display:flex;gap:12px;color:#6b7280;font-size:20px}
     .chips{display:flex;gap:8px;overflow:auto;padding:12px 0 2px;-ms-overflow-style:none;scrollbar-width:none}
     .chips::-webkit-scrollbar{display:none}
-    .chip{padding:8px 14px;border-radius:999px;background:var(--chip);font-size:14px;font-weight:600;white-space:nowrap;color:#4b5563}
+    .chip{padding:8px 14px;border-radius:999px;background:var(--chip);font-size:14px;font-weight:700;white-space:nowrap;color:#4b5563;border:none}
     .chip.active{background:var(--chip-active);color:#fff}
 
     .list{padding:0 16px}
@@ -28,15 +25,9 @@
     .item-title{font-size:17px;font-weight:600;line-height:1.35;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .meta{margin-top:5px;color:var(--muted);font-size:13px}
     .price{margin-top:8px;font-size:18px;font-weight:800;letter-spacing:-.02em}
-    .stats{display:flex;justify-content:flex-end;margin-top:6px;color:#b0b8c1;font-size:12px}
+    .empty{padding:40px 8px;color:#6b7280;font-size:14px}
 
-    .fab{position:fixed;right:calc(50% - 196px);bottom:24px;border:none;background:var(--brand);color:#fff;
-      border-radius:999px;padding:12px 18px;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(255,111,15,.34);cursor:pointer}
-
-
-    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:86px;background:#111827;color:#fff;
-      font-size:13px;padding:9px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s}
-    .toast.show{opacity:1}
+    .fab{position:fixed;right:calc(50% - 196px);bottom:24px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:12px 18px;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(255,111,15,.34);cursor:pointer}
   </style>
 </head>
 <body>
@@ -47,95 +38,97 @@
         <div class="icons">⌕ 🔔 ☰</div>
       </div>
       <div class="chips">
-        <div class="chip active">전체</div>
+        <button class="chip active" data-tab="today">오늘의 핫딜</button>
+        <button class="chip" data-tab="yesterday">어제의 핫딜</button>
         <div class="chip">디지털</div>
         <div class="chip">생활가전</div>
         <div class="chip">주방</div>
-        <div class="chip">패션</div>
       </div>
     </header>
     <main class="list" id="list"></main>
   </div>
 
   <button class="fab" id="writeBtn">+ 글쓰기</button>
-  <div class="toast" id="toast">새 글이 등록됐어요.</div>
 
   <script>
-    const STORAGE_KEY = 'hotdeal_items_v2';
-    const PPOMPPU_FEED_PATH = 'assets/ppomppu_page2.json';
-    const defaultItems = [
-      {id:'1',title:'핫딜 샘플 상품',area:'오늘의 핫딜',dist:'추천',time:'방금 전',price:'가격 정보 확인',likes:0,category:'샘플',desc:'피드 로딩 실패 시 보여주는 기본 항목입니다.',img:'assets/frying-pan.svg'}
-    ];
+    const STORAGE_KEY = 'hotdeal_items_v3';
+    const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
+    let state = { tab: 'today', grouped: { today: [], yesterday: [] } };
 
     function normalizeItems(items){
       return (items || []).map((item, idx) => ({
-        id: String(item.id ?? (idx + 1)),
+        id: String(item.id ?? idx + 1),
         title: item.title || '제목 없음',
         area: item.area || '뽐뿌 핫딜',
-        dist: item.dist || '스크랩',
-        time: item.time || 'page 2',
+        dist: item.dist || '기타',
+        time: item.time || item.date || '',
         price: item.price || '가격 정보 확인',
-        likes: Number(item.likes ?? 0),
-        category: item.category || '뽐뿌',
-        desc: item.desc || '상세 설명 없음',
-        img: item.img || 'assets/frying-pan.svg',
-        sourceLink: item.sourceLink || ''
+        category: item.category || '기타',
+        desc: item.desc || '',
+        img: item.img || '',
+        sourceLink: item.sourceLink || '',
+        buyLink: item.buyLink || '',
+        date: item.date || ''
       }));
     }
 
-    function saveItems(items){
-      const normalized = normalizeItems(items);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-      return normalized;
-    }
-
-    function loadItems(){
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        try { return normalizeItems(JSON.parse(raw)); } catch(_){}
-      }
-      return saveItems(defaultItems);
-    }
-
-    async function getDisplayItems(){
-      try {
-        const res = await fetch(PPOMPPU_FEED_PATH, { cache: 'no-store' });
-        if(res.ok){
-          const data = await res.json();
-          if(Array.isArray(data.items) && data.items.length){
-            return saveItems(data.items);
-          }
-        }
-      } catch(_) {}
-      return loadItems();
-    }
-
-    async function render(){
-      const items = await getDisplayItems();
+    function render(){
       const list = document.getElementById('list');
+      const items = state.grouped[state.tab] || [];
+      if(!items.length){
+        list.innerHTML = '<div class="empty">표시할 핫딜이 없습니다.</div>';
+        return;
+      }
       list.innerHTML = items.map(item => `
-        <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}">
+        <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}&tab=${state.tab}">
           <img class="thumb" src="${item.img}" alt="${item.title}">
           <div>
             <div class="item-title">${item.title}</div>
             <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
             <div class="price">${item.price}</div>
-            <div class="stats">♡ ${item.likes ?? 0}</div>
           </div>
         </a>
       `).join('');
     }
 
-    document.getElementById('writeBtn').addEventListener('click',()=>location.href='create.html');
-    render();
-
-    const p = new URLSearchParams(location.search);
-    if(p.get('posted')==='1'){
-      const t=document.getElementById('toast');
-      t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'),1700);
-      history.replaceState({},'', 'index.html');
+    function bindTabs(){
+      document.querySelectorAll('[data-tab]').forEach(el => {
+        el.addEventListener('click', () => {
+          state.tab = el.dataset.tab;
+          document.querySelectorAll('[data-tab]').forEach(c => c.classList.remove('active'));
+          el.classList.add('active');
+          render();
+        });
+      });
     }
+
+    async function init(){
+      try{
+        const res = await fetch(FEED_PATH, { cache: 'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          const grouped = {
+            today: normalizeItems(data.grouped?.today || []),
+            yesterday: normalizeItems(data.grouped?.yesterday || [])
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(grouped));
+          state.grouped = grouped;
+        }
+      }catch(_){ }
+
+      if(!state.grouped.today.length && !state.grouped.yesterday.length){
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          try{ state.grouped = JSON.parse(raw); }catch(_){ }
+        }
+      }
+
+      bindTabs();
+      render();
+    }
+
+    document.getElementById('writeBtn').addEventListener('click',()=>location.href='create.html');
+    init();
   </script>
 </body>
 </html>

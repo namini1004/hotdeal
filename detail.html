@@ -13,23 +13,15 @@
     .hero{position:relative}
     .hero img{width:100%;height:320px;object-fit:cover;display:block;background:#f3f4f6}
     .topbtns{position:absolute;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;color:#fff;font-size:24px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.45)}
-    .count{position:absolute;right:14px;bottom:14px;background:rgba(0,0,0,.52);color:#fff;padding:4px 10px;border-radius:999px;font-size:12px}
-
-    .seller{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
-    .seller-left{display:flex;gap:10px;align-items:center}
-    .avatar{width:42px;height:42px;border-radius:50%;background:#e5e7eb}
-    .name{font-size:16px;font-weight:700;letter-spacing:-.02em}
-    .sub{font-size:13px;color:var(--muted)}
-    .temp{font-size:15px;color:#ef5c22;font-weight:800}
 
     .content{padding:18px 16px}
     h1{margin:0;font-size:22px;line-height:1.35;letter-spacing:-.03em}
     .price{margin-top:10px;font-size:28px;font-weight:900;letter-spacing:-.03em}
     .meta{font-size:13px;color:var(--muted);margin:10px 0 16px}
     .desc{font-size:16px;line-height:1.65;letter-spacing:-.01em;white-space:pre-line}
+    .buy-top{display:inline-flex;align-items:center;justify-content:center;margin:12px 0 14px;padding:10px 14px;border-radius:10px;background:#111827;color:#fff;text-decoration:none;font-size:14px;font-weight:700}
 
     .bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);border-top:1px solid var(--line);background:#fff;display:flex;gap:10px;align-items:center}
-    .heart{width:44px;height:44px;border:1px solid #dde1e6;border-radius:50%;display:grid;place-items:center;color:#9ca3af;font-size:18px}
     .chat{flex:1;border:none;background:var(--brand);color:#fff;border-radius:12px;height:46px;font-size:16px;font-weight:800}
     a{text-decoration:none;color:inherit}
   </style>
@@ -39,91 +31,87 @@
     <section class="hero">
       <img id="img" alt="상품 이미지">
       <div class="topbtns"><a href="index.html">‹</a><div>⌂  ⤴  ⋮</div></div>
-      <div class="count">1 / 1</div>
-    </section>
-
-    <section class="seller">
-      <div class="seller-left">
-        <div class="avatar"></div>
-        <div>
-          <div class="name" id="seller">오늘의 핫딜</div>
-          <div class="sub" id="area">온라인 특가</div>
-        </div>
-      </div>
-      <div style="text-align:right">
-        <div class="temp">55℃ 🥕</div>
-        <div class="sub">신뢰도</div>
-      </div>
     </section>
 
     <section class="content">
       <h1 id="title"></h1>
+      <a id="buyTop" class="buy-top" href="#" target="_blank" rel="noopener" style="display:none">사러가기</a>
       <div class="price" id="price"></div>
       <div class="meta" id="meta"></div>
       <div class="desc" id="desc"></div>
-      <div style="margin-top:14px"><a id="sourceLink" href="#" target="_blank" rel="noopener" style="display:none;color:#2563eb;font-size:14px;font-weight:600">원문 보기</a></div>
     </section>
   </div>
 
   <div class="bottom">
-    <div class="heart">♡</div>
-    <button class="chat">채팅하기</button>
+    <button class="chat" id="buyBottom">사러가기</button>
   </div>
 
   <script>
-    const STORAGE_KEY = 'hotdeal_items_v2';
-    const PPOMPPU_FEED_PATH = 'assets/ppomppu_page2.json';
+    const STORAGE_KEY = 'hotdeal_items_v3';
+    const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
 
     function normalizeItems(items){
       return (items || []).map((item, idx) => ({
-        id: String(item.id ?? (idx + 1)),
+        id: String(item.id ?? idx + 1),
         title: item.title || '제목 없음',
         area: item.area || '뽐뿌 핫딜',
-        time: item.time || '방금 전',
+        time: item.time || item.date || '',
         category: item.category || '핫딜',
         price: item.price || '-',
         desc: item.desc || '상품 설명이 아직 등록되지 않았습니다.',
         img: item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80',
-        sourceLink: item.sourceLink || ''
+        buyLink: item.buyLink || '',
+        date: item.date || ''
       }));
     }
 
     async function getItems(){
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        try { return normalizeItems(JSON.parse(raw)); } catch(_){}
-      }
       try{
-        const res = await fetch(PPOMPPU_FEED_PATH, { cache: 'no-store' });
+        const res = await fetch(FEED_PATH, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
-          if(Array.isArray(data.items) && data.items.length){
-            const normalized = normalizeItems(data.items);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-            return normalized;
-          }
+          const all = normalizeItems([...(data.grouped?.today || []), ...(data.grouped?.yesterday || [])]);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({today:data.grouped?.today||[], yesterday:data.grouped?.yesterday||[]}));
+          return all;
         }
       }catch(_){ }
-      return normalizeItems([]);
+
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        try{
+          const parsed = JSON.parse(raw);
+          return normalizeItems([...(parsed.today || []), ...(parsed.yesterday || [])]);
+        }catch(_){ }
+      }
+      return [];
+    }
+
+    function applyBuyLink(url){
+      const top = document.getElementById('buyTop');
+      const bottom = document.getElementById('buyBottom');
+      if(url){
+        top.href = url;
+        top.style.display = 'inline-flex';
+        bottom.onclick = () => window.open(url, '_blank', 'noopener');
+      }else{
+        bottom.disabled = true;
+        bottom.textContent = '링크 없음';
+        bottom.style.opacity = '.45';
+      }
     }
 
     async function init(){
       const items = await getItems();
       const id = new URLSearchParams(location.search).get('id');
-      const item = items.find(v=>String(v.id)===String(id)) || items[0] || {title:'상품 없음',price:'-',meta:'',desc:'등록된 상품이 없습니다.',img:''};
+      const item = items.find(v => String(v.id) === String(id)) || items[0] || {title:'상품 없음',price:'-',desc:'등록된 상품이 없습니다.',img:''};
 
       document.getElementById('title').textContent = item.title;
       document.getElementById('price').textContent = item.price;
-      document.getElementById('area').textContent = item.area || '오늘의 핫딜';
-      document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.time || '방금 전'}`;
-      document.getElementById('img').src = item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80';
+      document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.time || '날짜 없음'}`;
+      document.getElementById('img').src = item.img;
       document.getElementById('img').alt = item.title;
-      document.getElementById('desc').textContent = item.desc || '상품 설명이 아직 등록되지 않았습니다.';
-      if(item.sourceLink){
-        const link = document.getElementById('sourceLink');
-        link.href = item.sourceLink;
-        link.style.display = 'inline-block';
-      }
+      document.getElementById('desc').textContent = item.desc;
+      applyBuyLink(item.buyLink || '');
     }
 
     init();
