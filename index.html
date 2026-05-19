@@ -6,14 +6,17 @@
   <title>오늘의 핫딜</title>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
-    :root{--bg:#fff;--text:#111827;--muted:#8b95a1;--line:#eef1f4;--chip:#f4f6f8;--chip-active:#1f2937;--brand:#ff6f0f}
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@500');
+    :root{--bg:#fff;--page:#f6f7f9;--text:#111827;--muted:#8b95a1;--line:#eef1f4;--chip:#f4f6f8;--chip-active:#1f2937;--brand:#ff6f0f}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:32px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
     .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:24px}
     .top{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
     .row{display:flex;align-items:center;justify-content:space-between}
     .title-app{font-size:28px;font-weight:800;letter-spacing:-.03em}
-    .icon-btn{border:none;background:transparent;color:#6b7280;font-size:28px;line-height:1;cursor:pointer}
+    .icon-btn{width:48px;height:48px;display:grid;place-items:center;border:none;border-radius:999px;background:transparent;color:#374151;line-height:1;cursor:pointer}
+    .icon-btn:active{background:#f4f6f8}
 
     .search-wrap{display:none;margin-top:10px}
     .search-wrap.show{display:block}
@@ -33,6 +36,38 @@
     .empty{padding:40px 8px;color:#6b7280;font-size:14px}
 
     .fab{position:fixed;right:calc(50% - 196px);bottom:24px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:12px 18px;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(255,111,15,.34);cursor:pointer}
+
+    @media (min-width:768px){
+      body{background:var(--page)}
+      .app{max-width:1120px;padding:0 28px 48px}
+      .top{top:16px;margin:16px 0 18px;padding:18px 20px 14px;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 32px rgba(17,24,39,.06)}
+      .title-app{font-size:32px}
+      .icon-btn{width:52px;height:52px;background:#f4f6f8}
+      .icon-btn .material-symbols-outlined{font-size:34px}
+      .search-wrap{display:block;max-width:520px}
+      .search-input{height:46px;background:#fafafa}
+      .chips{padding-top:14px}
+      .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0}
+      .item{grid-template-columns:132px 1fr;gap:16px;padding:14px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(17,24,39,.04);transition:transform .15s ease,box-shadow .15s ease}
+      .item:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(17,24,39,.08)}
+      .thumb{width:132px;height:132px;border-radius:14px}
+      .item-title{font-size:18px;-webkit-line-clamp:3}
+      .meta{font-size:14px}
+      .price{font-size:20px}
+      .empty{grid-column:1/-1;padding:72px 16px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:16px}
+      .fab{right:calc(50% - 532px);bottom:32px;padding:13px 20px}
+    }
+
+    @media (min-width:1180px){
+      .list{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .item{grid-template-columns:118px 1fr}
+      .thumb{width:118px;height:118px}
+      .fab{right:calc(50% - 560px)}
+    }
+
+    @media (max-width:767px){
+      .search-wrap.show{display:block}
+    }
   </style>
 </head>
 <body>
@@ -40,7 +75,7 @@
     <header class="top">
       <div class="row">
         <div class="title-app">오늘의 핫딜</div>
-        <button class="icon-btn" id="searchToggle" aria-label="검색">⌕</button>
+        <button class="icon-btn" id="searchToggle" aria-label="검색"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
       </div>
       <div class="search-wrap" id="searchWrap">
         <input class="search-input" id="searchInput" type="text" placeholder="오늘/어제 상품 제목 검색" />
