@@ -15,12 +15,19 @@
 
     .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
     .title{font-size:19px;font-weight:800;letter-spacing:-.02em}
-    .draft{font-size:13px;color:#9ca3af;font-weight:600}
+    .top-spacer{width:48px;height:48px}
     .back{width:48px;height:48px;display:grid;place-items:center;border-radius:999px;color:#111;text-decoration:none}
     .back:active{background:#f4f6f8}
 
     .wrap{padding:14px 16px}
-    .photo{border:1px solid #e3e7ec;border-radius:12px;width:96px;height:96px;display:grid;place-items:center;color:#9ca3af;font-size:13px;margin-bottom:16px;background:var(--bg)}
+    .photo{border:1px solid #e3e7ec;border-radius:12px;width:96px;height:96px;display:grid;place-items:center;color:#7c3aed;font-size:13px;font-weight:700;margin-bottom:16px;background:var(--bg);cursor:pointer;overflow:hidden;text-align:center}
+    .photo .material-symbols-outlined{font-size:28px}
+    .photo-text{display:grid;gap:4px;place-items:center}
+    .photo-preview{width:100%;height:100%;object-fit:cover;display:none}
+    .photo.has-image{border-color:#d8c7ff;background:#fff}
+    .photo.has-image .photo-text{display:none}
+    .photo.has-image .photo-preview{display:block}
+    .file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
     .field{border-top:1px solid var(--line);padding:14px 0}
     .field:first-of-type{border-top:none;padding-top:0}
     label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
@@ -41,6 +48,7 @@
       .top{position:static;padding:16px 20px}
       .title{font-size:21px}
       .back{width:52px;height:52px}
+      .top-spacer{width:52px;height:52px}
       .back .material-symbols-outlined{font-size:34px}
       .wrap{padding:22px 24px}
       .photo{width:112px;height:112px}
@@ -57,11 +65,15 @@
     <header class="top">
       <a class="back" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
       <div class="title">오늘의 핫딜 작성</div>
-      <div class="draft">임시저장</div>
+      <div class="top-spacer" aria-hidden="true"></div>
     </header>
 
     <form class="wrap" id="form">
-      <div class="photo">📷 0/10</div>
+      <label class="photo" id="photoButton" for="photoInput">
+        <span class="photo-text"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span><span>사진 첨부</span></span>
+        <img class="photo-preview" id="photoPreview" alt="첨부한 사진 미리보기">
+      </label>
+      <input class="file-input" id="photoInput" type="file" accept="image/*" />
 
       <div class="field">
         <label for="title">제목</label>
@@ -71,7 +83,7 @@
       <div class="field">
         <label for="desc">자세한 설명</label>
         <textarea id="desc" placeholder="상품 상태, 구성품, 거래 조건 등을 자세히 적어주세요." required></textarea>
-        <div class="hint">서로 믿고 거래할 수 있도록 자세히 적어주세요.\n허위/과장 정보는 제한될 수 있습니다.</div>
+        <div class="hint">서로 믿고 거래할 수 있도록 자세히 적어주세요.<br>허위 과장 정보는 제한될 수 있습니다.</div>
       </div>
 
       <div class="field">
@@ -101,8 +113,10 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'hotdeal_items_v2';
+    const STORAGE_KEY = 'hotdeal_items_v3';
+    const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     let selectedCategory = '디지털';
+    let selectedImage = '';
 
     document.getElementById('catRow').addEventListener('click',(e)=>{
       const btn = e.target.closest('.chip');
@@ -118,30 +132,62 @@
       return num.toLocaleString('ko-KR') + '원';
     }
 
+    function readStoredItems(key){
+      try{
+        const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(parsed) ? parsed : parsed.items || parsed.today || parsed.grouped?.today || [];
+      }catch(_){
+        return [];
+      }
+    }
+
+    function saveItems(items){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
+
+    document.getElementById('photoInput').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if(!file) return;
+      if(!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        selectedImage = String(reader.result || '');
+        document.getElementById('photoPreview').src = selectedImage;
+        document.getElementById('photoButton').classList.add('has-image');
+      };
+      reader.readAsDataURL(file);
+    });
+
     document.getElementById('form').addEventListener('submit', (e)=>{
       e.preventDefault();
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const price = formatPrice(document.getElementById('price').value);
-      const img = document.getElementById('img').value.trim() || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
+      const img = selectedImage || document.getElementById('img').value.trim() || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
       if(!title || !desc || !price) return;
 
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const items = raw ? JSON.parse(raw) : [];
+      const items = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
+      const now = new Date();
       const newItem = {
-        id: String(Date.now()),
+        id: `local-${Date.now()}`,
         title,
         area:'오늘의 핫딜',
         dist:'방금 등록',
         time:'방금 전',
         price,
         likes:0,
+        views:0,
+        comments:0,
         category:selectedCategory,
         desc,
-        img
+        img,
+        source:'user',
+        date: now.toISOString().slice(0, 10),
+        registeredAt: now.toISOString()
       };
       items.unshift(newItem);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      saveItems(items);
       location.href = 'index.html?posted=1';
     });
   </script>

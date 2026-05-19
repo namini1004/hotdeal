@@ -96,6 +96,7 @@
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
+    const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
     let currentItem = null;
@@ -112,8 +113,39 @@
         img: item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80',
         buyLink: item.buyLink || '',
         sourceLink: item.sourceLink || '',
-        date: item.date || ''
+        date: item.date || '',
+        registeredAt: item.registeredAt || '',
+        source: item.source || ''
       }));
+    }
+
+    function parseStoredItems(key){
+      try{
+        const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+        return normalizeItems(Array.isArray(parsed) ? parsed : parsed.items || parsed.today || parsed.grouped?.today || []);
+      }catch(_){
+        return [];
+      }
+    }
+
+    function getUserItems(){
+      return [...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]
+        .filter(item => item.source === 'user' || String(item.id || '').startsWith('local-'));
+    }
+
+    function dedupeItems(items){
+      const seen = new Set();
+      return (items || []).filter(item => {
+        const key = getDealKey(item);
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function saveItems(items){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     }
 
     function getDealKey(item){
@@ -161,20 +193,14 @@
         const res = await fetch(FEED_PATH, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
-          const all = normalizeItems(data.items || data.grouped?.today || []);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+          const feedItems = normalizeItems(data.items || data.grouped?.today || []);
+          const all = dedupeItems([...getUserItems(), ...feedItems]);
+          saveItems(all);
           return all;
         }
       }catch(_){ }
 
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        try{
-          const parsed = JSON.parse(raw);
-          return normalizeItems(Array.isArray(parsed) ? parsed : parsed.items || parsed.today || parsed.grouped?.today || []);
-        }catch(_){ }
-      }
-      return [];
+      return dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]);
     }
 
     function showToast(message){
