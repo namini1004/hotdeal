@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 핫딜</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --text: #181c25;
+      --muted: #687083;
+      --line: #e6e9ef;
+      --accent: #e53935;
+      --accent-dark: #c62828;
+      --badge-bg: #fff0ee;
+      --shadow: 0 14px 36px rgba(25, 30, 40, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .site-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 18px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 34px);
+      letter-spacing: 0;
+    }
+
+    .header-label {
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+      background: #fbfcfe;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+    }
+
+    .intro {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .intro h2 {
+      margin: 0;
+      font-size: clamp(22px, 5vw, 42px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .intro p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .update-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 24px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .update-box span:first-child {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .update-time {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .deal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .deal-card {
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .deal-image {
+      min-height: 132px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #fff7e6, #e9f6ff);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .deal-image span {
+      font-size: 42px;
+      line-height: 1;
+    }
+
+    .deal-body {
+      padding: 16px;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .deal-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .deal-name {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .discount-badge {
+      flex: 0 0 auto;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: var(--badge-bg);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .price-box {
+      display: grid;
+      gap: 3px;
+    }
+
+    .original-price {
+      color: var(--muted);
+      font-size: 14px;
+      text-decoration: line-through;
+    }
+
+    .sale-price {
+      font-size: 22px;
+      font-weight: 850;
+      letter-spacing: 0;
+    }
+
+    .buy-button {
+      width: 100%;
+      min-height: 44px;
+      margin-top: auto;
+      border: 0;
+      border-radius: 7px;
+      color: #ffffff;
+      background: var(--accent);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 0.16s ease, transform 0.16s ease;
+    }
+
+    .buy-button:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .buy-button:focus-visible {
+      outline: 3px solid rgba(229, 57, 53, 0.28);
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 900px) {
+      .deal-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .header-inner,
+      main {
+        width: min(100% - 24px, 1120px);
+      }
+
+      .header-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+
+      .header-label {
+        font-size: 13px;
+      }
+
+      main {
+        padding-top: 22px;
+      }
+
+      .update-box {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .update-time {
+        text-align: left;
+      }
+
+      .deal-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .deal-card {
+        flex-direction: row;
+      }
+
+      .deal-image {
+        width: 104px;
+        min-height: auto;
+        border-right: 1px solid var(--line);
+        border-bottom: 0;
+      }
+
+      .deal-image span {
+        font-size: 34px;
+      }
+
+      .deal-body {
+        min-width: 0;
+        padding: 14px;
+      }
+
+      .deal-name {
+        font-size: 16px;
+      }
+
+      .sale-price {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>오늘의 핫딜</h1>
+      <div class="header-label">놓치면 아쉬운 특가 모음</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="intro-title">
+      <h2 id="intro-title">오늘 가장 인기 있는 할인 상품</h2>
+      <p>필요한 상품을 좋은 가격에 찾을 수 있도록 엄선한 샘플 핫딜 목록입니다.</p>
+    </section>
+
+    <section class="update-box" aria-label="마지막 업데이트 시간">
+      <span>마지막 업데이트</span>
+      <span class="update-time" id="lastUpdated">업데이트 시간 확인 중</span>
+    </section>
+
+    <section class="deal-grid" aria-label="핫딜 상품 목록">
+      <article class="deal-card">
+        <div class="deal-image" aria-hidden="true"><span>🎧</span></div>
+        <div class="deal-body">
+          <div class="deal-top">
+            <h3 class="deal-name">무선 노이즈캔슬링 헤드폰</h3>
+            <span class="discount-badge">42% 할인</span>
+          </div>
+          <div class="price-box">
+            <span class="original-price">정가 189,000원</span>
+            <span class="sale-price">109,000원</span>
+          </div>
+          <button class="buy-button" type="button">구매하기</button>
+        </div>
+      </article>
+
+      <article class="deal-card">
+        <div class="deal-image" aria-hidden="true"><span>⌚</span></div>
+        <div class="deal-body">
+          <div class="deal-top">
+            <h3 class="deal-name">스마트워치 피트니스 에디션</h3>
+            <span class="discount-badge">35% 할인</span>
+          </div>
+          <div class="price-box">
+            <span class="original-price">정가 129,000원</span>
+            <span class="sale-price">83,900원</span>
+          </div>
+          <button class="buy-button" type="button">구매하기</button>
+        </div>
+      </article>
+
+      <article class="deal-card">
+        <div class="deal-image" aria-hidden="true"><span>☕</span></div>
+        <div class="deal-body">
+          <div class="deal-top">
+            <h3 class="deal-name">캡슐 커피머신 스타터 세트</h3>
+            <span class="discount-badge">28% 할인</span>
+          </div>
+          <div class="price-box">
+            <span class="original-price">정가 159,000원</span>
+            <span class="sale-price">114,000원</span>
+          </div>
+          <button class="buy-button" type="button">구매하기</button>
+        </div>
+      </article>
+
+      <article class="deal-card">
+        <div class="deal-image" aria-hidden="true"><span>💻</span></div>
+        <div class="deal-body">
+          <div class="deal-top">
+            <h3 class="deal-name">초경량 노트북 거치대</h3>
+            <span class="discount-badge">50% 할인</span>
+          </div>
+          <div class="price-box">
+            <span class="original-price">정가 39,800원</span>
+            <span class="sale-price">19,900원</span>
+          </div>
+          <button class="buy-button" type="button">구매하기</button>
+        </div>
+      </article>
+
+      <article class="deal-card">
+        <div class="deal-image" aria-hidden="true"><span>🧴</span></div>
+        <div class="deal-body">
+          <div class="deal-top">
+            <h3 class="deal-name">저자극 수분 크림 대용량</h3>
+            <span class="discount-badge">31% 할인</span>
+          </div>
+          <div class="price-box">
+            <span class="original-price">정가 32,000원</span>
+            <span class="sale-price">21,900원</span>
+          </div>
+          <button class="buy-button" type="button">구매하기</button>
+        </div>
+      </article>
+
+      <article class="deal-card">
+        <div class="deal-image" aria-hidden="true"><span>🍳</span></div>
+        <div class="deal-body">
+          <div class="deal-top">
+            <h3 class="deal-name">논스틱 프라이팬 2종 세트</h3>
+            <span class="discount-badge">45% 할인</span>
+          </div>
+          <div class="price-box">
+            <span class="original-price">정가 72,000원</span>
+            <span class="sale-price">39,600원</span>
+          </div>
+          <button class="buy-button" type="button">구매하기</button>
+        </div>
+      </article>
+
+      <article class="deal-card">
+        <div class="deal-image" aria-hidden="true"><span>🎒</span></div>
+        <div class="deal-body">
+          <div class="deal-top">
+            <h3 class="deal-name">방수 데일리 백팩 24L</h3>
+            <span class="discount-badge">38% 할인</span>
+          </div>
+          <div class="price-box">
+            <span class="original-price">정가 89,000원</span>
+            <span class="sale-price">54,900원</span>
+          </div>
+          <button class="buy-button" type="button">구매하기</button>
+        </div>
+      </article>
+
+      <article class="deal-card">
+        <div class="deal-image" aria-hidden="true"><span>🧹</span></div>
+        <div class="deal-body">
+          <div class="deal-top">
+            <h3 class="deal-name">무선 핸디 청소기</h3>
+            <span class="discount-badge">40% 할인</span>
+          </div>
+          <div class="price-box">
+            <span class="original-price">정가 99,000원</span>
+            <span class="sale-price">59,000원</span>
+          </div>
+          <button class="buy-button" type="button">구매하기</button>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const formatter = new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    document.getElementById("lastUpdated").textContent = formatter.format(new Date());
+
+    document.querySelectorAll(".buy-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        alert("샘플 사이트입니다. 실제 구매 페이지는 연결되어 있지 않습니다.");
+      });
+    });
+  </script>
+</body>
+</html>
