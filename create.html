@@ -101,6 +101,11 @@
         <input id="price" inputmode="numeric" placeholder="가격을 입력해주세요. (숫자만)" required />
       </div>
 
+      <div class="field">
+        <label for="dealUrl">핫딜주소</label>
+        <input id="dealUrl" inputmode="url" placeholder="https://..." />
+      </div>
+
     </form>
   </div>
 
@@ -113,6 +118,7 @@
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     let selectedCategory = '디지털';
     let selectedImage = '';
+    let sharedImage = '';
 
     document.getElementById('catRow').addEventListener('click',(e)=>{
       const btn = e.target.closest('.chip');
@@ -142,6 +148,28 @@
       localStorage.removeItem(LEGACY_STORAGE_KEY);
     }
 
+    function isHttpUrl(value){
+      return /^https?:\/\/\S+/i.test(value || '');
+    }
+
+    function setPhotoPreview(src){
+      if(!src) return;
+      sharedImage = src;
+      document.getElementById('photoPreview').src = src;
+      document.getElementById('photoButton').classList.add('has-image');
+    }
+
+    function prefillSharedHotdeal(data){
+      if(!data) return;
+      const title = document.getElementById('title');
+      const dealUrl = document.getElementById('dealUrl');
+      if(data.url && !dealUrl.value) dealUrl.value = data.url;
+      if(data.title && !title.value) title.value = data.title;
+      if(data.image && !selectedImage) setPhotoPreview(data.image);
+    }
+
+    window.prefillSharedHotdeal = prefillSharedHotdeal;
+
     const photoInput = document.getElementById('photoInput');
     const photoButton = document.getElementById('photoButton');
 
@@ -156,10 +184,17 @@
       const reader = new FileReader();
       reader.onload = () => {
         selectedImage = String(reader.result || '');
+        sharedImage = '';
         document.getElementById('photoPreview').src = selectedImage;
         document.getElementById('photoButton').classList.add('has-image');
       };
       reader.readAsDataURL(file);
+    });
+
+    prefillSharedHotdeal({
+      url: new URLSearchParams(location.search).get('sharedUrl') || '',
+      title: new URLSearchParams(location.search).get('sharedTitle') || '',
+      image: new URLSearchParams(location.search).get('sharedImage') || ''
     });
 
     document.getElementById('form').addEventListener('submit', (e)=>{
@@ -167,8 +202,13 @@
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const price = formatPrice(document.getElementById('price').value);
-      const img = selectedImage || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
+      const dealUrl = document.getElementById('dealUrl').value.trim();
+      const img = selectedImage || sharedImage || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
       if(!title || !desc || !price) return;
+      if(dealUrl && !isHttpUrl(dealUrl)){
+        alert('핫딜주소는 http 또는 https로 시작해야 합니다.');
+        return;
+      }
 
       const items = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
       const now = new Date();
@@ -185,6 +225,8 @@
         category:selectedCategory,
         desc,
         img,
+        buyLink:dealUrl,
+        sourceLink:dealUrl,
         source:'user',
         date: now.toISOString().slice(0, 10),
         registeredAt: now.toISOString()
