@@ -52,6 +52,8 @@
   - 뽐뿌 수집/필터/구매링크 추출/썸네일 캐시/JSON 갱신
 - `scripts/cron_refresh_hotdeals.sh`
   - 갱신 스크립트 실행 + 변경 시 커밋/푸시
+- `scripts/refresh_hotdeals_windows.ps1`
+  - Windows 작업 스케줄러용 자동 갱신/커밋/푸시 스크립트
 - `assets/ppomppu_hotdeals_2days.json`
   - 실제 렌더링용 데이터
 - `assets/ppomppu_thumbs/*`
@@ -71,7 +73,13 @@
    - `git remote -v`
    - `git branch --show-current`
 
-## B. 최신화
+## B. 최신화 (상황별)
+- **같은 컴퓨터(WSL + Windows가 같은 로컬 파일 공유)**:
+  - 보통 pull 불필요 (같은 폴더 파일을 보고 있음)
+  - 대신 아래 확인 권장:
+    - `git status`
+    - `git log --oneline -n 3`
+- **다른 컴퓨터/새 환경**:
 ```bash
 git pull origin main
 ```
@@ -137,6 +145,40 @@ Hermes 환경에서 등록된 작업:
 - Windows Codex 앱만 켜둔다고 자동으로 돌지 않습니다.
 - Windows에서도 동일 자동화를 원하면, 별도로 작업 스케줄러(Windows Task Scheduler) 구성 필요.
 
+### Windows Task Scheduler 구성(추가)
+
+Windows Codex 앱/Windows 단독 환경에서 자동 갱신을 돌리려면 아래처럼 등록:
+
+1) 수동 1회 테스트 (PowerShell)
+```powershell
+cd C:\Users\namin\hotdeal-site
+powershell -ExecutionPolicy Bypass -File .\scripts\refresh_hotdeals_windows.ps1
+```
+
+2) 작업 스케줄러 등록(매 60분)
+```powershell
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Users\namin\hotdeal-site\scripts\refresh_hotdeals_windows.ps1"
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 60)
+Register-ScheduledTask -TaskName "HotdealHourlyRefresh" -Action $action -Trigger $trigger -Description "뽐뿌 핫딜 1시간 자동갱신/커밋/푸시"
+```
+
+3) 동작 확인
+```powershell
+Get-ScheduledTask -TaskName "HotdealHourlyRefresh"
+Get-ScheduledTaskInfo -TaskName "HotdealHourlyRefresh"
+```
+
+4) 수동 실행/중지
+```powershell
+Start-ScheduledTask -TaskName "HotdealHourlyRefresh"
+Stop-ScheduledTask -TaskName "HotdealHourlyRefresh"
+```
+
+5) 삭제
+```powershell
+Unregister-ScheduledTask -TaskName "HotdealHourlyRefresh" -Confirm:$false
+```
+
 ---
 
 ## 6) 자주 발생 가능한 이슈와 대응
@@ -172,7 +214,8 @@ Hermes 환경에서 등록된 작업:
 ## 7) 빠른 점검 체크리스트
 
 작업 시작 전:
-- [ ] `git pull origin main`
+- [ ] (같은 컴퓨터) `git status` / `git log --oneline -n 3` 확인
+- [ ] (다른 컴퓨터) `git pull origin main`
 - [ ] `git status` 깨끗한지 확인
 
 변경 후:
