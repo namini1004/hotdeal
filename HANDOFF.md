@@ -53,7 +53,11 @@
 - `scripts/cron_refresh_hotdeals.sh`
   - 갱신 스크립트 실행 + 변경 시 커밋/푸시
 - `scripts/refresh_hotdeals_windows.ps1`
-  - Windows 작업 스케줄러용 자동 갱신/커밋/푸시 스크립트
+  - Windows 작업 스케줄러용 자동 갱신/커밋/푸시 실행 스크립트
+- `scripts/register_hotdeal_task_windows.ps1`
+  - Windows 작업 스케줄러 원클릭 등록(교체 등록/즉시실행 옵션)
+- `scripts/unregister_hotdeal_task_windows.ps1`
+  - Windows 작업 스케줄러 작업 삭제 스크립트
 - `assets/ppomppu_hotdeals_2days.json`
   - 실제 렌더링용 데이터
 - `assets/ppomppu_thumbs/*`
@@ -147,19 +151,18 @@ Hermes 환경에서 등록된 작업:
 
 ### Windows Task Scheduler 구성(추가)
 
-Windows Codex 앱/Windows 단독 환경에서 자동 갱신을 돌리려면 아래처럼 등록:
+Windows Codex 앱/Windows 단독 환경에서 자동 갱신을 돌리려면 아래 순서 권장:
 
-1) 수동 1회 테스트 (PowerShell)
+1) 수동 1회 테스트 (실행 스크립트)
 ```powershell
 cd C:\Users\namin\hotdeal-site
 powershell -ExecutionPolicy Bypass -File .\scripts\refresh_hotdeals_windows.ps1
 ```
 
-2) 작업 스케줄러 등록(매 60분)
+2) 원클릭 등록(매 60분, 기존 작업 있으면 교체)
 ```powershell
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Users\namin\hotdeal-site\scripts\refresh_hotdeals_windows.ps1"
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 60)
-Register-ScheduledTask -TaskName "HotdealHourlyRefresh" -Action $action -Trigger $trigger -Description "뽐뿌 핫딜 1시간 자동갱신/커밋/푸시"
+cd C:\Users\namin\hotdeal-site
+powershell -ExecutionPolicy Bypass -File .\scripts\register_hotdeal_task_windows.ps1 -IntervalMinutes 60 -RunNow
 ```
 
 3) 동작 확인
@@ -174,9 +177,10 @@ Start-ScheduledTask -TaskName "HotdealHourlyRefresh"
 Stop-ScheduledTask -TaskName "HotdealHourlyRefresh"
 ```
 
-5) 삭제
+5) 삭제(원클릭)
 ```powershell
-Unregister-ScheduledTask -TaskName "HotdealHourlyRefresh" -Confirm:$false
+cd C:\Users\namin\hotdeal-site
+powershell -ExecutionPolicy Bypass -File .\scripts\unregister_hotdeal_task_windows.ps1
 ```
 
 ---
@@ -242,7 +246,7 @@ Unregister-ScheduledTask -TaskName "HotdealHourlyRefresh" -Confirm:$false
 
 현재는 **Git 중심 이어받기 전략**이 가장 안전합니다.
 - 이미 main에 최신 변경 푸시됨
-- Windows Codex 앱에서 pull 후 바로 작업 가능
+- 같은 컴퓨터면 pull 없이 바로 작업 가능(다른 컴퓨터는 pull 권장)
 - 작업 맥락은 본 문서 + Git log로 복원 가능
 
 끝.
