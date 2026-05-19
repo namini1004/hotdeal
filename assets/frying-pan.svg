@@ -1,0 +1,37 @@
+<svg width="900" height="900" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="논스틱 프라이팬">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5f7fb"/>
+      <stop offset="100%" stop-color="#e9eef5"/>
+    </linearGradient>
+    <radialGradient id="panBody" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#4b5563"/>
+      <stop offset="70%" stop-color="#1f2937"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </radialGradient>
+    <radialGradient id="panInner" cx="45%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#374151"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </radialGradient>
+    <linearGradient id="handle" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1f2937"/>
+      <stop offset="100%" stop-color="#374151"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="900" fill="url(#bg)"/>
+
+  <g transform="translate(130,120)">
+    <ellipse cx="320" cy="310" rx="270" ry="230" fill="url(#panBody)"/>
+    <ellipse cx="320" cy="300" rx="225" ry="188" fill="url(#panInner)"/>
+    <ellipse cx="255" cy="235" rx="95" ry="55" fill="#6b7280" opacity="0.22"/>
+
+    <g transform="rotate(-12 590 330)">
+      <rect x="560" y="298" width="250" height="60" rx="30" fill="url(#handle)"/>
+      <rect x="780" y="306" width="78" height="44" rx="22" fill="#111827"/>
+    </g>
+
+    <circle cx="500" cy="316" r="10" fill="#9ca3af"/>
+    <circle cx="520" cy="311" r="8" fill="#9ca3af"/>
+  </g>
+</svg>
