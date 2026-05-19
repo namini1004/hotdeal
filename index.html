@@ -13,7 +13,12 @@
     .top{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
     .row{display:flex;align-items:center;justify-content:space-between}
     .title-app{font-size:28px;font-weight:800;letter-spacing:-.03em}
-    .icons{display:flex;gap:12px;color:#6b7280;font-size:20px}
+    .icon-btn{border:none;background:transparent;color:#6b7280;font-size:20px;cursor:pointer}
+
+    .search-wrap{display:none;margin-top:10px}
+    .search-wrap.show{display:block}
+    .search-input{width:100%;height:42px;border:1px solid #d9dde3;border-radius:10px;padding:0 12px;font-size:14px}
+
     .chips{display:flex;gap:8px;overflow:auto;padding:12px 0 2px;-ms-overflow-style:none;scrollbar-width:none}
     .chips::-webkit-scrollbar{display:none}
     .chip{padding:8px 14px;border-radius:999px;background:var(--chip);font-size:14px;font-weight:700;white-space:nowrap;color:#4b5563;border:none}
@@ -35,14 +40,14 @@
     <header class="top">
       <div class="row">
         <div class="title-app">오늘의 핫딜</div>
-        <div class="icons">⌕ 🔔 ☰</div>
+        <button class="icon-btn" id="searchToggle" aria-label="검색">⌕</button>
+      </div>
+      <div class="search-wrap" id="searchWrap">
+        <input class="search-input" id="searchInput" type="text" placeholder="오늘/어제 상품 제목 검색" />
       </div>
       <div class="chips">
         <button class="chip active" data-tab="today">오늘의 핫딜</button>
         <button class="chip" data-tab="yesterday">어제의 핫딜</button>
-        <div class="chip">디지털</div>
-        <div class="chip">생활가전</div>
-        <div class="chip">주방</div>
       </div>
     </header>
     <main class="list" id="list"></main>
@@ -53,7 +58,7 @@
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
-    let state = { tab: 'today', grouped: { today: [], yesterday: [] } };
+    let state = { tab: 'today', grouped: { today: [], yesterday: [] }, keyword: '' };
 
     function normalizeItems(items){
       return (items || []).map((item, idx) => ({
@@ -72,11 +77,18 @@
       }));
     }
 
+    function getFilteredItems(){
+      const tabItems = state.grouped[state.tab] || [];
+      const kw = state.keyword.trim().toLowerCase();
+      if(!kw) return tabItems;
+      return tabItems.filter(i => (i.title || '').toLowerCase().includes(kw));
+    }
+
     function render(){
       const list = document.getElementById('list');
-      const items = state.grouped[state.tab] || [];
+      const items = getFilteredItems();
       if(!items.length){
-        list.innerHTML = '<div class="empty">표시할 핫딜이 없습니다.</div>';
+        list.innerHTML = '<div class="empty">검색 결과가 없습니다.</div>';
         return;
       }
       list.innerHTML = items.map(item => `
@@ -102,6 +114,19 @@
       });
     }
 
+    function bindSearch(){
+      const wrap = document.getElementById('searchWrap');
+      const input = document.getElementById('searchInput');
+      document.getElementById('searchToggle').addEventListener('click', () => {
+        wrap.classList.toggle('show');
+        if(wrap.classList.contains('show')) input.focus();
+      });
+      input.addEventListener('input', (e) => {
+        state.keyword = e.target.value || '';
+        render();
+      });
+    }
+
     async function init(){
       try{
         const res = await fetch(FEED_PATH, { cache: 'no-store' });
@@ -124,6 +149,7 @@
       }
 
       bindTabs();
+      bindSearch();
       render();
     }
 
