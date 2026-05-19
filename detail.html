@@ -61,6 +61,7 @@
       <div class="price" id="price"></div>
       <div class="meta" id="meta"></div>
       <div class="desc" id="desc"></div>
+      <div style="margin-top:14px"><a id="sourceLink" href="#" target="_blank" rel="noopener" style="display:none;color:#2563eb;font-size:14px;font-weight:600">원문 보기</a></div>
     </section>
   </div>
 
@@ -71,17 +72,61 @@
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v2';
-    const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const id = new URLSearchParams(location.search).get('id');
-    const item = items.find(v=>String(v.id)===String(id)) || items[0] || {title:'상품 없음',price:'-',meta:'',desc:'등록된 상품이 없습니다.',img:''};
+    const PPOMPPU_FEED_PATH = 'assets/ppomppu_page2.json';
 
-    document.getElementById('title').textContent = item.title;
-    document.getElementById('price').textContent = item.price;
-    document.getElementById('area').textContent = item.area || '오늘의 핫딜';
-    document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.time || '방금 전'}`;
-    document.getElementById('img').src = item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80';
-    document.getElementById('img').alt = item.title;
-    document.getElementById('desc').textContent = item.desc || '상품 설명이 아직 등록되지 않았습니다.';
+    function normalizeItems(items){
+      return (items || []).map((item, idx) => ({
+        id: String(item.id ?? (idx + 1)),
+        title: item.title || '제목 없음',
+        area: item.area || '뽐뿌 핫딜',
+        time: item.time || '방금 전',
+        category: item.category || '핫딜',
+        price: item.price || '-',
+        desc: item.desc || '상품 설명이 아직 등록되지 않았습니다.',
+        img: item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80',
+        sourceLink: item.sourceLink || ''
+      }));
+    }
+
+    async function getItems(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        try { return normalizeItems(JSON.parse(raw)); } catch(_){}
+      }
+      try{
+        const res = await fetch(PPOMPPU_FEED_PATH, { cache: 'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          if(Array.isArray(data.items) && data.items.length){
+            const normalized = normalizeItems(data.items);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+            return normalized;
+          }
+        }
+      }catch(_){ }
+      return normalizeItems([]);
+    }
+
+    async function init(){
+      const items = await getItems();
+      const id = new URLSearchParams(location.search).get('id');
+      const item = items.find(v=>String(v.id)===String(id)) || items[0] || {title:'상품 없음',price:'-',meta:'',desc:'등록된 상품이 없습니다.',img:''};
+
+      document.getElementById('title').textContent = item.title;
+      document.getElementById('price').textContent = item.price;
+      document.getElementById('area').textContent = item.area || '오늘의 핫딜';
+      document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.time || '방금 전'}`;
+      document.getElementById('img').src = item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80';
+      document.getElementById('img').alt = item.title;
+      document.getElementById('desc').textContent = item.desc || '상품 설명이 아직 등록되지 않았습니다.';
+      if(item.sourceLink){
+        const link = document.getElementById('sourceLink');
+        link.href = item.sourceLink;
+        link.style.display = 'inline-block';
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>

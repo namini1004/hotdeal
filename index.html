@@ -62,53 +62,56 @@
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v2';
+    const PPOMPPU_FEED_PATH = 'assets/ppomppu_page2.json';
     const defaultItems = [
-      {id:'1',title:'핸드폰·태블릿 거치대',area:'오늘의 핫딜',dist:'추천',time:'3시간 전',price:'12,000원',likes:2,category:'디지털',desc:'각도 조절 가능한 알루미늄 거치대예요.',img:'https://images.unsplash.com/photo-1586953208448-b95a79798f07?auto=format&fit=crop&w=900&q=80'},
-      {id:'2',title:'캡슐 커피머신 스타터 세트',area:'오늘의 핫딜',dist:'인기',time:'28분 전',price:'114,000원',likes:11,category:'주방',desc:'본체+샘플캡슐 구성, 바로 사용 가능해요.',img:'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80'},
-      {id:'3',title:'무선 노이즈캔슬링 헤드폰',area:'오늘의 핫딜',dist:'추천',time:'1시간 전',price:'109,000원',likes:4,category:'디지털',desc:'케이스 포함, 배터리 상태 양호.',img:'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80'},
-      {id:'4',title:'논스틱 프라이팬 2종 세트',area:'오늘의 핫딜',dist:'추천',time:'2시간 전',price:'39,600원',likes:8,category:'주방',desc:'가정용으로 쓰기 좋은 24cm/28cm 2종 구성입니다.',img:'assets/frying-pan.svg'}
+      {id:'1',title:'핫딜 샘플 상품',area:'오늘의 핫딜',dist:'추천',time:'방금 전',price:'가격 정보 확인',likes:0,category:'샘플',desc:'피드 로딩 실패 시 보여주는 기본 항목입니다.',img:'assets/frying-pan.svg'}
     ];
 
     function normalizeItems(items){
-      return (items || []).map(item => {
-        if(String(item.id)==='1'){
-          return {
-            ...item,
-            title:'핸드폰·태블릿 거치대',
-            category:'디지털',
-            desc:'각도 조절 가능한 알루미늄 거치대예요.',
-            img:'https://images.unsplash.com/photo-1586953208448-b95a79798f07?auto=format&fit=crop&w=900&q=80'
-          };
-        }
-        if(String(item.id)==='4'){
-          return {
-            ...item,
-            title:'논스틱 프라이팬 2종 세트',
-            category:'주방',
-            desc:'가정용으로 쓰기 좋은 24cm/28cm 2종 구성입니다.',
-            img:'assets/frying-pan.svg'
-          };
-        }
-        return item;
-      });
+      return (items || []).map((item, idx) => ({
+        id: String(item.id ?? (idx + 1)),
+        title: item.title || '제목 없음',
+        area: item.area || '뽐뿌 핫딜',
+        dist: item.dist || '스크랩',
+        time: item.time || 'page 2',
+        price: item.price || '가격 정보 확인',
+        likes: Number(item.likes ?? 0),
+        category: item.category || '뽐뿌',
+        desc: item.desc || '상세 설명 없음',
+        img: item.img || 'assets/frying-pan.svg',
+        sourceLink: item.sourceLink || ''
+      }));
+    }
+
+    function saveItems(items){
+      const normalized = normalizeItems(items);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+      return normalized;
     }
 
     function loadItems(){
       const raw = localStorage.getItem(STORAGE_KEY);
       if(raw){
-        try {
-          const normalized = normalizeItems(JSON.parse(raw));
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-          return normalized;
-        } catch(_){}
+        try { return normalizeItems(JSON.parse(raw)); } catch(_){}
       }
-      const seeded = normalizeItems(defaultItems);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-      return seeded;
+      return saveItems(defaultItems);
     }
 
-    function render(){
-      const items = loadItems();
+    async function getDisplayItems(){
+      try {
+        const res = await fetch(PPOMPPU_FEED_PATH, { cache: 'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          if(Array.isArray(data.items) && data.items.length){
+            return saveItems(data.items);
+          }
+        }
+      } catch(_) {}
+      return loadItems();
+    }
+
+    async function render(){
+      const items = await getDisplayItems();
       const list = document.getElementById('list');
       list.innerHTML = items.map(item => `
         <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}">
