@@ -69,10 +69,10 @@
     </header>
 
     <form class="wrap" id="form">
-      <label class="photo" id="photoButton" for="photoInput">
+      <button class="photo" id="photoButton" type="button">
         <span class="photo-text"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span><span>사진 첨부</span></span>
         <img class="photo-preview" id="photoPreview" alt="첨부한 사진 미리보기">
-      </label>
+      </button>
       <input class="file-input" id="photoInput" type="file" accept="image/*" />
 
       <div class="field">
@@ -142,7 +142,14 @@
       localStorage.removeItem(LEGACY_STORAGE_KEY);
     }
 
-    document.getElementById('photoInput').addEventListener('change', (e) => {
+    const photoInput = document.getElementById('photoInput');
+    const photoButton = document.getElementById('photoButton');
+
+    photoButton.addEventListener('click', () => {
+      photoInput.click();
+    });
+
+    photoInput.addEventListener('change', (e) => {
       const file = e.target.files?.[0];
       if(!file) return;
       if(!file.type.startsWith('image/')) return;
