@@ -23,6 +23,8 @@
     .price{margin-top:10px;font-size:28px;font-weight:900;letter-spacing:-.03em}
     .meta{font-size:13px;color:var(--muted);margin:10px 0 16px}
     .desc{font-size:16px;line-height:1.65;letter-spacing:-.01em;white-space:pre-line}
+    .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .bottom-cta{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:12px 16px calc(env(safe-area-inset-bottom) + 12px);background:#fff;border-top:1px solid var(--line);z-index:10}
     .buy-bottom{width:100%;height:54px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:var(--brand);color:#fff;text-decoration:none;font-size:17px;font-weight:900;box-shadow:0 10px 24px rgba(255,111,15,.32)}
 
@@ -41,6 +43,7 @@
       .price{font-size:34px;margin-top:16px}
       .meta{font-size:14px;margin:12px 0 22px}
       .desc{font-size:17px;line-height:1.8}
+      .toast{bottom:96px}
       .bottom-cta{max-width:1080px;padding:16px 20px;background:rgba(255,255,255,.94);box-shadow:0 -12px 32px rgba(17,24,39,.08)}
       .buy-bottom{width:360px;margin-left:auto}
     }
@@ -58,7 +61,7 @@
         <a class="icon-link" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
         <div class="top-actions">
           <a class="icon-link" href="index.html" aria-label="홈"><span class="material-symbols-outlined" aria-hidden="true">home</span></a>
-          <button class="icon-btn" type="button" aria-label="공유"><span class="material-symbols-outlined" aria-hidden="true">share</span></button>
+          <button class="icon-btn" id="shareBtn" type="button" aria-label="공유"><span class="material-symbols-outlined" aria-hidden="true">share</span></button>
           <button class="icon-btn" type="button" aria-label="더보기"><span class="material-symbols-outlined" aria-hidden="true">more_vert</span></button>
         </div>
       </div>
@@ -75,6 +78,7 @@
   <div class="bottom-cta" id="buyBottomWrap" style="display:none">
     <a id="buyBottom" class="buy-bottom" href="#" target="_blank" rel="noopener">사러가기</a>
   </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
@@ -116,6 +120,50 @@
       return [];
     }
 
+    function showToast(message){
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    async function copyShareUrl(url){
+      if(navigator.clipboard?.writeText){
+        await navigator.clipboard.writeText(url);
+        return;
+      }
+      const input = document.createElement('input');
+      input.value = url;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+    }
+
+    async function shareCurrentDeal(){
+      const title = document.getElementById('title').textContent || document.title;
+      const url = location.href;
+      if(navigator.share){
+        try{
+          await navigator.share({ title, text: title, url });
+          return;
+        }catch(err){
+          if(err?.name === 'AbortError') return;
+        }
+      }
+
+      try{
+        await copyShareUrl(url);
+        showToast('링크가 복사되었습니다.');
+      }catch(_){
+        showToast('링크 복사에 실패했습니다.');
+      }
+    }
+
     async function init(){
       const items = await getItems();
       const id = new URLSearchParams(location.search).get('id');
@@ -135,6 +183,7 @@
       }
     }
 
+    document.getElementById('shareBtn').addEventListener('click', shareCurrentDeal);
     init();
   </script>
 </body>
