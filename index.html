@@ -5,72 +5,111 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>오늘의 핫딜</title>
   <style>
-    :root{--bg:#fff;--text:#111;--muted:#8b8b8b;--line:#f0f0f0;--chip:#f4f5f6;--chip-active:#1f2937;--brand:#ff6f0f}
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    :root{
+      --bg:#ffffff;--text:#111827;--muted:#8b95a1;--line:#eef1f4;--chip:#f4f6f8;--chip-active:#1f2937;
+      --brand:#ff6f0f;--nav:#9ca3af
+    }
     *{box-sizing:border-box}
-    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--text)}
-    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:88px}
-    .top{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:92px}
+    .top{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
     .row{display:flex;align-items:center;justify-content:space-between}
-    .loc{font-size:34px;font-weight:800;letter-spacing:-0.03em}
-    .icons{display:flex;gap:14px;font-size:22px}
-    .chips{display:flex;gap:10px;overflow:auto;padding:12px 0 2px}
-    .chip{padding:10px 16px;border-radius:999px;background:var(--chip);font-weight:700;white-space:nowrap}
+    .title-app{font-size:28px;font-weight:800;letter-spacing:-.03em}
+    .icons{display:flex;gap:12px;color:#6b7280;font-size:20px}
+    .chips{display:flex;gap:8px;overflow:auto;padding:12px 0 2px;-ms-overflow-style:none;scrollbar-width:none}
+    .chips::-webkit-scrollbar{display:none}
+    .chip{padding:8px 14px;border-radius:999px;background:var(--chip);font-size:14px;font-weight:600;white-space:nowrap;color:#4b5563}
     .chip.active{background:var(--chip-active);color:#fff}
+
     .list{padding:0 16px}
-    .item{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
-    .thumb{width:110px;height:110px;border-radius:12px;object-fit:cover;background:#eee}
-    .title{font-size:28px;font-weight:700;line-height:1.25;letter-spacing:-0.02em}
-    .meta{font-size:22px;color:var(--muted);margin-top:6px}
-    .price{margin-top:8px;font-size:34px;font-weight:800;letter-spacing:-0.03em}
-    .stats{display:flex;justify-content:flex-end;color:#b0b0b0;font-size:21px;margin-top:6px}
-    .fab{position:fixed;right:calc(50% - 200px);bottom:98px;background:var(--brand);color:#fff;border:none;border-radius:999px;padding:14px 22px;font-size:24px;font-weight:800;box-shadow:0 8px 18px rgba(255,111,15,.35)}
-    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;border-top:1px solid var(--line);background:#fff;display:grid;grid-template-columns:repeat(5,1fr);padding:10px 0 calc(env(safe-area-inset-bottom) + 8px)}
-    .nav div{text-align:center;color:#9ca3af;font-size:18px}
-    .nav .on{color:#111;font-weight:700}
+    .item{display:grid;grid-template-columns:98px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+    .thumb{width:98px;height:98px;border-radius:12px;object-fit:cover;background:#f3f4f6}
+    .item-title{font-size:17px;font-weight:600;line-height:1.35;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .meta{margin-top:5px;color:var(--muted);font-size:13px}
+    .price{margin-top:8px;font-size:18px;font-weight:800;letter-spacing:-.02em}
+    .stats{display:flex;justify-content:flex-end;margin-top:6px;color:#b0b8c1;font-size:12px}
+
+    .fab{position:fixed;right:calc(50% - 196px);bottom:86px;border:none;background:var(--brand);color:#fff;
+      border-radius:999px;padding:12px 18px;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(255,111,15,.34);cursor:pointer}
+
+    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;border-top:1px solid var(--line);
+      background:#fff;display:grid;grid-template-columns:repeat(5,1fr);padding:10px 0 calc(env(safe-area-inset-bottom) + 8px)}
+    .nav div{text-align:center;color:var(--nav);font-size:12px}
+    .nav .on{color:#111827;font-weight:700}
+
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:156px;background:#111827;color:#fff;
+      font-size:13px;padding:9px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s}
+    .toast.show{opacity:1}
   </style>
 </head>
 <body>
   <div class="app">
     <header class="top">
       <div class="row">
-        <div class="loc">망포동 ▾</div>
+        <div class="title-app">오늘의 핫딜</div>
         <div class="icons">⌕ 🔔 ☰</div>
       </div>
       <div class="chips">
-        <div class="chip active">전체</div><div class="chip">수집품</div><div class="chip">태블릿PC</div><div class="chip">방금 전</div><div class="chip">인기</div>
+        <div class="chip active">전체</div>
+        <div class="chip">디지털</div>
+        <div class="chip">생활가전</div>
+        <div class="chip">주방</div>
+        <div class="chip">패션</div>
       </div>
     </header>
-
     <main class="list" id="list"></main>
   </div>
 
-  <button class="fab">+ 글쓰기</button>
+  <button class="fab" id="writeBtn">+ 글쓰기</button>
+  <div class="toast" id="toast">새 글이 등록됐어요.</div>
+
   <nav class="nav">
-    <div class="on">홈</div><div>커뮤니티</div><div>동네지도</div><div>채팅</div><div>나의 당근</div>
+    <div class="on">홈</div><div>커뮤니티</div><div>동네생활</div><div>채팅</div><div>마이</div>
   </nav>
 
   <script>
-    const items = [
-      {id:1,title:'NEEKE 핸드폰 태블릿 거치대',area:'영통2동',dist:'2km',time:'3시간 전',price:'12,000원',likes:2,img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80'},
-      {id:2,title:'캡슐 커피머신 스타터 세트',area:'망포1동',dist:'1.2km',time:'28분 전',price:'114,000원',likes:11,img:'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80'},
-      {id:3,title:'무선 노이즈캔슬링 헤드폰',area:'매탄동',dist:'3.8km',time:'1시간 전',price:'109,000원',likes:4,img:'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80'},
-      {id:4,title:'논스틱 프라이팬 2종 세트',area:'원천동',dist:'4km',time:'2시간 전',price:'39,600원',likes:8,img:'https://images.unsplash.com/photo-1584990347449-ae2f5c79f8c0?auto=format&fit=crop&w=900&q=80'},
-      {id:5,title:'방수 데일리 백팩 24L',area:'망포동',dist:'400m',time:'12분 전',price:'54,900원',likes:6,img:'https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?auto=format&fit=crop&w=900&q=80'},
-      {id:6,title:'무선 핸디 청소기',area:'인계동',dist:'2.3km',time:'50분 전',price:'59,000원',likes:3,img:'https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&w=900&q=80'}
+    const STORAGE_KEY = 'hotdeal_items_v2';
+    const defaultItems = [
+      {id:'1',title:'NEEKE 핸드폰 태블릿 거치대',area:'오늘의 핫딜',dist:'추천',time:'3시간 전',price:'12,000원',likes:2,category:'디지털',desc:'실사용 적고 상태 좋아요.',img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80'},
+      {id:'2',title:'캡슐 커피머신 스타터 세트',area:'오늘의 핫딜',dist:'인기',time:'28분 전',price:'114,000원',likes:11,category:'주방',desc:'본체+샘플캡슐 구성, 바로 사용 가능해요.',img:'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=900&q=80'},
+      {id:'3',title:'무선 노이즈캔슬링 헤드폰',area:'오늘의 핫딜',dist:'추천',time:'1시간 전',price:'109,000원',likes:4,category:'디지털',desc:'케이스 포함, 배터리 상태 양호.',img:'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80'},
+      {id:'4',title:'논스틱 프라이팬 2종 세트',area:'오늘의 핫딜',dist:'추천',time:'2시간 전',price:'39,600원',likes:8,category:'주방',desc:'코팅 상태 좋습니다.',img:'https://images.unsplash.com/photo-1584990347449-ae2f5c79f8c0?auto=format&fit=crop&w=900&q=80'}
     ];
 
-    const list = document.getElementById('list');
-    list.innerHTML = items.map(item => `
-      <a class="item" href="detail.html?id=${item.id}">
-        <img class="thumb" src="${item.img}" alt="${item.title}">
-        <div>
-          <div class="title">${item.title}</div>
-          <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
-          <div class="price">${item.price}</div>
-          <div class="stats">♡ ${item.likes}</div>
-        </div>
-      </a>
-    `).join('');
+    function loadItems(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ try { return JSON.parse(raw); } catch(_){} }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultItems));
+      return defaultItems;
+    }
+
+    function render(){
+      const items = loadItems();
+      const list = document.getElementById('list');
+      list.innerHTML = items.map(item => `
+        <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}">
+          <img class="thumb" src="${item.img}" alt="${item.title}">
+          <div>
+            <div class="item-title">${item.title}</div>
+            <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
+            <div class="price">${item.price}</div>
+            <div class="stats">♡ ${item.likes ?? 0}</div>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    document.getElementById('writeBtn').addEventListener('click',()=>location.href='create.html');
+    render();
+
+    const p = new URLSearchParams(location.search);
+    if(p.get('posted')==='1'){
+      const t=document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'),1700);
+      history.replaceState({},'', 'index.html');
+    }
   </script>
 </body>
 </html>

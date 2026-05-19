@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>오늘의 핫딜 등록</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    :root{--line:#eef1f4;--muted:#8b95a1;--bg:#f8fafc;--brand:#ff6f0f}
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;color:#111827;font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:96px}
+
+    .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+    .title{font-size:19px;font-weight:800;letter-spacing:-.02em}
+    .draft{font-size:13px;color:#9ca3af;font-weight:600}
+    .back{font-size:24px;color:#111;text-decoration:none}
+
+    .wrap{padding:14px 16px}
+    .photo{border:1px solid #e3e7ec;border-radius:12px;width:96px;height:96px;display:grid;place-items:center;color:#9ca3af;font-size:13px;margin-bottom:16px;background:var(--bg)}
+    .field{border-top:1px solid var(--line);padding:14px 0}
+    .field:first-of-type{border-top:none;padding-top:0}
+    label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+    input,textarea,select{width:100%;border:none;outline:none;font:inherit;font-size:16px;color:#111;background:#fff}
+    textarea{min-height:120px;line-height:1.6;resize:none}
+    .hint{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+    .row{display:flex;gap:8px}
+    .chip{padding:10px 14px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-size:14px;font-weight:600;color:#4b5563;cursor:pointer}
+    .chip.active{background:#fff3eb;color:#d9480f;border-color:#ffd3b1}
+
+    .bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:12px 14px calc(env(safe-area-inset-bottom) + 12px);background:#fff;border-top:1px solid var(--line)}
+    .submit{width:100%;height:50px;border:none;border-radius:14px;background:var(--brand);color:#fff;font-size:17px;font-weight:800}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <a class="back" href="index.html">‹</a>
+      <div class="title">오늘의 핫딜 작성</div>
+      <div class="draft">임시저장</div>
+    </header>
+
+    <form class="wrap" id="form">
+      <div class="photo">📷 0/10</div>
+
+      <div class="field">
+        <label for="title">제목</label>
+        <input id="title" maxlength="60" placeholder="제목을 입력해주세요." required />
+      </div>
+
+      <div class="field">
+        <label for="desc">자세한 설명</label>
+        <textarea id="desc" placeholder="상품 상태, 구성품, 거래 조건 등을 자세히 적어주세요." required></textarea>
+        <div class="hint">서로 믿고 거래할 수 있도록 자세히 적어주세요.\n허위/과장 정보는 제한될 수 있습니다.</div>
+      </div>
+
+      <div class="field">
+        <label>카테고리</label>
+        <div class="row" id="catRow">
+          <button type="button" class="chip active" data-cat="디지털">디지털</button>
+          <button type="button" class="chip" data-cat="생활가전">생활가전</button>
+          <button type="button" class="chip" data-cat="주방">주방</button>
+          <button type="button" class="chip" data-cat="패션">패션</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="price">가격</label>
+        <input id="price" inputmode="numeric" placeholder="가격을 입력해주세요. (숫자만)" required />
+      </div>
+
+      <div class="field">
+        <label for="img">이미지 URL</label>
+        <input id="img" placeholder="https://... (비워두면 기본 이미지 사용)" />
+      </div>
+    </form>
+  </div>
+
+  <div class="bottom">
+    <button class="submit" form="form" type="submit">작성 완료</button>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'hotdeal_items_v2';
+    let selectedCategory = '디지털';
+
+    document.getElementById('catRow').addEventListener('click',(e)=>{
+      const btn = e.target.closest('.chip');
+      if(!btn) return;
+      document.querySelectorAll('.chip').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCategory = btn.dataset.cat;
+    });
+
+    function formatPrice(value){
+      const num = Number(String(value).replace(/[^0-9]/g,''));
+      if(!num) return '';
+      return num.toLocaleString('ko-KR') + '원';
+    }
+
+    document.getElementById('form').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const title = document.getElementById('title').value.trim();
+      const desc = document.getElementById('desc').value.trim();
+      const price = formatPrice(document.getElementById('price').value);
+      const img = document.getElementById('img').value.trim() || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
+      if(!title || !desc || !price) return;
+
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const items = raw ? JSON.parse(raw) : [];
+      const newItem = {
+        id: String(Date.now()),
+        title,
+        area:'오늘의 핫딜',
+        dist:'방금 등록',
+        time:'방금 전',
+        price,
+        likes:0,
+        category:selectedCategory,
+        desc,
+        img
+      };
+      items.unshift(newItem);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      location.href = 'index.html?posted=1';
+    });
+  </script>
+</body>
+</html>
