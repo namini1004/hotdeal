@@ -13,6 +13,7 @@ LIST_URL = "https://m.ppomppu.co.kr/new/pop_bbs.php?id=ppomppu&bot_type=pop_bbs"
 BASE = "https://m.ppomppu.co.kr"
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "ppomppu_hotdeals_2days.json"
+HIDDEN_PATH = ROOT / "assets" / "hidden_hotdeals.json"
 THUMB_DIR = ROOT / "assets" / "ppomppu_thumbs"
 KST = timezone(timedelta(hours=9))
 HEADERS = {"User-Agent": "Mozilla/5.0", "Referer": "https://m.ppomppu.co.kr/"}
@@ -62,6 +63,25 @@ def parse_post_stats(detail: str) -> tuple[int, int]:
     if comments_m:
         comments = parse_int(comments_m.group(1))
     return views, comments
+
+
+def load_hidden_hotdeals():
+    if not HIDDEN_PATH.exists():
+        return {"sourceLinks": set(), "bbsNos": set()}
+    try:
+        data = json.loads(HIDDEN_PATH.read_text(encoding='utf-8'))
+    except Exception:
+        return {"sourceLinks": set(), "bbsNos": set()}
+
+    return {
+        "sourceLinks": set(data.get("sourceLinks", [])),
+        "bbsNos": {str(v) for v in data.get("bbsNos", [])},
+    }
+
+
+def bbs_no_from_url(url: str) -> str:
+    q = parse_qs(urlparse(url).query)
+    return (q.get("no", [""])[0] or "").strip()
 
 
 def parse_items():
@@ -161,7 +181,13 @@ def parse_items():
     today = datetime.now(KST).date()
     yesterday = today - timedelta(days=1)
 
-    filtered = [it for it in items if it.get('date') in {str(today), str(yesterday)}]
+    hidden = load_hidden_hotdeals()
+    filtered = [
+        it for it in items
+        if it.get('date') in {str(today), str(yesterday)}
+        and it.get('sourceLink') not in hidden["sourceLinks"]
+        and bbs_no_from_url(it.get('sourceLink', '')) not in hidden["bbsNos"]
+    ]
     for i, it in enumerate(filtered, 1):
         it['id'] = str(i)
 

@@ -10,13 +10,13 @@
     :root{--line:#eef1f4;--muted:#8b95a1;--brand:#ff6f0f;--page:#f6f7f9}
     *{box-sizing:border-box}
     body{margin:0;background:#fff;color:#111827;font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-    .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:32px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
+    .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:24px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
     .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:92px}
     .hero{position:relative}
     .hero img{width:100%;height:320px;object-fit:cover;display:block;background:#f3f4f6}
     .topbtns{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:center;justify-content:space-between;color:#fff}
-    .icon-link,.icon-btn{width:50px;height:50px;display:grid;place-items:center;border:none;border-radius:999px;background:rgba(17,24,39,.42);color:#fff;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer}
-    .top-actions{display:flex;gap:8px}
+    .icon-link,.icon-btn{width:36px;height:36px;display:grid;place-items:center;border:none;border-radius:999px;background:rgba(17,24,39,.42);color:#fff;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer}
+    .top-actions{display:flex;gap:6px}
 
     .content{padding:18px 16px;border-top:1px solid var(--line)}
     h1{margin:0;font-size:22px;line-height:1.35;letter-spacing:-.03em}
@@ -25,6 +25,13 @@
     .desc{font-size:16px;line-height:1.65;letter-spacing:-.01em;white-space:pre-line}
     .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:30}
+    .sheet-backdrop.show{opacity:1;pointer-events:auto}
+    .action-sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%);padding:10px 14px calc(env(safe-area-inset-bottom) + 14px);background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease;z-index:31}
+    .action-sheet.show{transform:translateX(-50%) translateY(0)}
+    .sheet-btn{width:100%;height:52px;border:none;border-radius:12px;background:#f4f6f8;color:#111827;font-size:16px;font-weight:800;cursor:pointer}
+    .sheet-btn + .sheet-btn{margin-top:8px}
+    .sheet-btn.delete{background:#fff1f2;color:#dc2626}
     .bottom-cta{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:12px 16px calc(env(safe-area-inset-bottom) + 12px);background:#fff;border-top:1px solid var(--line);z-index:10}
     .buy-bottom{width:100%;height:54px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:var(--brand);color:#fff;text-decoration:none;font-size:17px;font-weight:900;box-shadow:0 10px 24px rgba(255,111,15,.32)}
 
@@ -36,14 +43,16 @@
       .hero{min-height:100%}
       .hero img{height:100%;min-height:560px}
       .topbtns{top:16px;left:16px;right:16px}
-      .icon-link,.icon-btn{width:54px;height:54px}
-      .material-symbols-outlined{font-size:34px}
+      .icon-link,.icon-btn{width:36px;height:36px}
+      .material-symbols-outlined{font-size:24px}
       .content{border-top:none;border-left:1px solid var(--line);padding:42px 38px}
       h1{font-size:28px;line-height:1.35}
       .price{font-size:34px;margin-top:16px}
       .meta{font-size:14px;margin:12px 0 22px}
       .desc{font-size:17px;line-height:1.8}
       .toast{bottom:96px}
+      .sheet-backdrop{display:grid;place-items:end center}
+      .action-sheet{max-width:420px;margin-bottom:24px;border-radius:18px;box-shadow:0 18px 50px rgba(17,24,39,.18)}
       .bottom-cta{max-width:1080px;padding:16px 20px;background:rgba(255,255,255,.94);box-shadow:0 -12px 32px rgba(17,24,39,.08)}
       .buy-bottom{width:360px;margin-left:auto}
     }
@@ -62,7 +71,7 @@
         <div class="top-actions">
           <a class="icon-link" href="index.html" aria-label="홈"><span class="material-symbols-outlined" aria-hidden="true">home</span></a>
           <button class="icon-btn" id="shareBtn" type="button" aria-label="공유"><span class="material-symbols-outlined" aria-hidden="true">share</span></button>
-          <button class="icon-btn" type="button" aria-label="더보기"><span class="material-symbols-outlined" aria-hidden="true">more_vert</span></button>
+          <button class="icon-btn" id="moreBtn" type="button" aria-label="더보기"><span class="material-symbols-outlined" aria-hidden="true">more_vert</span></button>
         </div>
       </div>
     </section>
@@ -79,10 +88,17 @@
     <a id="buyBottom" class="buy-bottom" href="#" target="_blank" rel="noopener">사러가기</a>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-label="게시물 메뉴">
+    <button class="sheet-btn delete" id="deleteBtn" type="button">삭제하기</button>
+    <button class="sheet-btn" id="closeSheetBtn" type="button">닫기</button>
+  </div>
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
+    const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
+    let currentItem = null;
 
     function normalizeItems(items){
       return (items || []).map((item, idx) => ({
@@ -95,8 +111,45 @@
         desc: item.desc || '상품 설명이 아직 등록되지 않았습니다.',
         img: item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80',
         buyLink: item.buyLink || '',
+        sourceLink: item.sourceLink || '',
         date: item.date || ''
       }));
+    }
+
+    function getDealKey(item){
+      if(item?.sourceLink) return item.sourceLink;
+      if(item?.id) return `id:${item.id}:${item.date || ''}`;
+      return `title:${item?.title || ''}:${item?.date || ''}`;
+    }
+
+    function getDeletedKeys(){
+      try{
+        return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) || '[]'));
+      }catch(_){
+        return new Set();
+      }
+    }
+
+    function saveDeletedKey(key){
+      const keys = getDeletedKeys();
+      keys.add(key);
+      localStorage.setItem(DELETED_KEY, JSON.stringify([...keys]));
+    }
+
+    function removeDeletedFromCache(key){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      try{
+        const grouped = JSON.parse(raw);
+        for(const tab of ['today', 'yesterday']){
+          grouped[tab] = (grouped[tab] || []).filter(item => getDealKey(item) !== key);
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(grouped));
+      }catch(_){ }
+    }
+
+    function isDeleted(item){
+      return getDeletedKeys().has(getDealKey(item));
     }
 
     async function getItems(){
@@ -126,6 +179,28 @@
       toast.classList.add('show');
       clearTimeout(showToast.timer);
       showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function openSheet(){
+      document.getElementById('sheetBackdrop').classList.add('show');
+      document.getElementById('actionSheet').classList.add('show');
+    }
+
+    function closeSheet(){
+      document.getElementById('sheetBackdrop').classList.remove('show');
+      document.getElementById('actionSheet').classList.remove('show');
+    }
+
+    function deleteCurrentDeal(){
+      if(!currentItem) return;
+      const key = getDealKey(currentItem);
+      saveDeletedKey(key);
+      removeDeletedFromCache(key);
+      closeSheet();
+      showToast('삭제되었습니다.');
+      setTimeout(() => {
+        location.href = 'index.html';
+      }, 450);
     }
 
     async function copyShareUrl(url){
@@ -168,6 +243,11 @@
       const items = await getItems();
       const id = new URLSearchParams(location.search).get('id');
       const item = items.find(v => String(v.id) === String(id)) || items[0] || {title:'상품 없음',price:'-',desc:'등록된 상품이 없습니다.',img:''};
+      if(item && isDeleted(item)){
+        location.replace('index.html');
+        return;
+      }
+      currentItem = item;
 
       document.getElementById('title').textContent = item.title;
       document.getElementById('price').textContent = item.price;
@@ -184,6 +264,10 @@
     }
 
     document.getElementById('shareBtn').addEventListener('click', shareCurrentDeal);
+    document.getElementById('moreBtn').addEventListener('click', openSheet);
+    document.getElementById('sheetBackdrop').addEventListener('click', closeSheet);
+    document.getElementById('closeSheetBtn').addEventListener('click', closeSheet);
+    document.getElementById('deleteBtn').addEventListener('click', deleteCurrentDeal);
     init();
   </script>
 </body>

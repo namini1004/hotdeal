@@ -94,6 +94,7 @@
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
+    const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
     let state = { tab: 'today', grouped: { today: [], yesterday: [] }, keyword: '' };
 
@@ -114,6 +115,25 @@
         comments: Number(item.comments || 0),
         date: item.date || ''
       }));
+    }
+
+    function getDealKey(item){
+      if(item?.sourceLink) return item.sourceLink;
+      if(item?.id) return `id:${item.id}:${item.date || ''}`;
+      return `title:${item?.title || ''}:${item?.date || ''}`;
+    }
+
+    function getDeletedKeys(){
+      try{
+        return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) || '[]'));
+      }catch(_){
+        return new Set();
+      }
+    }
+
+    function filterDeleted(items){
+      const deleted = getDeletedKeys();
+      return (items || []).filter(item => !deleted.has(getDealKey(item)));
     }
 
     function formatCount(value){
@@ -178,8 +198,8 @@
         if(res.ok){
           const data = await res.json();
           const grouped = {
-            today: normalizeItems(data.grouped?.today || []),
-            yesterday: normalizeItems(data.grouped?.yesterday || [])
+            today: filterDeleted(normalizeItems(data.grouped?.today || [])),
+            yesterday: filterDeleted(normalizeItems(data.grouped?.yesterday || []))
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(grouped));
           state.grouped = grouped;
@@ -189,7 +209,13 @@
       if(!state.grouped.today.length && !state.grouped.yesterday.length){
         const raw = localStorage.getItem(STORAGE_KEY);
         if(raw){
-          try{ state.grouped = JSON.parse(raw); }catch(_){ }
+          try{
+            const grouped = JSON.parse(raw);
+            state.grouped = {
+              today: filterDeleted(normalizeItems(grouped.today || [])),
+              yesterday: filterDeleted(normalizeItems(grouped.yesterday || []))
+            };
+          }catch(_){ }
         }
       }
 
