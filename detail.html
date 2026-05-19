@@ -222,6 +222,10 @@
     async function shareCurrentDeal(){
       const title = document.getElementById('title').textContent || document.title;
       const url = location.href;
+      if(window.HotdealAndroid?.share){
+        window.HotdealAndroid.share(title, url);
+        return;
+      }
       if(navigator.share){
         try{
           await navigator.share({ title, text: title, url });
