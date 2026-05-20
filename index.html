@@ -106,6 +106,7 @@
       </div>
       <div class="chips" id="tabs">
         <button class="chip active" type="button" data-tab="today">오늘의 핫딜</button>
+        <button class="chip" type="button" data-tab="quasar">퀘이사딜</button>
         <button class="chip" type="button" data-tab="namin">남인의 핫딜</button>
       </div>
     </header>
@@ -125,7 +126,7 @@
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const DEALS_API = '/api/deals';
-    let state = { allItems: [], feedItems: [], userItems: [], keyword: '', activeTab: 'today', feedEtag: '', userEtag: '', lastUserSyncAt: '' };
+    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], userItems: [], keyword: '', activeTab: 'today', feedEtag: '', userEtag: '', lastUserSyncAt: '' };
     let isRefreshing = false;
 
     function normalizeItems(items){
@@ -203,12 +204,16 @@
       const cleaned = filterDeleted(dedupeItems(items));
       state.allItems = cleaned;
       state.feedItems = cleaned.filter(item => item.source !== 'user');
+      state.ppomppuItems = state.feedItems.filter(item => item.source !== 'quasar');
+      state.quasarItems = state.feedItems.filter(item => item.source === 'quasar' || item.area === '퀘이사딜');
       state.userItems = cleaned.filter(item => item.source === 'user');
       saveItems(cleaned);
     }
 
     function getCurrentTabItems(){
-      return state.activeTab === 'namin' ? state.userItems : state.feedItems;
+      if(state.activeTab === 'namin') return state.userItems;
+      if(state.activeTab === 'quasar') return state.quasarItems;
+      return state.ppomppuItems;
     }
 
     function getFilteredItems(){
@@ -230,7 +235,9 @@
       if(!items.length){
         list.innerHTML = state.activeTab === 'namin'
           ? '<div class="empty">남인의 핫딜이 아직 없습니다.</div>'
-          : '<div class="empty">검색 결과가 없습니다.</div>';
+          : state.activeTab === 'quasar'
+            ? '<div class="empty">퀘이사딜이 아직 없습니다.</div>'
+            : '<div class="empty">검색 결과가 없습니다.</div>';
         return;
       }
       list.innerHTML = items.map(item => `

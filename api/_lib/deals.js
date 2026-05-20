@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const FEED_FILE = path.join(process.cwd(), 'assets', 'ppomppu_hotdeals_2days.json');
+const FEED_FILES = [
+  path.join(process.cwd(), 'assets', 'ppomppu_hotdeals_2days.json'),
+  path.join(process.cwd(), 'assets', 'quasar_hotdeals_2days.json'),
+];
 
 function normalizeFeedItems(items = []) {
   return items.map((item, idx) => ({
@@ -26,13 +29,17 @@ function normalizeFeedItems(items = []) {
 }
 
 function readFeedItems() {
-  try {
-    const raw = fs.readFileSync(FEED_FILE, 'utf-8');
-    const json = JSON.parse(raw);
-    return normalizeFeedItems(json.items || json.grouped?.today || []);
-  } catch (_) {
-    return [];
+  const merged = [];
+  for (const feedFile of FEED_FILES) {
+    try {
+      const raw = fs.readFileSync(feedFile, 'utf-8');
+      const json = JSON.parse(raw);
+      merged.push(...normalizeFeedItems(json.items || json.grouped?.today || []));
+    } catch (_) {
+      // ignore missing/invalid feed file
+    }
   }
+  return merged;
 }
 
 function normalizeUserRow(row) {
