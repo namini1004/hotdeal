@@ -116,7 +116,7 @@
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
-    const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
+    const DEALS_API = '/api/deals';
     let selectedCategory = '디지털';
     let selectedImage = '';
     let sharedImage = '';
@@ -273,16 +273,18 @@
     async function loadEditItem(){
       const editId = new URLSearchParams(location.search).get('editId');
       if(!editId) return;
-      const localItems = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
-      let item = localItems.find(v => String(v.id) === String(editId));
+      let item = null;
+      try{
+        const res = await fetch(`${DEALS_API}/${encodeURIComponent(editId)}`, { cache: 'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          item = data.item || null;
+        }
+      }catch(_){ }
+
       if(!item){
-        try{
-          const res = await fetch(FEED_PATH, { cache: 'no-store' });
-          if(res.ok){
-            const data = await res.json();
-            item = normalizeItems(data.items || data.grouped?.today || []).find(v => String(v.id) === String(editId));
-          }
-        }catch(_){ }
+        const localItems = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
+        item = localItems.find(v => String(v.id) === String(editId));
       }
       if(item) fillForm(item);
     }
@@ -300,7 +302,6 @@
         return;
       }
 
-      const items = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
       const now = new Date();
       const newItem = {
         ...(editItem || {}),
@@ -324,9 +325,26 @@
         registeredAt: editItem?.registeredAt || now.toISOString(),
         updatedAt: now.toISOString()
       };
-      const nextItems = [newItem, ...items.filter(item => String(item.id) !== String(newItem.id) && getDealKey(item) !== getDealKey(newItem))];
-      saveItems(dedupeItems(nextItems));
-      location.href = editItem ? `detail.html?id=${encodeURIComponent(newItem.id)}` : 'index.html?posted=1';
+
+      const method = editItem ? 'PATCH' : 'POST';
+      const targetUrl = editItem ? `${DEALS_API}/${encodeURIComponent(editItem.id)}` : DEALS_API;
+      fetch(targetUrl, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newItem)
+      })
+      .then(async (res) => {
+        if(!res.ok) throw new Error('save failed');
+        const data = await res.json();
+        const savedId = data?.item?.id || newItem.id;
+        location.href = editItem ? `detail.html?id=${encodeURIComponent(savedId)}` : 'index.html?posted=1';
+      })
+      .catch(() => {
+        const items = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
+        const nextItems = [newItem, ...items.filter(item => String(item.id) !== String(newItem.id) && getDealKey(item) !== getDealKey(newItem))];
+        saveItems(dedupeItems(nextItems));
+        location.href = editItem ? `detail.html?id=${encodeURIComponent(newItem.id)}` : 'index.html?posted=1';
+      });
     });
 
     loadEditItem();

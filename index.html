@@ -123,7 +123,7 @@
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
-    const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
+    const DEALS_API = '/api/deals';
     let state = { items: [], keyword: '' };
     let isRefreshing = false;
 
@@ -284,7 +284,7 @@
           wrap.style.height = '86px';
           label.textContent = '가지 로딩중...';
         }
-        const res = await fetch(FEED_PATH, { cache: 'no-store' });
+        const res = await fetch(DEALS_API, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
           const feedItems = normalizeItems(data.items || data.grouped?.today || []);

@@ -100,7 +100,7 @@
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
-    const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
+    const DEALS_API = '/api/deals';
     let currentItem = null;
 
     function normalizeItems(items){
@@ -193,7 +193,7 @@
 
     async function getItems(){
       try{
-        const res = await fetch(FEED_PATH, { cache: 'no-store' });
+        const res = await fetch(DEALS_API, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
           const feedItems = normalizeItems(data.items || data.grouped?.today || []);
@@ -224,10 +224,21 @@
       document.getElementById('actionSheet').classList.remove('show');
     }
 
-    function deleteCurrentDeal(){
+    async function deleteCurrentDeal(){
       if(!currentItem) return;
       const key = getDealKey(currentItem);
-      saveDeletedKey(key);
+      if(String(currentItem.id || '').startsWith('user-')){
+        try{
+          const res = await fetch(`${DEALS_API}/${encodeURIComponent(currentItem.id)}`, { method:'DELETE' });
+          if(!res.ok) throw new Error('delete failed');
+        }catch(_){
+          showToast('삭제에 실패했습니다.');
+          closeSheet();
+          return;
+        }
+      }else{
+        saveDeletedKey(key);
+      }
       removeDeletedFromCache(key);
       closeSheet();
       showToast('삭제되었습니다.');
