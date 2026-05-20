@@ -177,6 +177,7 @@ def parse_items():
             "img": og_img,
             "buyLink": buy_link,
             "sourceLink": href,
+            "source": "ppomppu",
             "date": date_label,
         })
 

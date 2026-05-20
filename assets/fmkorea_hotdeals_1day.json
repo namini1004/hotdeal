@@ -1,0 +1,18 @@
+{
+  "source": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine",
+  "generatedAt": "2026-05-20T17:36:06.546103+09:00",
+  "rangeHours": 24,
+  "since": "2026-05-19T17:36:06.546103+09:00",
+  "today": "2026-05-20",
+  "yesterday": "2026-05-19",
+  "counts": {
+    "today": 0,
+    "yesterday": 0,
+    "total": 0
+  },
+  "items": [],
+  "grouped": {
+    "today": [],
+    "yesterday": []
+  }
+}

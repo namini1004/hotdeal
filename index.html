@@ -105,9 +105,11 @@
         <input class="search-input" id="searchInput" type="text" placeholder="최근 48시간 핫딜 검색" />
       </div>
       <div class="chips" id="tabs">
-        <button class="chip active" type="button" data-tab="today">오늘의 핫딜</button>
-        <button class="chip" type="button" data-tab="quasar">퀘이사딜</button>
-        <button class="chip" type="button" data-tab="namin">남인의 핫딜</button>
+        <button class="chip active" type="button" data-tab="today">뽐딜</button>
+        <button class="chip" type="button" data-tab="quasar">퀘딜</button>
+        <button class="chip" type="button" data-tab="fmkorea">펨딜</button>
+        <button class="chip" type="button" data-tab="ruliweb">루딜</button>
+        <button class="chip" type="button" data-tab="namin">남딜</button>
       </div>
     </header>
     <div class="pull-refresh" id="pullRefresh" aria-live="polite">
@@ -126,7 +128,7 @@
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const DEALS_API = '/api/deals';
-    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], userItems: [], keyword: '', activeTab: 'today', feedEtag: '', userEtag: '', lastUserSyncAt: '' };
+    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'today', feedEtag: '', userEtag: '', lastUserSyncAt: '' };
     let isRefreshing = false;
 
     function normalizeItems(items){
@@ -204,8 +206,10 @@
       const cleaned = filterDeleted(dedupeItems(items));
       state.allItems = cleaned;
       state.feedItems = cleaned.filter(item => item.source !== 'user');
-      state.ppomppuItems = state.feedItems.filter(item => item.source !== 'quasar');
+      state.ppomppuItems = state.feedItems.filter(item => item.source === 'ppomppu' || (!item.source || item.source === 'feed'));
       state.quasarItems = state.feedItems.filter(item => item.source === 'quasar' || item.area === '퀘이사딜');
+      state.fmkoreaItems = state.feedItems.filter(item => item.source === 'fmkorea' || item.area === '펨딜');
+      state.ruliwebItems = state.feedItems.filter(item => item.source === 'ruliweb' || item.area === '루딜');
       state.userItems = cleaned.filter(item => item.source === 'user');
       saveItems(cleaned);
     }
@@ -213,6 +217,8 @@
     function getCurrentTabItems(){
       if(state.activeTab === 'namin') return state.userItems;
       if(state.activeTab === 'quasar') return state.quasarItems;
+      if(state.activeTab === 'fmkorea') return state.fmkoreaItems;
+      if(state.activeTab === 'ruliweb') return state.ruliwebItems;
       return state.ppomppuItems;
     }
 
@@ -234,10 +240,14 @@
       const items = getFilteredItems();
       if(!items.length){
         list.innerHTML = state.activeTab === 'namin'
-          ? '<div class="empty">남인의 핫딜이 아직 없습니다.</div>'
+          ? '<div class="empty">남딜이 아직 없습니다.</div>'
           : state.activeTab === 'quasar'
-            ? '<div class="empty">퀘이사딜이 아직 없습니다.</div>'
-            : '<div class="empty">검색 결과가 없습니다.</div>';
+            ? '<div class="empty">퀘딜이 아직 없습니다.</div>'
+            : state.activeTab === 'fmkorea'
+              ? '<div class="empty">펨딜이 아직 없습니다.</div>'
+              : state.activeTab === 'ruliweb'
+                ? '<div class="empty">루딜이 아직 없습니다.</div>'
+                : '<div class="empty">뽐딜이 아직 없습니다.</div>';
         return;
       }
       list.innerHTML = items.map(item => `

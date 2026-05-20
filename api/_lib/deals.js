@@ -4,6 +4,8 @@ const path = require('path');
 const FEED_FILES = [
   path.join(process.cwd(), 'assets', 'ppomppu_hotdeals_2days.json'),
   path.join(process.cwd(), 'assets', 'quasar_hotdeals_2days.json'),
+  path.join(process.cwd(), 'assets', 'fmkorea_hotdeals_1day.json'),
+  path.join(process.cwd(), 'assets', 'ruliweb_hotdeals_1day.json'),
 ];
 
 function normalizeFeedItems(items = []) {
