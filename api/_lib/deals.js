@@ -19,15 +19,37 @@ function parseNumericPriceValue(priceText = '') {
 
 function extractBestPriceFromText(text = '') {
   const s = String(text || '');
-  const regex = /([0-9][0-9,]*\s*(?:만원대|천원대|원대|만원|천원|원))(?![가-힣A-Za-z])/g;
   const candidates = [];
+
+  const pushCandidate = (raw) => {
+    const normalized = String(raw || '')
+      .replace(/\s+/g, '')
+      .replace(/[.,;:!?]+$/g, '');
+    if (!normalized) return;
+    const value = parseNumericPriceValue(normalized);
+    const hasComma = normalized.includes(',');
+    candidates.push({ raw: normalized, value, hasComma });
+  };
+
+  // 1) 원/천원/만원 계열
   let m;
-  while ((m = regex.exec(s)) !== null) {
-    const raw = m[1].replace(/\s+/g, '');
-    const value = parseNumericPriceValue(raw);
-    const hasComma = raw.includes(',');
-    candidates.push({ raw, value, hasComma });
+  const wonRegex = /([0-9][0-9,]*\s*(?:만원대|천원대|원대|만원|천원|원))(?![가-힣A-Za-z])/g;
+  while ((m = wonRegex.exec(s)) !== null) pushCandidate(m[1]);
+
+  // 2) ₩/￦ 통화기호 + 숫자 (예: ￦68,400)
+  const symbolRegex = /([₩￦]\s*[0-9][0-9,]{2,})(?![0-9])/g;
+  while ((m = symbolRegex.exec(s)) !== null) {
+    const numeric = m[1].replace(/[₩￦]/g, '').replace(/[\s.,;:!?]+$/g, '').trim();
+    const withWon = `${numeric}원`;
+    pushCandidate(withWon);
   }
+
+  // 3) 통화기호/원 없이 천단위 콤마 숫자 (예: 68,400)
+  const commaNumberRegex = /(^|[^0-9])([0-9]{1,3}(?:,[0-9]{3})+)(?![0-9])/g;
+  while ((m = commaNumberRegex.exec(s)) !== null) {
+    pushCandidate(`${m[2]}원`);
+  }
+
   if (!candidates.length) return '';
 
   const over1k = candidates.filter((c) => c.value >= 1000);

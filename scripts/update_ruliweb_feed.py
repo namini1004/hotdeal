@@ -70,9 +70,27 @@ def extract_best_price(text: str) -> str:
     t = re.sub(r'(?<!\d)(\d{1,3})\s{1,2}(\d{3})(\s*원)', r'\1,\2\3', t)
 
     candidates = []
+
+    def push(raw: str):
+        normalized = (raw or '').replace(' ', '')
+        normalized = re.sub(r'[\.,;:!?]+$', '', normalized)
+        if not normalized:
+            return
+        candidates.append((normalized, parse_numeric_price_value(normalized), (',' in normalized)))
+
+    # 1) 원/천원/만원 계열
     for m in re.finditer(r'([0-9][0-9,]*\s*(?:만원대|천원대|원대|만원|천원|원))(?![가-힣A-Za-z])', t):
-        raw = m.group(1).replace(' ', '')
-        candidates.append((raw, parse_numeric_price_value(raw), (',' in raw)))
+        push(m.group(1))
+
+    # 2) 통화기호(₩/￦) + 숫자
+    for m in re.finditer(r'([₩￦]\s*[0-9][0-9,]{2,})(?![0-9])', t):
+        s = re.sub(r'[₩￦\s]+', '', m.group(1))
+        s = re.sub(r'[\.,;:!?]+$', '', s)
+        push(f'{s}원')
+
+    # 3) 통화기호/원 없이 천단위 콤마 숫자
+    for m in re.finditer(r'(^|[^0-9])([0-9]{1,3}(?:,[0-9]{3})+)(?![0-9])', t):
+        push(f'{m.group(2)}원')
 
     if not candidates:
         return ''
