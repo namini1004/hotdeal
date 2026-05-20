@@ -52,11 +52,11 @@
     .price{margin-top:8px;font-size:18px;font-weight:800;letter-spacing:-.02em}
     .empty{padding:40px 8px;color:#6b7280;font-size:14px}
 
-    .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:84px;min-width:116px;height:56px;display:flex;align-items:center;justify-content:center;gap:8px;border:none;background:#ff7a00;color:#fff;border-radius:999px;padding:0 20px;font-size:16px;font-weight:800;box-shadow:0 10px 24px rgba(255,122,0,.38);cursor:pointer;transition:width .2s ease,min-width .2s ease,height .2s ease,padding .2s ease,border-radius .2s ease,box-shadow .2s ease,transform .2s ease}
-    .fab-plus{font-size:28px;line-height:1;font-weight:700}
-    .fab-text{white-space:nowrap;transition:opacity .15s ease;font-size:22px;font-weight:800;letter-spacing:-.02em}
-    .fab.is-compact{width:56px;min-width:56px;height:56px;padding:0;border-radius:50%;box-shadow:0 10px 24px rgba(255,122,0,.38)}
-    .fab.is-compact .fab-plus{font-size:30px;font-weight:800}
+    .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:84px;min-width:108px;height:52px;display:flex;align-items:center;justify-content:center;gap:6px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:0 18px;font-size:16px;font-weight:700;box-shadow:0 10px 24px rgba(var(--brand-rgb),.34);cursor:pointer;transition:width .2s ease,min-width .2s ease,height .2s ease,padding .2s ease,border-radius .2s ease,box-shadow .2s ease,transform .2s ease}
+    .fab-plus{font-size:22px;line-height:1;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+    .fab-text{white-space:nowrap;transition:opacity .15s ease;font-size:16px;font-weight:700;letter-spacing:-.01em}
+    .fab.is-compact{width:56px;min-width:56px;height:56px;padding:0;border-radius:50%;box-shadow:0 10px 24px rgba(var(--brand-rgb),.38);display:flex;align-items:center;justify-content:center}
+    .fab.is-compact .fab-plus{font-size:30px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%}
     .fab.is-compact .fab-text{width:0;opacity:0;overflow:hidden}
 
     @media (min-width:768px){
