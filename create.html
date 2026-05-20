@@ -224,22 +224,61 @@
     const photoInput = document.getElementById('photoInput');
     const photoButton = document.getElementById('photoButton');
 
+    function readFileAsDataURL(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('read failed'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function compressImageFile(file){
+      const rawDataUrl = await readFileAsDataURL(file);
+      const img = await new Promise((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error('image decode failed'));
+        el.src = rawDataUrl;
+      });
+
+      const maxSide = 1280;
+      const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * ratio));
+      const height = Math.max(1, Math.round(img.height * ratio));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      let quality = 0.82;
+      let result = canvas.toDataURL('image/jpeg', quality);
+      const maxLen = 1_500_000;
+      while(result.length > maxLen && quality > 0.5){
+        quality -= 0.08;
+        result = canvas.toDataURL('image/jpeg', quality);
+      }
+      return result;
+    }
+
     photoButton.addEventListener('click', () => {
       photoInput.click();
     });
 
-    photoInput.addEventListener('change', (e) => {
+    photoInput.addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
       if(!file) return;
       if(!file.type.startsWith('image/')) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        selectedImage = String(reader.result || '');
+      try{
+        selectedImage = await compressImageFile(file);
         sharedImage = '';
         document.getElementById('photoPreview').src = selectedImage;
         document.getElementById('photoButton').classList.add('has-image');
-      };
-      reader.readAsDataURL(file);
+      }catch(_){
+        alert('이미지 처리에 실패했습니다. 다시 시도해주세요.');
+      }
     });
 
     prefillSharedHotdeal({
@@ -338,13 +377,21 @@
         body: JSON.stringify(newItem)
       })
       .then(async (res) => {
-        if(!res.ok) throw new Error('save failed');
+        if(!res.ok){
+          let message = '';
+          try{
+            const err = await res.json();
+            message = err?.error || '';
+          }catch(_){ }
+          throw new Error(message || `HTTP ${res.status}`);
+        }
         const data = await res.json();
         const savedId = data?.item?.id || newItem.id;
         location.href = editItem ? `detail.html?id=${encodeURIComponent(savedId)}` : 'index.html?posted=1';
       })
-      .catch(() => {
-        alert('서버 저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.');
+      .catch((err) => {
+        const reason = err?.message ? `\n(${err.message.slice(0, 120)})` : '';
+        alert(`서버 저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.${reason}`);
         submitBtn.disabled = false;
         submitBtn.textContent = editItem ? '수정 완료' : '작성 완료';
       });
