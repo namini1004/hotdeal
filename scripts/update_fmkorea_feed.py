@@ -61,24 +61,48 @@ def run_page_extract(page, url):
 
 
 def extract_primary_image(detail_html: str) -> str:
-    body_m = re.search(r'<div[^>]+class="[^"]*xe_content[^"]*"[\\s\\S]*?</div>\\s*</div>', detail_html, re.I)
+    body_m = re.search(r'<div[^>]+class="[^"]*xe_content[^"]*"[\s\S]*?</div>\s*</div>', detail_html, re.I)
     chunk = body_m.group(0) if body_m else detail_html
 
-    for m in re.finditer(r'<img[^>]+(?:data-src|src)="([^"]+)"', chunk, re.I):
+    for m in re.finditer(r'<img[^>]+(?:data-src|src)=["\']([^"\']+)["\']', chunk, re.I):
         src = (m.group(1) or "").strip()
-        if not src:
+        if not src or src.startswith('data:') or '/logos/mobile/fmkorea.png' in src:
             continue
         if src.startswith("//"):
             return f"https:{src}"
         return src
 
-    og = re.search(r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"', detail_html, re.I)
+    og = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', detail_html, re.I)
     if og:
         src = (og.group(1) or "").strip()
-        if src.startswith("//"):
-            return f"https:{src}"
-        return src
+        if src and '/logos/mobile/fmkorea.png' not in src:
+            if src.startswith("//"):
+                return f"https:{src}"
+            return src
     return ""
+
+
+def extract_primary_image_in_page(page, url: str) -> str:
+    page.goto(url, wait_until="domcontentloaded", timeout=90000)
+    page.wait_for_timeout(1200)
+    return page.evaluate('''() => {
+      const scopes = ['.xe_content', '.rd_body', '.document-content', '.document-view', '.article-content', 'article'];
+      let root = null;
+      for (const sel of scopes) {
+        root = document.querySelector(sel);
+        if (root) break;
+      }
+      if (!root) root = document;
+      for (const img of root.querySelectorAll('img')) {
+        const src = (img.getAttribute('data-src') || img.getAttribute('src') || '').trim();
+        if (!src) continue;
+        if (src.startsWith('data:')) continue;
+        if (src.includes('/logos/mobile/fmkorea.png')) continue;
+        if (src.startsWith('//')) return `https:${src}`;
+        return src;
+      }
+      return '';
+    }''')
 
 
 def main():
@@ -106,6 +130,19 @@ def main():
                     continue
                 seen.add(r["href"])
                 all_rows.append(r)
+
+        detail_page = context.new_page()
+        for r in all_rows:
+            current = (r.get("img") or "").strip()
+            if current and "/logos/mobile/fmkorea.png" not in current:
+                continue
+            try:
+                picked = extract_primary_image_in_page(detail_page, r["href"])
+                if picked:
+                    r["img"] = picked
+            except Exception:
+                pass
+        detail_page.close()
 
         browser.close()
 
