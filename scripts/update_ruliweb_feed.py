@@ -4,6 +4,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 import requests
 
@@ -17,6 +18,23 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 def clean(s: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(s or "")).strip()
+
+
+def to_mobile_read_url(source_link: str, post_id: str) -> str:
+    if post_id and str(post_id).isdigit():
+        return f"https://m.ruliweb.com/market/board/1020/read/{post_id}"
+    return source_link
+
+
+def to_proxy_image_url(src: str) -> str:
+    raw = clean(src)
+    if not raw:
+        return ''
+    if raw.startswith('//'):
+        raw = f'https:{raw}'
+    if 'ruliweb.com' in raw:
+        return f"/api/image-proxy?url={quote(raw, safe='')}"
+    return raw
 
 
 def parse_time_to_datetime(text: str, now: datetime) -> datetime:
@@ -47,6 +65,7 @@ def parse_rows(page_html: str):
         source_link = clean(title_m.group(1))
         post_id_m = re.search(r'/read/(\d+)', source_link)
         post_id = post_id_m.group(1) if post_id_m else source_link
+        source_link = to_mobile_read_url(source_link, post_id)
         if post_id in seen:
             continue
         seen.add(post_id)
@@ -152,7 +171,7 @@ def main():
             img_m = re.search(r'<meta property="og:image" content="([^"]*)"', detail_html)
             desc_m = re.search(r'<meta property="og:description" content="([^"]*)"', detail_html)
             primary_img = extract_primary_image(detail_html)
-            row['img'] = primary_img or (clean(img_m.group(1)) if img_m else '')
+            row['img'] = to_proxy_image_url(primary_img or (clean(img_m.group(1)) if img_m else ''))
             row['desc'] = clean(desc_m.group(1)) if desc_m else ''
             row['buyLink'] = extract_buy_link(detail_html) or row['sourceLink']
         except Exception:
