@@ -159,7 +159,13 @@ def parse_items():
                     pass
 
         pm = re.search(r'\(([0-9,]+원)\s*/\s*([^\)]+)\)', og_title)
-        price = pm.group(1) if pm else "가격 정보 확인"
+        price = pm.group(1) if pm else ""
+        if not price:
+            title_price_m = re.search(r'([0-9][0-9,]*원)', og_title)
+            if title_price_m:
+                price = title_price_m.group(1)
+        if not price:
+            price = ""
 
         items.append({
             "id": str(len(items) + 1),

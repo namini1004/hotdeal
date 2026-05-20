@@ -109,6 +109,15 @@ def parse_list_items(page_html: str):
 
         price_m = re.search(r'<span class="text-orange">([\s\S]*?)</span>', row)
         price = clean(price_m.group(1)) if price_m else "가격 정보 확인"
+        if '(KRW)' in price:
+            num_m = re.search(r'([0-9][0-9,]*)\s*\(KRW\)', price, re.I)
+            if num_m:
+                price = f"{num_m.group(1)}원"
+            else:
+                price = price.replace('(KRW)', '원').replace(' KRW', '원')
+        price = price.replace('￦', '').replace('₩', '').strip()
+        price = re.sub(r'\s+', ' ', price)
+        price = re.sub(r'\s*원\s*원$', '원', price)
 
         comments_m = re.search(r'class="ctn-count\s*">\s*([0-9,]+)\s*</span>', row)
         comments = int((comments_m.group(1).replace(',', '') if comments_m else '0') or '0')
