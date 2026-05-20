@@ -31,6 +31,23 @@ def parse_time_token(token: str, now: datetime):
     return now
 
 
+def extract_price_from_title(title: str) -> str:
+    t = (title or "").strip()
+    patterns = [
+        r"([0-9][0-9,]*\s*원)",
+        r"([0-9][0-9,]*\s*천원)",
+        r"([0-9][0-9,]*\s*만원)",
+        r"([0-9][0-9,]*\s*원대)",
+        r"([0-9][0-9,]*\s*천원대)",
+        r"([0-9][0-9,]*\s*만원대)",
+    ]
+    for p in patterns:
+        m = re.search(p, t)
+        if m:
+            return m.group(1).replace(" ", "")
+    return ""
+
+
 def run_page_extract(page, url):
     page.goto(url, wait_until="networkidle", timeout=90000)
     page.wait_for_timeout(2000)
@@ -186,9 +203,9 @@ def main():
                 break
 
         if price == "가격 정보 확인":
-            tm_price = re.search(r"([0-9][0-9,]*\s*원)", r["title"])
-            if tm_price:
-                price = tm_price.group(1).replace(" ", "")
+            fallback_price = extract_price_from_title(r["title"])
+            if fallback_price:
+                price = fallback_price
 
         comments_m = re.search(r"\[([0-9,]+)\]\s*$", r["title"])
         comments = int((comments_m.group(1).replace(",", "") if comments_m else "0") or "0")

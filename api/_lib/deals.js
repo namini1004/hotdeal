@@ -8,6 +8,22 @@ const FEED_FILES = [
   path.join(process.cwd(), 'assets', 'ruliweb_hotdeals_1day.json'),
 ];
 
+function extractPriceFromTitle(title = '') {
+  const patterns = [
+    /([0-9][0-9,]*\s*원)/,
+    /([0-9][0-9,]*\s*천원)/,
+    /([0-9][0-9,]*\s*만원)/,
+    /([0-9][0-9,]*\s*원대)/,
+    /([0-9][0-9,]*\s*천원대)/,
+    /([0-9][0-9,]*\s*만원대)/,
+  ];
+  for (const p of patterns) {
+    const m = String(title || '').match(p);
+    if (m) return m[1].replace(/\s+/g, '');
+  }
+  return '';
+}
+
 function normalizeFeedItems(items = []) {
   return items.map((item, idx) => {
     const source = item.source || 'feed';
@@ -15,8 +31,7 @@ function normalizeFeedItems(items = []) {
     let price = item.price || '';
 
     if (!price && ['ppomppu', 'fmkorea', 'ruliweb'].includes(source)) {
-      const m = title.match(/([0-9][0-9,]*\s*원)/);
-      if (m) price = m[1].replace(/\s+/g, '');
+      price = extractPriceFromTitle(title);
     }
 
     return {

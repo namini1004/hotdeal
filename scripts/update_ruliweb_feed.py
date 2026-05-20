@@ -83,10 +83,21 @@ def parse_rows(page_html: str):
         time_m = re.search(r'<td class="time">\s*([^<]+)\s*</td>', row, re.S)
         time_text = clean(time_m.group(1)) if time_m else ''
 
-        price_m = re.search(r'\(([0-9,]+원)\)', title)
-        if not price_m:
-            price_m = re.search(r'([0-9][0-9,]*\s*원)', title)
-        price = price_m.group(1).replace(' ', '') if price_m else '가격 정보 확인'
+        patterns = [
+            r'\(([0-9,]+\s*원)\)',
+            r'([0-9][0-9,]*\s*원)',
+            r'([0-9][0-9,]*\s*천원)',
+            r'([0-9][0-9,]*\s*만원)',
+            r'([0-9][0-9,]*\s*원대)',
+            r'([0-9][0-9,]*\s*천원대)',
+            r'([0-9][0-9,]*\s*만원대)',
+        ]
+        price = '가격 정보 확인'
+        for p in patterns:
+            m = re.search(p, title)
+            if m:
+                price = m.group(1).replace(' ', '')
+                break
 
         items.append(
             {
