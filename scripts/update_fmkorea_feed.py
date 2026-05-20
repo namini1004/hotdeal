@@ -3,6 +3,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
 from playwright.sync_api import sync_playwright
@@ -52,9 +53,25 @@ def extract_price_from_title(title: str) -> str:
     return ""
 
 
+def normalize_fmkorea_outbound(link: str) -> str:
+    raw = (link or '').strip()
+    if not raw:
+        return ''
+    try:
+        u = urlparse(raw)
+        if 'link.fmkorea.org' in (u.netloc or '') and u.path.startswith('/link.php'):
+            q = parse_qs(u.query)
+            target = (q.get('url', [''])[0] or '').strip()
+            if target:
+                return unquote(target)
+    except Exception:
+        pass
+    return raw
+
+
 def run_page_extract(page, url):
-    page.goto(url, wait_until="networkidle", timeout=90000)
-    page.wait_for_timeout(2000)
+    page.goto(url, wait_until="domcontentloaded", timeout=90000)
+    page.wait_for_timeout(1400)
     script = '''() => {
       const rows = [];
       for (const li of document.querySelectorAll("li")) {
@@ -127,6 +144,53 @@ def extract_primary_image_in_page(page, url: str) -> str:
     }''')
 
 
+def extract_buy_link_in_page(page, url: str) -> str:
+    page.goto(url, wait_until="domcontentloaded", timeout=90000)
+    page.wait_for_timeout(900)
+    return page.evaluate('''() => {
+      const norm = (v) => (v || '').trim();
+      const abs = (href) => {
+        try { return new URL(href, location.href).href; } catch (_) { return ''; }
+      };
+
+      // 1) '링크' 라벨 옆 anchor 우선
+      const cells = Array.from(document.querySelectorAll('th,td,dt,dd,li,span,div'));
+      for (const el of cells) {
+        const t = norm(el.textContent);
+        if (t !== '링크' && !t.startsWith('링크')) continue;
+        let next = el.nextElementSibling;
+        if (next) {
+          const a = next.querySelector('a[href^="http"]') || next.closest('tr,dl,li,div')?.querySelector('a[href^="http"]');
+          if (a) return abs(a.getAttribute('href'));
+          const txt = norm(next.textContent);
+          const m = txt.match(/https?:\/\/\S+/);
+          if (m) return abs(m[0]);
+        }
+        const wrap = el.closest('tr,dl,li,div');
+        if (wrap) {
+          const a2 = wrap.querySelector('a[href^="http"]');
+          if (a2) return abs(a2.getAttribute('href'));
+          const m2 = norm(wrap.textContent).match(/https?:\/\/\S+/);
+          if (m2) return abs(m2[0]);
+        }
+      }
+
+      // 2) 상단 정보영역에서 첫 외부링크
+      const topScopes = ['.rd_body', '.xe_content', '.document-content', 'article', 'body'];
+      for (const sel of topScopes) {
+        const root = document.querySelector(sel);
+        if (!root) continue;
+        for (const a of root.querySelectorAll('a[href^="http"]')) {
+          const href = abs(a.getAttribute('href'));
+          if (!href) continue;
+          if (href.includes('fmkorea.com')) continue;
+          return href;
+        }
+      }
+      return '';
+    }''')
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
@@ -156,12 +220,18 @@ def main():
         detail_page = context.new_page()
         for r in all_rows:
             current = (r.get("img") or "").strip()
-            if current and "/logos/mobile/fmkorea.png" not in current:
-                continue
+            if (not current) or ("/logos/mobile/fmkorea.png" in current) or ("transparent.gif" in current):
+                try:
+                    picked = extract_primary_image_in_page(detail_page, r["href"])
+                    if picked:
+                        r["img"] = picked
+                except Exception:
+                    pass
             try:
-                picked = extract_primary_image_in_page(detail_page, r["href"])
-                if picked:
-                    r["img"] = picked
+                buy = extract_buy_link_in_page(detail_page, r["href"])
+                buy = normalize_fmkorea_outbound(buy)
+                if buy:
+                    r["buyLink"] = buy
             except Exception:
                 pass
         detail_page.close()
@@ -260,7 +330,7 @@ def main():
                 "category": category,
                 "desc": f"쇼핑몰: {shop} / 배송: {delivery}".strip(),
                 "img": img,
-                "buyLink": r["href"],
+                "buyLink": normalize_fmkorea_outbound(r.get("buyLink") or r["href"]),
                 "sourceLink": r["href"],
                 "source": "fmkorea",
                 "date": dt.strftime("%Y-%m-%d"),

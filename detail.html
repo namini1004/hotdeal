@@ -248,6 +248,17 @@
         const buyBottom = document.getElementById('buyBottom');
         sourceBottom.href = item.sourceLink || item.buyLink || '#';
         buyBottom.href = item.buyLink || item.sourceLink || '#';
+
+        if((item.source || '').toLowerCase() === 'ruliweb'){
+          buyBottom.style.display = 'none';
+          sourceBottom.style.gridColumn = '1 / -1';
+          sourceBottom.textContent = '원본보기';
+        }else{
+          buyBottom.style.display = 'flex';
+          sourceBottom.style.gridColumn = '';
+          sourceBottom.textContent = '원본보기';
+        }
+
         document.getElementById('buyBottomWrap').style.display = 'block';
       }
     }
