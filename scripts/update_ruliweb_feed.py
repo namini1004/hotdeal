@@ -90,15 +90,32 @@ def parse_rows(page_html: str):
     return items
 
 
+def get_content_chunk(detail_html: str) -> str:
+    body_m = re.search(r'<div class="view_content[\s\S]*?</div>\s*</div>', detail_html)
+    return body_m.group(0) if body_m else detail_html
+
+
 def extract_buy_link(detail_html: str) -> str:
     # 본문 영역 우선 탐색
-    body_m = re.search(r'<div class="view_content[\s\S]*?</div>\s*</div>', detail_html)
-    chunk = body_m.group(0) if body_m else detail_html
+    chunk = get_content_chunk(detail_html)
     for m in re.finditer(r'href="(https?://[^\"]+)"', chunk):
         link = clean(m.group(1))
         if 'ruliweb.com' in link:
             continue
         return link
+    return ''
+
+
+def extract_primary_image(detail_html: str) -> str:
+    # 루리웹은 상세 본문 첫 번째 이미지가 대표 이미지
+    chunk = get_content_chunk(detail_html)
+    for m in re.finditer(r'<img[^>]+(?:data-src|src)="([^"]+)"', chunk, re.I):
+        src = clean(m.group(1))
+        if not src:
+            continue
+        if src.startswith('//'):
+            return f'https:{src}'
+        return src
     return ''
 
 
@@ -121,7 +138,8 @@ def main():
             detail_html = s.get(row['sourceLink'], timeout=25).text
             img_m = re.search(r'<meta property="og:image" content="([^"]*)"', detail_html)
             desc_m = re.search(r'<meta property="og:description" content="([^"]*)"', detail_html)
-            row['img'] = clean(img_m.group(1)) if img_m else ''
+            primary_img = extract_primary_image(detail_html)
+            row['img'] = primary_img or (clean(img_m.group(1)) if img_m else '')
             row['desc'] = clean(desc_m.group(1)) if desc_m else ''
             row['buyLink'] = extract_buy_link(detail_html) or row['sourceLink']
         except Exception:

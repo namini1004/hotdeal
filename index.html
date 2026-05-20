@@ -128,6 +128,7 @@
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const DEALS_API = '/api/deals';
+    const LAST_TAB_KEY = 'hotdeal_last_tab_v1';
     let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'today', feedEtag: '', userEtag: '', lastUserSyncAt: '' };
     let isRefreshing = false;
 
@@ -263,14 +264,30 @@
       `).join('');
     }
 
+    function setActiveTabUI(){
+      const tabs = document.getElementById('tabs');
+      tabs.querySelectorAll('.chip').forEach(chip => chip.classList.toggle('active', chip.dataset.tab === state.activeTab));
+    }
+
+    function restoreLastTab(){
+      const allowed = new Set(['today','quasar','fmkorea','ruliweb','namin']);
+      const saved = localStorage.getItem(LAST_TAB_KEY);
+      if(saved && allowed.has(saved)) state.activeTab = saved;
+      setActiveTabUI();
+    }
+
+    function persistLastTab(){
+      localStorage.setItem(LAST_TAB_KEY, state.activeTab || 'today');
+    }
+
     function bindTabs(){
       const tabs = document.getElementById('tabs');
       tabs.addEventListener('click', (e) => {
         const btn = e.target.closest('.chip[data-tab]');
         if(!btn) return;
         state.activeTab = btn.dataset.tab;
-        tabs.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
-        btn.classList.add('active');
+        persistLastTab();
+        setActiveTabUI();
         render();
       });
     }
@@ -453,6 +470,7 @@
     }
 
     async function init(){
+      restoreLastTab();
       const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
       applyItems(cached);
       render();
