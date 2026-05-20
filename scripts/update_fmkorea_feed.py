@@ -185,6 +185,11 @@ def main():
                     delivery = m.group(3).strip()
                 break
 
+        if price == "가격 정보 확인":
+            tm_price = re.search(r"([0-9][0-9,]*\s*원)", r["title"])
+            if tm_price:
+                price = tm_price.group(1).replace(" ", "")
+
         comments_m = re.search(r"\[([0-9,]+)\]\s*$", r["title"])
         comments = int((comments_m.group(1).replace(",", "") if comments_m else "0") or "0")
         likes_m = re.search(r"추천\s*([0-9,]+)", line_meta)

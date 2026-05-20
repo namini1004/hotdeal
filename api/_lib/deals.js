@@ -14,9 +14,9 @@ function normalizeFeedItems(items = []) {
     const title = item.title || '제목 없음';
     let price = item.price || '';
 
-    if (!price && source === 'ppomppu') {
-      const m = title.match(/([0-9][0-9,]*원)/);
-      if (m) price = m[1];
+    if (!price && ['ppomppu', 'fmkorea', 'ruliweb'].includes(source)) {
+      const m = title.match(/([0-9][0-9,]*\s*원)/);
+      if (m) price = m[1].replace(/\s+/g, '');
     }
 
     return {

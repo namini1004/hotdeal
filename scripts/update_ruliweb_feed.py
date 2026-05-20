@@ -84,7 +84,9 @@ def parse_rows(page_html: str):
         time_text = clean(time_m.group(1)) if time_m else ''
 
         price_m = re.search(r'\(([0-9,]+원)\)', title)
-        price = price_m.group(1) if price_m else '가격 정보 확인'
+        if not price_m:
+            price_m = re.search(r'([0-9][0-9,]*\s*원)', title)
+        price = price_m.group(1).replace(' ', '') if price_m else '가격 정보 확인'
 
         items.append(
             {
