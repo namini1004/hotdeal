@@ -9,25 +9,36 @@ const FEED_FILES = [
 ];
 
 function normalizeFeedItems(items = []) {
-  return items.map((item, idx) => ({
-    id: String(item.id ?? idx + 1),
-    title: item.title || '제목 없음',
-    area: item.area || '뽐뿌 핫딜',
-    dist: item.dist || '기타',
-    time: item.time || item.date || '',
-    price: item.price || '가격 정보 확인',
-    category: item.category || '기타',
-    desc: item.desc || '',
-    img: item.img || '',
-    sourceLink: item.sourceLink || '',
-    buyLink: item.buyLink || '',
-    views: Number(item.views || 0),
-    comments: Number(item.comments || 0),
-    date: item.date || '',
-    registeredAt: item.registeredAt || '',
-    source: item.source || 'feed',
-    edited: Boolean(item.edited),
-  }));
+  return items.map((item, idx) => {
+    const source = item.source || 'feed';
+    const title = item.title || '제목 없음';
+    let price = item.price || '';
+
+    if (!price && source === 'ppomppu') {
+      const m = title.match(/([0-9][0-9,]*원)/);
+      if (m) price = m[1];
+    }
+
+    return {
+      id: String(item.id ?? idx + 1),
+      title,
+      area: item.area || '뽐뿌 핫딜',
+      dist: item.dist || '기타',
+      time: item.time || item.date || '',
+      price: price || (source === 'ppomppu' ? '' : '가격 정보 확인'),
+      category: item.category || '기타',
+      desc: item.desc || '',
+      img: item.img || '',
+      sourceLink: item.sourceLink || '',
+      buyLink: item.buyLink || '',
+      views: Number(item.views || 0),
+      comments: Number(item.comments || 0),
+      date: item.date || '',
+      registeredAt: item.registeredAt || '',
+      source,
+      edited: Boolean(item.edited),
+    };
+  });
 }
 
 function readFeedItems() {
