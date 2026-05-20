@@ -186,19 +186,42 @@
       return getDeletedKeys().has(getDealKey(item));
     }
 
-    async function getItems(){
+    function optimizeImageUrl(src, { width = 900, quality = 62 } = {}){
+      const raw = String(src || '').trim();
+      if(!raw) return '';
+      if(raw.startsWith('data:')) return raw;
       try{
-        const res = await fetch(DEALS_API, { cache: 'no-store' });
-        if(res.ok){
-          const data = await res.json();
-          const syncedItems = normalizeItems(data.items || data.grouped?.today || []);
-          const all = dedupeItems(syncedItems);
-          saveItems(all);
-          return all;
-        }
-      }catch(_){ }
+        const target = encodeURIComponent(raw.replace(/^https?:\/\//, ''));
+        return `https://wsrv.nl/?url=${target}&w=${width}&q=${quality}&output=webp`;
+      }catch(_){
+        return raw;
+      }
+    }
 
+    function getCachedItems(){
       return dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]);
+    }
+
+    function renderItem(item){
+      document.getElementById('title').textContent = item.title;
+      document.getElementById('price').textContent = item.price;
+      document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.time || '날짜 없음'}`;
+      document.getElementById('img').src = optimizeImageUrl(item.img, { width: 960, quality: 60 });
+      document.getElementById('img').alt = item.title;
+      document.getElementById('desc').textContent = item.desc;
+
+      if(item.buyLink){
+        const bottom = document.getElementById('buyBottom');
+        bottom.href = item.buyLink;
+        document.getElementById('buyBottomWrap').style.display = 'block';
+      }
+    }
+
+    async function fetchItemById(id){
+      const res = await fetch(`${DEALS_API}/${encodeURIComponent(id)}`, { cache: 'no-store' });
+      if(!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
+      return data.item;
     }
 
     function showToast(message){
@@ -289,26 +312,41 @@
     }
 
     async function init(){
-      const items = await getItems();
       const id = new URLSearchParams(location.search).get('id');
-      const item = items.find(v => String(v.id) === String(id)) || items[0] || {title:'상품 없음',price:'-',desc:'등록된 상품이 없습니다.',img:''};
+      const cachedItems = getCachedItems();
+      let item = cachedItems.find(v => String(v.id) === String(id)) || null;
+
       if(item && isDeleted(item)){
         location.replace('index.html');
         return;
       }
-      currentItem = item;
 
-      document.getElementById('title').textContent = item.title;
-      document.getElementById('price').textContent = item.price;
-      document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.time || '날짜 없음'}`;
-      document.getElementById('img').src = item.img;
-      document.getElementById('img').alt = item.title;
-      document.getElementById('desc').textContent = item.desc;
+      if(item){
+        currentItem = item;
+        renderItem(item);
+      }else{
+        const fallback = {title:'로딩 중...',price:'-',desc:'상품 정보를 불러오는 중입니다.',img:'',category:'핫딜',time:''};
+        renderItem(fallback);
+      }
 
-      if(item.buyLink){
-        const bottom = document.getElementById('buyBottom');
-        bottom.href = item.buyLink;
-        document.getElementById('buyBottomWrap').style.display = 'block';
+      if(!id){
+        if(!item){
+          const first = cachedItems[0] || {title:'상품 없음',price:'-',desc:'등록된 상품이 없습니다.',img:''};
+          currentItem = first;
+          renderItem(first);
+        }
+        return;
+      }
+
+      try{
+        const latest = await fetchItemById(id);
+        if(latest && !isDeleted(latest)){
+          currentItem = latest;
+          renderItem(latest);
+          const next = [latest, ...cachedItems.filter(v => String(v.id) !== String(latest.id))];
+          saveItems(dedupeItems(next));
+        }
+      }catch(_){
       }
     }
 

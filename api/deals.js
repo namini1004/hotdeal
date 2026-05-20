@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { readFeedItems, normalizeUserRow, supabaseRequest, mapPayload } = require('./_lib/deals');
 
 function json(res, code, data) {
@@ -16,18 +17,29 @@ function dedupe(items = []) {
   });
 }
 
+function makeEtag(scope, items) {
+  const fingerprint = items
+    .map((v) => `${v.id}|${v.updatedAt || v.registeredAt || v.date || ''}`)
+    .join('~');
+  const hash = crypto.createHash('sha1').update(`${scope}:${fingerprint}`).digest('hex');
+  return `W/"${hash}"`;
+}
+
 module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const url = new URL(req.url, 'http://localhost');
       const scope = url.searchParams.get('scope') || 'all';
+      const since = url.searchParams.get('since') || '';
 
       const feedItems = scope === 'user' ? [] : readFeedItems();
       let userItems = [];
 
       if (scope !== 'feed') {
         try {
-          const rows = await supabaseRequest('deals?deleted_at=is.null&order=created_at.desc');
+          const query = [`deleted_at=is.null`, 'order=created_at.desc'];
+          if (since) query.push(`updated_at=gt.${encodeURIComponent(since)}`);
+          const rows = await supabaseRequest(`deals?${query.join('&')}`);
           userItems = (rows || []).map(normalizeUserRow);
         } catch (_) {
           userItems = [];
@@ -35,15 +47,25 @@ module.exports = async (req, res) => {
       }
 
       const items = dedupe([...userItems, ...feedItems]);
-      return json(res, 200, { items });
+      const etag = makeEtag(scope, items);
+      res.setHeader('Cache-Control', 'public, max-age=10, stale-while-revalidate=60');
+      res.setHeader('ETag', etag);
+
+      if (req.headers['if-none-match'] === etag) {
+        res.statusCode = 304;
+        return res.end();
+      }
+
+      return json(res, 200, { items, delta: Boolean(since), serverTime: new Date().toISOString() });
     }
 
     if (req.method === 'POST') {
       const payload = mapPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });
+      const now = new Date().toISOString();
       const rows = await supabaseRequest('deals', {
         method: 'POST',
-        body: JSON.stringify([{ ...payload, source: 'user' }]),
+        body: JSON.stringify([{ ...payload, source: 'user', registered_at: now, created_at: now, updated_at: now }]),
       });
       return json(res, 201, { item: normalizeUserRow(rows[0]) });
     }

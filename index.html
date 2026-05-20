@@ -125,7 +125,7 @@
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const DEALS_API = '/api/deals';
-    let state = { allItems: [], feedItems: [], userItems: [], keyword: '', activeTab: 'today' };
+    let state = { allItems: [], feedItems: [], userItems: [], keyword: '', activeTab: 'today', feedEtag: '', userEtag: '', lastUserSyncAt: '' };
     let isRefreshing = false;
 
     function normalizeItems(items){
@@ -218,6 +218,18 @@
       return baseItems.filter(i => (i.title || '').toLowerCase().includes(kw));
     }
 
+    function optimizeImageUrl(src, { width = 360, quality = 70 } = {}){
+      const raw = String(src || '').trim();
+      if(!raw) return '';
+      if(raw.startsWith('data:')) return raw;
+      try{
+        const target = encodeURIComponent(raw.replace(/^https?:\/\//, ''));
+        return `https://wsrv.nl/?url=${target}&w=${width}&q=${quality}&output=webp`;
+      }catch(_){
+        return raw;
+      }
+    }
+
     function render(){
       const list = document.getElementById('list');
       const items = getFilteredItems();
@@ -229,7 +241,7 @@
       }
       list.innerHTML = items.map(item => `
         <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}">
-          <img class="thumb" src="${item.img}" alt="${item.title}">
+          <img class="thumb" src="${optimizeImageUrl(item.img, { width: 360, quality: 68 })}" alt="${item.title}" loading="lazy" decoding="async">
           <div>
             <div class="item-title">${item.title}</div>
             <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
@@ -308,8 +320,11 @@
           wrap.style.height = '86px';
           label.textContent = '가지 로딩중...';
         }
-        const res = await fetch(`${DEALS_API}?scope=feed`, { cache: 'no-store' });
+        const headers = state.feedEtag ? { 'If-None-Match': state.feedEtag } : {};
+        const res = await fetch(`${DEALS_API}?scope=feed`, { cache: 'no-store', headers });
+        if(res.status === 304) return;
         if(res.ok){
+          state.feedEtag = res.headers.get('etag') || state.feedEtag;
           const data = await res.json();
           const feedItems = normalizeItems(data.items || []);
           applyItems([...state.userItems, ...feedItems]);
@@ -330,11 +345,26 @@
 
     async function refreshNaminDealsBackground(){
       try{
-        const res = await fetch(`${DEALS_API}?scope=user`, { cache: 'no-store' });
+        const headers = state.userEtag ? { 'If-None-Match': state.userEtag } : {};
+        const sinceQuery = state.lastUserSyncAt ? `&since=${encodeURIComponent(state.lastUserSyncAt)}` : '';
+        const res = await fetch(`${DEALS_API}?scope=user${sinceQuery}`, { cache: 'no-store', headers });
+        if(res.status === 304) return;
         if(!res.ok) return;
+
+        state.userEtag = res.headers.get('etag') || state.userEtag;
         const data = await res.json();
-        const userItems = normalizeItems(data.items || []).filter(item => item.source === 'user');
-        applyItems([...state.feedItems, ...userItems]);
+        const incoming = normalizeItems(data.items || []).filter(item => item.source === 'user');
+
+        if(data.delta && state.userItems.length){
+          const byId = new Map(state.userItems.map(item => [String(item.id), item]));
+          incoming.forEach(item => byId.set(String(item.id), item));
+          state.userItems = [...byId.values()];
+        }else{
+          state.userItems = incoming;
+        }
+
+        state.lastUserSyncAt = data.serverTime || new Date().toISOString();
+        applyItems([...state.feedItems, ...state.userItems]);
         if(state.activeTab === 'namin') render();
       }catch(_){
       }

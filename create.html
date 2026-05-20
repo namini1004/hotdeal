@@ -242,7 +242,7 @@
         el.src = rawDataUrl;
       });
 
-      const maxSide = 1280;
+      const maxSide = 960;
       const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
       const width = Math.max(1, Math.round(img.width * ratio));
       const height = Math.max(1, Math.round(img.height * ratio));
@@ -253,11 +253,11 @@
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
 
-      let quality = 0.82;
+      let quality = 0.74;
       let result = canvas.toDataURL('image/jpeg', quality);
-      const maxLen = 1_500_000;
-      while(result.length > maxLen && quality > 0.5){
-        quality -= 0.08;
+      const maxLen = 100_000;
+      while(result.length > maxLen && quality > 0.38){
+        quality -= 0.06;
         result = canvas.toDataURL('image/jpeg', quality);
       }
       return result;
