@@ -168,8 +168,20 @@ def get_content_chunk(detail_html: str) -> str:
 
 
 def extract_buy_link(detail_html: str) -> str:
-    # 본문 영역 우선 탐색
+    # 본문 하단의 '출처: http...' 패턴을 최우선으로 사용
     chunk = get_content_chunk(detail_html)
+    text_only = clean(re.sub(r'<[^>]+>', ' ', chunk))
+
+    src_m = re.search(r'출처\s*[:：]\s*(https?://[^\s\"\'<>]+)', text_only, re.I)
+    if src_m:
+        return clean(src_m.group(1)).rstrip(').,;!?:')
+
+    # HTML 상에 직접 텍스트로 박힌 경우도 보정
+    src_m_html = re.search(r'출처\s*[:：]\s*(https?://[^\s\"\'<>]+)', chunk, re.I)
+    if src_m_html:
+        return clean(src_m_html.group(1)).rstrip(').,;!?:')
+
+    # 출처 표기가 없으면 기존 외부 href 탐색 fallback
     for m in re.finditer(r'href="(https?://[^\"]+)"', chunk):
         link = clean(m.group(1))
         if 'ruliweb.com' in link:
