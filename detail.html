@@ -186,16 +186,10 @@
       return getDeletedKeys().has(getDealKey(item));
     }
 
-    function optimizeImageUrl(src, { width = 900, quality = 62 } = {}){
+    function optimizeImageUrl(src){
       const raw = String(src || '').trim();
       if(!raw) return '';
-      if(raw.startsWith('data:')) return raw;
-      try{
-        const target = encodeURIComponent(raw.replace(/^https?:\/\//, ''));
-        return `https://wsrv.nl/?url=${target}&w=${width}&q=${quality}&output=webp`;
-      }catch(_){
-        return raw;
-      }
+      return raw;
     }
 
     function getCachedItems(){
@@ -206,7 +200,7 @@
       document.getElementById('title').textContent = item.title;
       document.getElementById('price').textContent = item.price;
       document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.time || '날짜 없음'}`;
-      document.getElementById('img').src = optimizeImageUrl(item.img, { width: 960, quality: 60 });
+      document.getElementById('img').src = optimizeImageUrl(item.img);
       document.getElementById('img').alt = item.title;
       document.getElementById('desc').textContent = item.desc;
 

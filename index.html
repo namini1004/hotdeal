@@ -218,16 +218,10 @@
       return baseItems.filter(i => (i.title || '').toLowerCase().includes(kw));
     }
 
-    function optimizeImageUrl(src, { width = 360, quality = 70 } = {}){
+    function optimizeImageUrl(src){
       const raw = String(src || '').trim();
       if(!raw) return '';
-      if(raw.startsWith('data:')) return raw;
-      try{
-        const target = encodeURIComponent(raw.replace(/^https?:\/\//, ''));
-        return `https://wsrv.nl/?url=${target}&w=${width}&q=${quality}&output=webp`;
-      }catch(_){
-        return raw;
-      }
+      return raw;
     }
 
     function render(){
@@ -241,7 +235,7 @@
       }
       list.innerHTML = items.map(item => `
         <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}">
-          <img class="thumb" src="${optimizeImageUrl(item.img, { width: 360, quality: 68 })}" alt="${item.title}" loading="lazy" decoding="async">
+          <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="lazy" decoding="async">
           <div>
             <div class="item-title">${item.title}</div>
             <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
