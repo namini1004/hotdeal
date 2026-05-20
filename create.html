@@ -339,42 +339,17 @@
       if(item) fillForm(item);
     }
 
-    document.getElementById('form').addEventListener('submit', (e)=>{
+    document.getElementById('form').addEventListener('submit', async (e)=>{
       e.preventDefault();
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const price = formatPrice(document.getElementById('price').value);
       const dealUrl = document.getElementById('dealUrl').value.trim();
-      const img = selectedImage || sharedImage || editItem?.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
       if(!title) return;
       if(dealUrl && !isHttpUrl(dealUrl)){
         alert('핫딜주소는 http 또는 https로 시작해야 합니다.');
         return;
       }
-
-      const now = new Date();
-      const newItem = {
-        ...(editItem || {}),
-        id: editItem?.id || `local-${Date.now()}`,
-        title,
-        area: editItem?.area || '오늘의 핫딜',
-        dist: editItem ? (editItem.dist || '수정됨') : '방금 등록',
-        time: editItem ? (editItem.time || '수정됨') : '방금 전',
-        price,
-        likes: editItem?.likes || 0,
-        views: editItem?.views || 0,
-        comments: editItem?.comments || 0,
-        category:selectedCategory,
-        desc,
-        img,
-        buyLink:dealUrl,
-        sourceLink:dealUrl || editItem?.sourceLink || '',
-        source:'user',
-        edited: Boolean(editItem) || undefined,
-        date: editItem?.date || now.toISOString().slice(0, 10),
-        registeredAt: editItem?.registeredAt || now.toISOString(),
-        updatedAt: now.toISOString()
-      };
 
       const method = editItem ? 'PATCH' : 'POST';
       const targetUrl = editItem ? `${DEALS_API}/${encodeURIComponent(editItem.id)}` : DEALS_API;
@@ -382,12 +357,59 @@
       submitBtn.disabled = true;
       submitBtn.textContent = editItem ? '수정 중...' : '등록 중...';
 
-      fetch(targetUrl, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem)
-      })
-      .then(async (res) => {
+      try{
+        let img = sharedImage || editItem?.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1200&q=80';
+        if(selectedImage){
+          submitBtn.textContent = '이미지 업로드 중...';
+          const uploadRes = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageData: selectedImage, folder: 'user' })
+          });
+          if(!uploadRes.ok){
+            let message = '';
+            try{
+              const err = await uploadRes.json();
+              message = err?.error || '';
+            }catch(_){ }
+            throw new Error(message || `이미지 업로드 실패(HTTP ${uploadRes.status})`);
+          }
+          const uploadData = await uploadRes.json();
+          if(!uploadData?.url) throw new Error('이미지 URL 생성 실패');
+          img = uploadData.url;
+        }
+
+        const now = new Date();
+        const newItem = {
+          ...(editItem || {}),
+          id: editItem?.id || `local-${Date.now()}`,
+          title,
+          area: editItem?.area || '오늘의 핫딜',
+          dist: editItem ? (editItem.dist || '수정됨') : '방금 등록',
+          time: editItem ? (editItem.time || '수정됨') : '방금 전',
+          price,
+          likes: editItem?.likes || 0,
+          views: editItem?.views || 0,
+          comments: editItem?.comments || 0,
+          category:selectedCategory,
+          desc,
+          img,
+          buyLink:dealUrl,
+          sourceLink:dealUrl || editItem?.sourceLink || '',
+          source:'user',
+          edited: Boolean(editItem) || undefined,
+          date: editItem?.date || now.toISOString().slice(0, 10),
+          registeredAt: editItem?.registeredAt || now.toISOString(),
+          updatedAt: now.toISOString()
+        };
+
+        submitBtn.textContent = editItem ? '수정 저장 중...' : '등록 저장 중...';
+        const res = await fetch(targetUrl, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newItem)
+        });
+
         if(!res.ok){
           let message = '';
           try{
@@ -396,16 +418,16 @@
           }catch(_){ }
           throw new Error(message || `HTTP ${res.status}`);
         }
+
         const data = await res.json();
         const savedId = data?.item?.id || newItem.id;
         location.href = editItem ? `detail.html?id=${encodeURIComponent(savedId)}` : 'index.html?posted=1';
-      })
-      .catch((err) => {
-        const reason = err?.message ? `\n(${err.message.slice(0, 120)})` : '';
+      }catch(err){
+        const reason = err?.message ? `\n(${err.message.slice(0, 160)})` : '';
         alert(`서버 저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.${reason}`);
         submitBtn.disabled = false;
         submitBtn.textContent = editItem ? '수정 완료' : '작성 완료';
-      });
+      }
     });
 
     loadEditItem();
