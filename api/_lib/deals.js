@@ -18,7 +18,9 @@ function parseNumericPriceValue(priceText = '') {
 }
 
 function extractBestPriceFromText(text = '') {
-  const s = String(text || '');
+  let s = String(text || '');
+  // '919 000원'처럼 공백 천단위 표기를 먼저 보정
+  s = s.replace(/(?<!\d)(\d{1,3})\s{1,2}(\d{3})(\s*원)/g, '$1,$2$3');
   const candidates = [];
 
   const pushCandidate = (raw) => {
