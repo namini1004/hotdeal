@@ -29,6 +29,21 @@ create table if not exists public.deals (
 
 create index if not exists idx_deals_created_at on public.deals (created_at desc);
 create index if not exists idx_deals_deleted_at on public.deals (deleted_at);
+
+create table if not exists public.board_posts (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text not null default '',
+  img text not null default '',
+  author text not null default '익명',
+  views integer not null default 0,
+  deleted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_board_posts_created_at on public.board_posts (created_at desc);
+create index if not exists idx_board_posts_deleted_at on public.board_posts (deleted_at);
 ```
 
 ## 2) Vercel 환경변수
@@ -43,3 +58,5 @@ Project Settings → Environment Variables
 - `GET /api/deals` 200
 - 글쓰기 후 다른 기기에서도 동일 항목 노출
 - 수정/삭제 반영 확인
+- `GET /api/board-posts` 200
+- `board.html`에서 게시글 작성 후 다른 기기에서도 동일 항목 노출

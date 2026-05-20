@@ -18,7 +18,8 @@
     .title-app{display:flex;align-items:baseline;font-size:24px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}
     .brand-word{color:var(--brand);font-weight:950;letter-spacing:-.09em}
     .title-rest{color:var(--text);font-weight:800;letter-spacing:-.04em;margin-left:1px}
-    .icon-btn{width:48px;height:48px;display:grid;place-items:center;border:none;border-radius:999px;background:transparent;color:#374151;line-height:1;cursor:pointer}
+    .top-actions{display:flex;align-items:center;gap:4px}
+    .icon-btn{width:48px;height:48px;display:grid;place-items:center;border:none;border-radius:999px;background:transparent;color:#374151;line-height:1;cursor:pointer;text-decoration:none}
     .icon-btn:active{background:#f4f6f8}
 
     .search-wrap{display:none;margin-top:10px}
@@ -99,7 +100,10 @@
     <header class="top">
       <div class="row">
         <div class="title-app"><span class="brand-word">가지</span><span class="title-rest">고 싶다</span></div>
-        <button class="icon-btn" id="searchToggle" aria-label="검색"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
+        <div class="top-actions">
+          <a class="icon-btn" href="board.html" aria-label="가지게시판"><span class="material-symbols-outlined" aria-hidden="true">forum</span></a>
+          <button class="icon-btn" id="searchToggle" aria-label="검색"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
+        </div>
       </div>
       <div class="search-wrap" id="searchWrap">
         <input class="search-input" id="searchInput" type="text" placeholder="최근 48시간 핫딜 검색" />

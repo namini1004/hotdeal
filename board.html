@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>가지게시판</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@500');
+    :root{--bg:#fff;--page:#f7f4ff;--text:#171325;--muted:#8b95a1;--line:#eee9f8;--chip:#f3edff;--brand:#7c3aed;--brand-rgb:124,58,237}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:28px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:88px}
+    .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px}
+    .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .left{display:flex;align-items:center;gap:8px;min-width:0}
+    .back,.icon-btn{width:44px;height:44px;display:grid;place-items:center;border:none;border-radius:999px;background:transparent;color:#111827;text-decoration:none;cursor:pointer}
+    .back:active,.icon-btn:active{background:#f4f6f8}
+    .title-block{min-width:0}
+    .title{font-size:22px;font-weight:900;letter-spacing:-.04em;color:var(--brand)}
+    .subtitle{margin-top:2px;font-size:12px;font-weight:700;color:var(--muted)}
+    .search-wrap{display:none;margin-top:10px}
+    .search-wrap.show{display:block}
+    .search-input{width:100%;height:42px;border:1px solid #d9dde3;border-radius:10px;padding:0 12px;font-size:14px;outline:none}
+    .list{padding:0 16px}
+    .post{display:grid;grid-template-columns:82px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
+    .thumb{width:82px;height:82px;border-radius:12px;object-fit:cover;background:#f3f4f6}
+    .thumb.empty{display:grid;place-items:center;background:var(--chip);color:var(--brand)}
+    .post-title{font-size:17px;font-weight:750;line-height:1.34;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .excerpt{margin-top:5px;color:#4b5563;font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .meta{margin-top:7px;color:var(--muted);font-size:12px;font-weight:700}
+    .empty-list{padding:64px 16px;text-align:center;color:#6b7280;font-size:14px;line-height:1.6}
+    .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:16px;min-width:108px;height:52px;display:flex;align-items:center;justify-content:center;gap:6px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:0 18px;font-size:16px;font-weight:800;box-shadow:0 10px 24px rgba(var(--brand-rgb),.34);cursor:pointer}
+
+    .view{display:none}
+    .view.active{display:block}
+    .form{padding:14px 16px}
+    .photo{border:1px solid #e3e7ec;border-radius:12px;width:96px;height:96px;display:grid;place-items:center;color:var(--brand);font-size:13px;font-weight:800;margin-bottom:16px;background:var(--chip);cursor:pointer;overflow:hidden;text-align:center}
+    .photo .material-symbols-outlined{font-size:28px}
+    .photo-text{display:grid;gap:4px;place-items:center}
+    .photo-preview{width:100%;height:100%;object-fit:cover;display:none}
+    .photo.has-image .photo-text{display:none}
+    .photo.has-image .photo-preview{display:block}
+    .file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+    .field{border-top:1px solid var(--line);padding:14px 0}
+    .field:first-of-type{border-top:none;padding-top:0}
+    label{display:block;font-size:14px;font-weight:800;margin-bottom:8px}
+    input,textarea{width:100%;border:none;outline:none;font:inherit;font-size:16px;color:#111827;background:#fff}
+    textarea{min-height:180px;line-height:1.65;resize:none}
+    .hint{font-size:13px;color:var(--muted);line-height:1.5}
+    .bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:12px 14px calc(env(safe-area-inset-bottom) + 12px);background:#fff;border-top:1px solid var(--line)}
+    .submit{width:100%;height:50px;border:none;border-radius:14px;background:var(--brand);color:#fff;font-size:17px;font-weight:900}
+
+    .detail-hero img{width:100%;height:300px;object-fit:cover;display:block;background:#f3f4f6}
+    .detail{padding:18px 16px 28px}
+    h1{margin:0;font-size:23px;line-height:1.35;letter-spacing:-.03em}
+    .detail-meta{margin:10px 0 18px;color:var(--muted);font-size:13px;font-weight:700}
+    .body{font-size:16px;line-height:1.75;white-space:pre-line;word-break:break-word}
+
+    @media (min-width:768px){
+      body{background:var(--page)}
+      .app{max-width:1120px;padding:0 28px 96px}
+      .top{top:16px;margin:16px 0 18px;padding:16px 20px;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 32px rgba(17,24,39,.06)}
+      .title{font-size:28px}
+      .subtitle{font-size:13px}
+      .icon-btn{width:52px;height:52px;background:#f4f6f8}
+      .search-wrap{display:block;max-width:520px}
+      .search-input{height:46px;background:#fafafa}
+      .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0}
+      .post{grid-template-columns:118px 1fr;gap:16px;padding:14px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(17,24,39,.04)}
+      .thumb{width:118px;height:118px;border-radius:14px}
+      .post-title{font-size:18px;-webkit-line-clamp:3}
+      .excerpt{font-size:14px}
+      .empty-list{grid-column:1/-1;background:#fff;border:1px solid var(--line);border-radius:16px}
+      .fab{right:max(28px,calc((100vw - 1120px) / 2 + 28px));bottom:16px;min-width:116px;height:56px;padding:0 20px}
+      .form{max-width:720px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 18px 50px rgba(17,24,39,.08)}
+      .photo{width:112px;height:112px}
+      .bottom{max-width:720px;padding:16px 18px;box-shadow:0 -12px 30px rgba(17,24,39,.06)}
+      .detail-wrap{display:grid;grid-template-columns:minmax(360px,520px) minmax(0,1fr);background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(17,24,39,.08)}
+      .detail-hero img{height:100%;min-height:540px}
+      .detail{padding:42px 38px}
+      h1{font-size:28px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="top-row">
+        <div class="left">
+          <a class="back" id="backBtn" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
+          <div class="title-block">
+            <div class="title">가지게시판</div>
+            <div class="subtitle" id="subtitle">가족끼리 남기는 글</div>
+          </div>
+        </div>
+        <button class="icon-btn" id="searchToggle" type="button" aria-label="검색"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
+      </div>
+      <div class="search-wrap" id="searchWrap">
+        <input class="search-input" id="searchInput" type="text" placeholder="게시글 검색" />
+      </div>
+    </header>
+
+    <section class="view active" id="listView">
+      <main class="list" id="list"></main>
+      <button class="fab" id="writeBtn" type="button" aria-label="글쓰기"><span class="material-symbols-outlined" aria-hidden="true">add</span><span>글쓰기</span></button>
+    </section>
+
+    <section class="view" id="formView">
+      <form class="form" id="form">
+        <button class="photo" id="photoButton" type="button">
+          <span class="photo-text"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span><span>사진 첨부</span></span>
+          <img class="photo-preview" id="photoPreview" alt="첨부한 사진 미리보기">
+        </button>
+        <input class="file-input" id="photoInput" type="file" accept="image/*" />
+
+        <div class="field">
+          <label for="title">제목</label>
+          <input id="title" maxlength="80" placeholder="제목을 입력해주세요." required />
+        </div>
+        <div class="field">
+          <label for="body">내용</label>
+          <textarea id="body" placeholder="공유하고 싶은 이야기를 적어주세요."></textarea>
+          <div class="hint">사진은 선택사항입니다.</div>
+        </div>
+      </form>
+      <div class="bottom">
+        <button class="submit" form="form" type="submit">작성 완료</button>
+      </div>
+    </section>
+
+    <section class="view" id="detailView">
+      <div class="detail-wrap">
+        <div class="detail-hero" id="detailHero"></div>
+        <article class="detail">
+          <h1 id="detailTitle"></h1>
+          <div class="detail-meta" id="detailMeta"></div>
+          <div class="body" id="detailBody"></div>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const BOARD_API = '/api/board-posts';
+    const STORAGE_KEY = 'gaji_board_posts_v1';
+    const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=1200&q=80';
+    let state = { posts: [], keyword: '', selectedImage: '' };
+
+    function normalizePosts(posts){
+      return (posts || []).map((post, idx) => ({
+        id: String(post.id || `local-${idx}`),
+        title: post.title || '제목 없음',
+        body: post.body || '',
+        img: post.img || '',
+        author: post.author || '익명',
+        views: Number(post.views || 0),
+        createdAt: post.createdAt || post.created_at || new Date().toISOString(),
+        updatedAt: post.updatedAt || post.updated_at || '',
+      }));
+    }
+
+    function readLocalPosts(){
+      try{
+        return normalizePosts(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+      }catch(_){
+        return [];
+      }
+    }
+
+    function saveLocalPosts(posts){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizePosts(posts)));
+    }
+
+    function formatTime(value){
+      if(!value) return '';
+      const d = new Date(value);
+      if(Number.isNaN(d.getTime())) return '';
+      return d.toLocaleString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    function escapeHtml(text){
+      return String(text || '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function setView(name){
+      document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+      document.getElementById(`${name}View`).classList.add('active');
+      const back = document.getElementById('backBtn');
+      document.getElementById('searchToggle').style.display = name === 'list' ? 'grid' : 'none';
+      document.getElementById('searchWrap').classList.remove('show');
+      if(name === 'list'){
+        document.getElementById('subtitle').textContent = '가족끼리 남기는 글';
+        back.href = 'index.html';
+      }else{
+        document.getElementById('subtitle').textContent = name === 'form' ? '새 글 작성' : '게시글 상세';
+        back.href = 'board.html';
+      }
+    }
+
+    function getFilteredPosts(){
+      const kw = state.keyword.trim().toLowerCase();
+      if(!kw) return state.posts;
+      return state.posts.filter(post => `${post.title} ${post.body}`.toLowerCase().includes(kw));
+    }
+
+    function renderList(){
+      const list = document.getElementById('list');
+      const posts = getFilteredPosts();
+      if(!posts.length){
+        list.innerHTML = '<div class="empty-list">아직 게시글이 없습니다.<br>첫 글을 남겨보세요.</div>';
+        return;
+      }
+      list.innerHTML = posts.map(post => `
+        <a class="post" href="board.html?id=${encodeURIComponent(post.id)}">
+          ${post.img ? `<img class="thumb" src="${post.img}" alt="">` : `<div class="thumb empty"><span class="material-symbols-outlined">article</span></div>`}
+          <div>
+            <div class="post-title">${escapeHtml(post.title)}</div>
+            <div class="excerpt">${escapeHtml(post.body || '내용 없음')}</div>
+            <div class="meta">${escapeHtml(post.author)} · ${formatTime(post.createdAt)}</div>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    async function loadPosts(){
+      const local = readLocalPosts();
+      state.posts = local;
+      renderList();
+      try{
+        const res = await fetch(BOARD_API, { cache:'no-store' });
+        if(!res.ok) throw new Error('api failed');
+        const data = await res.json();
+        state.posts = normalizePosts(data.items || []);
+        saveLocalPosts(state.posts);
+        renderList();
+      }catch(_){
+        state.posts = local;
+        renderList();
+      }
+    }
+
+    async function loadPost(id){
+      const cached = readLocalPosts().find(post => String(post.id) === String(id));
+      if(cached) renderDetail(cached);
+      try{
+        const res = await fetch(`${BOARD_API}/${encodeURIComponent(id)}`, { cache:'no-store' });
+        if(!res.ok) throw new Error('api failed');
+        const data = await res.json();
+        if(data.item) renderDetail(normalizePosts([data.item])[0]);
+      }catch(_){
+        if(!cached) renderDetail({ title:'게시글 없음', body:'게시글을 찾을 수 없습니다.', author:'', img:'', createdAt:'' });
+      }
+    }
+
+    function renderDetail(post){
+      setView('detail');
+      document.getElementById('detailHero').innerHTML = post.img ? `<img src="${post.img}" alt="">` : `<img src="${FALLBACK_IMAGE}" alt="">`;
+      document.getElementById('detailTitle').textContent = post.title || '제목 없음';
+      document.getElementById('detailMeta').textContent = `${post.author || '익명'} · ${formatTime(post.createdAt)}`;
+      document.getElementById('detailBody').textContent = post.body || '';
+    }
+
+    function readFileAsDataURL(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('read failed'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function compressImageFile(file){
+      const rawDataUrl = await readFileAsDataURL(file);
+      const img = await new Promise((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error('image decode failed'));
+        el.src = rawDataUrl;
+      });
+      let maxSide = 960;
+      let quality = 0.76;
+      let result = rawDataUrl;
+      for(let attempt = 0; attempt < 8; attempt += 1){
+        const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * ratio));
+        const height = Math.max(1, Math.round(img.height * ratio));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        result = canvas.toDataURL('image/jpeg', quality);
+        if(result.length <= 50000) return result;
+        if(quality > 0.42) quality = Math.max(0.42, quality - 0.07);
+        else maxSide = Math.max(480, Math.round(maxSide * 0.88));
+      }
+      return result;
+    }
+
+    async function uploadImage(imageData){
+      const res = await fetch('/api/upload-image', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ imageData, folder:'board' })
+      });
+      if(!res.ok) throw new Error('image upload failed');
+      const data = await res.json();
+      return data.url || '';
+    }
+
+    function bindForm(){
+      const photoInput = document.getElementById('photoInput');
+      const photoButton = document.getElementById('photoButton');
+      photoButton.addEventListener('click', () => photoInput.click());
+      photoInput.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if(!file || !file.type.startsWith('image/')) return;
+        try{
+          state.selectedImage = await compressImageFile(file);
+          document.getElementById('photoPreview').src = state.selectedImage;
+          photoButton.classList.add('has-image');
+        }catch(_){
+          alert('이미지 처리에 실패했습니다.');
+        }
+      });
+
+      document.getElementById('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('title').value.trim();
+        const body = document.getElementById('body').value.trim();
+        if(!title) return;
+        const btn = document.querySelector('.submit');
+        btn.disabled = true;
+        btn.textContent = '등록 중...';
+        let img = '';
+        try{
+          if(state.selectedImage){
+            btn.textContent = '사진 업로드 중...';
+            img = await uploadImage(state.selectedImage);
+          }
+        }catch(_){
+          img = state.selectedImage;
+        }
+
+        const post = { id:`local-${Date.now()}`, title, body, img, author:'익명', createdAt:new Date().toISOString() };
+        try{
+          const res = await fetch(BOARD_API, {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify(post)
+          });
+          if(!res.ok) throw new Error('api failed');
+          const data = await res.json();
+          const saved = normalizePosts([data.item || post])[0];
+          const next = [saved, ...readLocalPosts().filter(v => String(v.id) !== String(saved.id))];
+          saveLocalPosts(next);
+          location.href = `board.html?id=${encodeURIComponent(saved.id)}`;
+        }catch(_){
+          const next = [post, ...readLocalPosts()];
+          saveLocalPosts(next);
+          location.href = `board.html?id=${encodeURIComponent(post.id)}`;
+        }
+      });
+    }
+
+    function bindListControls(){
+      document.getElementById('writeBtn').addEventListener('click', () => {
+        history.pushState(null, '', 'board.html?new=1');
+        setView('form');
+      });
+      document.getElementById('searchToggle').addEventListener('click', () => {
+        const wrap = document.getElementById('searchWrap');
+        wrap.classList.toggle('show');
+        if(wrap.classList.contains('show')) document.getElementById('searchInput').focus();
+      });
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        state.keyword = e.target.value || '';
+        renderList();
+      });
+    }
+
+    async function init(){
+      bindForm();
+      bindListControls();
+      const params = new URLSearchParams(location.search);
+      if(params.has('new')){
+        setView('form');
+        return;
+      }
+      const id = params.get('id');
+      if(id){
+        await loadPost(id);
+        return;
+      }
+      setView('list');
+      await loadPosts();
+    }
+
+    init();
+  </script>
+</body>
+</html>
