@@ -34,8 +34,6 @@ def parse_time_token(token: str, now: datetime):
 
 def extract_price_from_title(title: str) -> str:
     t = (title or "").strip()
-    if "무료" in t:
-        return "무료"
     patterns = [
         r"([0-9][0-9,]*\s*원)",
         r"([0-9][0-9,]*\s*천원)",
@@ -48,6 +46,8 @@ def extract_price_from_title(title: str) -> str:
         m = re.search(p, t)
         if m:
             return m.group(1).replace(" ", "")
+    if "무료" in t:
+        return "무료"
     if "다양" in t:
         return "다양"
     return ""

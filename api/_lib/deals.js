@@ -27,7 +27,10 @@ function extractPriceFromTitle(title = '') {
 function inferKeywordPrice(title = '', currentPrice = '') {
   const t = String(title || '');
   const p = String(currentPrice || '').trim();
-  // 우선순위: 무료 > 다양
+
+  const numericWon = extractPriceFromTitle(t);
+  if (numericWon) return numericWon;
+
   if (/무료/.test(t)) return '무료';
   if (!p || p === '가격 정보 확인') {
     if (/다양/.test(t)) return '다양';

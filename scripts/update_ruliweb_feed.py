@@ -93,12 +93,14 @@ def parse_rows(page_html: str, seen: set):
             r'([0-9][0-9,]*\s*만원대)',
         ]
         price = '가격 정보 확인'
+        title_numeric_price = ''
         for p in patterns:
             m = re.search(p, title)
             if m:
-                price = m.group(1).replace(' ', '')
+                title_numeric_price = m.group(1).replace(' ', '')
+                price = title_numeric_price
                 break
-        if '무료' in title:
+        if not title_numeric_price and '무료' in title:
             price = '무료'
         elif price == '가격 정보 확인' and '다양' in title:
             price = '다양'
