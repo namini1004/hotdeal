@@ -30,6 +30,19 @@
     .chip{padding:8px 14px;border-radius:999px;background:var(--chip);font-size:14px;font-weight:700;white-space:nowrap;color:#4b5563;border:none}
     .chip.active{background:var(--chip-active);color:#fff}
 
+    .pull-refresh{height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:height .18s ease;will-change:height}
+    .pull-refresh.show{height:86px}
+    .gaji-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#5b21b6;opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .18s ease}
+    .pull-refresh.show .gaji-loader{opacity:1;transform:translateY(0)}
+    .gaji-spinner{width:48px;height:48px;border-radius:999px;background:#f3edff;display:grid;place-items:center;box-shadow:0 6px 14px rgba(var(--brand-rgb),.18)}
+    .gaji-spinner .emoji{font-size:26px;line-height:1;display:inline-block;animation:gaji-spin 1s linear infinite}
+    .gaji-label{font-size:12px;font-weight:800;letter-spacing:-.01em}
+
+    @keyframes gaji-spin{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(360deg)}
+    }
+
     .list{padding:0 16px}
     .item{display:grid;grid-template-columns:98px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
     .thumb{width:98px;height:98px;border-radius:12px;object-fit:cover;background:#f3f4f6}
@@ -95,6 +108,12 @@
         <button class="chip active" type="button">오늘의 핫딜</button>
       </div>
     </header>
+    <div class="pull-refresh" id="pullRefresh" aria-live="polite">
+      <div class="gaji-loader" id="gajiLoader">
+        <div class="gaji-spinner"><span class="emoji" aria-hidden="true">🍆</span></div>
+        <div class="gaji-label" id="gajiLabel">당겨서 새로고침</div>
+      </div>
+    </div>
     <main class="list" id="list"></main>
   </div>
 
@@ -106,6 +125,7 @@
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const FEED_PATH = 'assets/ppomppu_hotdeals_2days.json';
     let state = { items: [], keyword: '' };
+    let isRefreshing = false;
 
     function normalizeItems(items){
       return (items || []).map((item, idx) => ({
@@ -253,8 +273,17 @@
       }, { passive:true });
     }
 
-    async function init(){
+    async function refreshFeed({ silent = false } = {}){
+      if(isRefreshing) return;
+      isRefreshing = true;
+      const wrap = document.getElementById('pullRefresh');
+      const label = document.getElementById('gajiLabel');
       try{
+        if(!silent){
+          wrap.classList.add('show');
+          wrap.style.height = '86px';
+          label.textContent = '가지 로딩중...';
+        }
         const res = await fetch(FEED_PATH, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
@@ -262,8 +291,74 @@
           const items = filterDeleted(dedupeItems([...getUserItems(), ...feedItems]));
           saveItems(items);
           state.items = items;
+          render();
         }
-      }catch(_){ }
+      }catch(_){
+      }finally{
+        if(!silent){
+          label.textContent = '당겨서 새로고침';
+          setTimeout(() => {
+            wrap.style.height = '0px';
+            wrap.classList.remove('show');
+          }, 220);
+        }
+        isRefreshing = false;
+      }
+    }
+
+    function bindPullToRefresh(){
+      const wrap = document.getElementById('pullRefresh');
+      const label = document.getElementById('gajiLabel');
+      let pulling = false;
+      let startY = 0;
+      let pullDistance = 0;
+      const threshold = 74;
+
+      function setPullHeight(px){
+        const height = Math.max(0, Math.min(98, px));
+        wrap.style.height = `${height}px`;
+        if(height > 8) wrap.classList.add('show');
+        else wrap.classList.remove('show');
+      }
+
+      window.addEventListener('touchstart', (e) => {
+        if(window.scrollY > 0 || isRefreshing) return;
+        pulling = true;
+        startY = e.touches[0].clientY;
+        pullDistance = 0;
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if(!pulling) return;
+        const currentY = e.touches[0].clientY;
+        const delta = currentY - startY;
+        if(delta <= 0){
+          setPullHeight(0);
+          label.textContent = '당겨서 새로고침';
+          return;
+        }
+        pullDistance = delta * 0.52;
+        setPullHeight(pullDistance);
+        label.textContent = pullDistance >= threshold ? '놓으면 새로고침' : '당겨서 새로고침';
+      }, { passive: true });
+
+      window.addEventListener('touchend', async () => {
+        if(!pulling) return;
+        pulling = false;
+        if(pullDistance >= threshold){
+          setPullHeight(86);
+          wrap.classList.add('show');
+          await refreshFeed();
+        }else{
+          setPullHeight(0);
+          label.textContent = '당겨서 새로고침';
+        }
+        pullDistance = 0;
+      }, { passive: true });
+    }
+
+    async function init(){
+      await refreshFeed({ silent: true });
 
       if(!state.items.length){
         state.items = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
@@ -271,6 +366,7 @@
 
       bindSearch();
       bindScrollChrome();
+      bindPullToRefresh();
       render();
     }
 
