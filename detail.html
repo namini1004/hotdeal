@@ -11,7 +11,7 @@
     *{box-sizing:border-box}
     body{margin:0;background:#fff;color:#111827;font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:24px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
-    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:126px}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:64px}
     .hero{position:relative}
     .hero img{width:100%;height:320px;object-fit:cover;display:block;background:#f3f4f6}
     .topbtns{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:center;justify-content:space-between;color:#fff}
@@ -34,16 +34,12 @@
     .sheet-btn + .sheet-btn{margin-top:8px}
     .sheet-btn.edit{background:var(--brand);color:#fff}
     .sheet-btn.delete{background:#fff1f2;color:#dc2626}
-    .bottom-cta{position:fixed;left:50%;transform:translateX(-50%);bottom:62px;width:100%;max-width:430px;padding:0 16px;background:#fff;border-top:none;z-index:10}
+    .bottom-cta{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:0 16px calc(env(safe-area-inset-bottom) + 0px);background:#fff;border-top:none;z-index:10}
     .cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .cta-btn{height:54px;display:flex;align-items:center;justify-content:center;border-radius:14px;text-decoration:none;font-size:16px;font-weight:900}
     .source-bottom{background:#f3edff;color:#4c1d95;border:1px solid #d8c7ff}
     .buy-bottom{background:var(--brand);color:#fff;box-shadow:0 10px 24px rgba(var(--brand-rgb),.32)}
-    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:62px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #ececf1;z-index:11}
-    .bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(4,1fr)}
-    .nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:600}
-    .nav-tab .material-symbols-outlined{font-size:24px}
-    .nav-tab.active{color:#111827;font-weight:700}
+
 
     a{text-decoration:none;color:inherit}
 
@@ -65,8 +61,7 @@
       .action-sheet{max-width:420px;margin-bottom:24px;border-radius:18px;box-shadow:0 18px 50px rgba(17,24,39,.18)}
       .buy-bottom{height:56px}
       .cta-btn{font-size:17px}
-      .bottom-cta{max-width:1080px;padding:0 20px;background:rgba(255,255,255,.94);box-shadow:0 -12px 32px rgba(17,24,39,.08);bottom:72px}
-      .bottom-nav{max-width:1080px;height:72px}
+      .bottom-cta{max-width:1080px;padding:0 20px;background:rgba(255,255,255,.94);box-shadow:0 -12px 32px rgba(17,24,39,.08);bottom:0}
     }
 
     @media (min-width:1180px){
@@ -102,26 +97,7 @@
       <a id="buyBottom" class="cta-btn buy-bottom" href="#" target="_blank" rel="noopener">가지고싶다</a>
     </div>
   </div>
-  <nav class="bottom-nav" aria-label="하단 네비게이션">
-    <div class="bottom-nav-row">
-      <a class="nav-tab active" href="index.html" aria-current="page">
-        <span class="material-symbols-outlined" aria-hidden="true">home</span>
-        <span>홈</span>
-      </a>
-      <a class="nav-tab" href="#" onclick="showToast('준비 중입니다.');return false;">
-        <span class="material-symbols-outlined" aria-hidden="true">deployed_code</span>
-        <span>가지가지</span>
-      </a>
-      <a class="nav-tab" href="#" onclick="showToast('준비 중입니다.');return false;">
-        <span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span>
-        <span>채팅</span>
-      </a>
-      <a class="nav-tab" href="#" onclick="showToast('준비 중입니다.');return false;">
-        <span class="material-symbols-outlined" aria-hidden="true">person</span>
-        <span>내 가지</span>
-      </a>
-    </div>
-  </nav>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="sheet-backdrop" id="sheetBackdrop"></div>
   <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-label="게시물 메뉴">

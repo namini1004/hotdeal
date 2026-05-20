@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>내 가지</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@500');
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .page{min-height:100vh;background:#fff;padding-bottom:82px}
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:62px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #ececf1}
+    .bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(4,1fr)}
+    .nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:600}
+    .nav-tab .material-symbols-outlined{font-size:24px}
+    .nav-tab.active{color:#111827;font-weight:700}
+  </style>
+</head>
+<body>
+  <main class="page"></main>
+  <nav class="bottom-nav" aria-label="하단 네비게이션">
+    <div class="bottom-nav-row">
+      <a class="nav-tab" href="index.html"><span class="material-symbols-outlined">home</span><span>홈</span></a>
+      <a class="nav-tab" href="gajigaji.html"><span class="material-symbols-outlined">deployed_code</span><span>가지가지</span></a>
+      <a class="nav-tab" href="chat.html"><span class="material-symbols-outlined">chat_bubble</span><span>채팅</span></a>
+      <a class="nav-tab active" href="my-gaji.html" aria-current="page"><span class="material-symbols-outlined">person</span><span>내 가지</span></a>
+    </div>
+  </nav>
+</body>
+</html>
