@@ -115,6 +115,19 @@ def extract_primary_image(detail_html: str) -> str:
             continue
         if src.startswith('//'):
             return f'https:{src}'
+        if src.startswith('/'):
+            return f'{BASE}{src}'
+        return src
+
+    # 일부 글은 view_content 정규식 누락될 수 있어 전체 문서에서 재탐색
+    for m in re.finditer(r'<img[^>]+(?:data-src|src)="([^"]+)"', detail_html, re.I):
+        src = clean(m.group(1))
+        if not src:
+            continue
+        if src.startswith('//'):
+            return f'https:{src}'
+        if src.startswith('/'):
+            return f'{BASE}{src}'
         return src
     return ''
 

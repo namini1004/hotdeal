@@ -230,9 +230,11 @@
       return baseItems.filter(i => (i.title || '').toLowerCase().includes(kw));
     }
 
+    const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80';
+
     function optimizeImageUrl(src){
       const raw = String(src || '').trim();
-      if(!raw) return '';
+      if(!raw) return FALLBACK_IMAGE;
       return raw;
     }
 
@@ -253,7 +255,7 @@
       }
       list.innerHTML = items.map(item => `
         <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}">
-          <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="lazy" decoding="async">
+          <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
           <div>
             <div class="item-title">${item.title}</div>
             <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>

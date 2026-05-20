@@ -4,12 +4,14 @@ import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import requests
 from playwright.sync_api import sync_playwright
 
 LIST_URL = "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine"
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "fmkorea_hotdeals_2days.json"
 KST = timezone(timedelta(hours=9))
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
 def parse_time_token(token: str, now: datetime):
@@ -58,6 +60,27 @@ def run_page_extract(page, url):
     return page.evaluate(script)
 
 
+def extract_primary_image(detail_html: str) -> str:
+    body_m = re.search(r'<div[^>]+class="[^"]*xe_content[^"]*"[\\s\\S]*?</div>\\s*</div>', detail_html, re.I)
+    chunk = body_m.group(0) if body_m else detail_html
+
+    for m in re.finditer(r'<img[^>]+(?:data-src|src)="([^"]+)"', chunk, re.I):
+        src = (m.group(1) or "").strip()
+        if not src:
+            continue
+        if src.startswith("//"):
+            return f"https:{src}"
+        return src
+
+    og = re.search(r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"', detail_html, re.I)
+    if og:
+        src = (og.group(1) or "").strip()
+        if src.startswith("//"):
+            return f"https:{src}"
+        return src
+    return ""
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
@@ -85,6 +108,9 @@ def main():
                 all_rows.append(r)
 
         browser.close()
+
+    s = requests.Session()
+    s.headers.update(HEADERS)
 
     items = []
     for r in all_rows:
@@ -148,6 +174,14 @@ def main():
         if not id_m:
             continue
 
+        img = (r.get("img") or "").strip()
+        if not img:
+            try:
+                detail_html = s.get(r["href"], timeout=20).text
+                img = extract_primary_image(detail_html)
+            except Exception:
+                img = ""
+
         items.append(
             {
                 "id": id_m.group(1),
@@ -161,7 +195,7 @@ def main():
                 "comments": comments,
                 "category": category,
                 "desc": f"쇼핑몰: {shop} / 배송: {delivery}".strip(),
-                "img": r["img"],
+                "img": img,
                 "buyLink": r["href"],
                 "sourceLink": r["href"],
                 "source": "fmkorea",
