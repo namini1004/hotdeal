@@ -11,7 +11,7 @@
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:32px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
-    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:88px}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:24px}
     .top{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5;transition:transform .24s ease,opacity .2s ease,box-shadow .2s ease}
     .top.is-hidden{transform:translateY(calc(-100% - 12px));opacity:0;pointer-events:none}
     .row{display:flex;align-items:center;justify-content:space-between}
@@ -52,17 +52,12 @@
     .price{margin-top:8px;font-size:18px;font-weight:800;letter-spacing:-.02em}
     .empty{padding:40px 8px;color:#6b7280;font-size:14px}
 
-    .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:24px;min-width:98px;height:48px;display:flex;align-items:center;justify-content:center;gap:4px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:0 18px;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(var(--brand-rgb),.34);cursor:pointer;transition:width .2s ease,min-width .2s ease,height .2s ease,padding .2s ease,border-radius .2s ease,box-shadow .2s ease,transform .2s ease}
-    .fab-plus{font-size:20px;line-height:1}
-    .fab-text{white-space:nowrap;transition:opacity .15s ease}
-    .fab.is-compact{width:56px;min-width:56px;height:56px;padding:0;border-radius:50%;box-shadow:0 10px 24px rgba(var(--brand-rgb),.38)}
+    .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:84px;min-width:116px;height:56px;display:flex;align-items:center;justify-content:center;gap:8px;border:none;background:#ff7a00;color:#fff;border-radius:999px;padding:0 20px;font-size:16px;font-weight:800;box-shadow:0 10px 24px rgba(255,122,0,.38);cursor:pointer;transition:width .2s ease,min-width .2s ease,height .2s ease,padding .2s ease,border-radius .2s ease,box-shadow .2s ease,transform .2s ease}
+    .fab-plus{font-size:28px;line-height:1;font-weight:700}
+    .fab-text{white-space:nowrap;transition:opacity .15s ease;font-size:22px;font-weight:800;letter-spacing:-.02em}
+    .fab.is-compact{width:56px;min-width:56px;height:56px;padding:0;border-radius:50%;box-shadow:0 10px 24px rgba(255,122,0,.38)}
     .fab.is-compact .fab-plus{font-size:30px;font-weight:800}
     .fab.is-compact .fab-text{width:0;opacity:0;overflow:hidden}
-    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:62px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #ececf1;z-index:11}
-    .bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(4,1fr)}
-    .nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:600}
-    .nav-tab .material-symbols-outlined{font-size:24px}
-    .nav-tab.active{color:#111827;font-weight:700}
 
     @media (min-width:768px){
       body{background:var(--page)}
@@ -84,8 +79,7 @@
       .price{font-size:20px}
       .empty{grid-column:1/-1;padding:72px 16px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:16px}
       .top.is-hidden{transform:translateY(calc(-100% - 28px))}
-      .fab{right:max(28px,calc((100vw - 1120px) / 2 + 28px));bottom:88px;min-width:98px;height:50px;padding:0 20px}
-      .bottom-nav{max-width:1120px;height:72px}
+      .fab{right:max(28px,calc((100vw - 1120px) / 2 + 28px));bottom:32px;min-width:116px;height:56px;padding:0 20px}
     }
 
     @media (min-width:1180px){
@@ -128,26 +122,6 @@
   </div>
 
   <button class="fab" id="writeBtn" aria-label="글쓰기"><span class="fab-plus" aria-hidden="true">+</span><span class="fab-text">글쓰기</span></button>
-  <nav class="bottom-nav" aria-label="하단 네비게이션">
-    <div class="bottom-nav-row">
-      <a class="nav-tab active" href="index.html" aria-current="page">
-        <span class="material-symbols-outlined" aria-hidden="true">home</span>
-        <span>홈</span>
-      </a>
-      <a class="nav-tab" href="gajigaji.html">
-        <span class="material-symbols-outlined" aria-hidden="true">deployed_code</span>
-        <span>가지가지</span>
-      </a>
-      <a class="nav-tab" href="chat.html">
-        <span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span>
-        <span>채팅</span>
-      </a>
-      <a class="nav-tab" href="my-gaji.html">
-        <span class="material-symbols-outlined" aria-hidden="true">person</span>
-        <span>내 가지</span>
-      </a>
-    </div>
-  </nav>
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
