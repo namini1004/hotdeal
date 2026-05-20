@@ -166,7 +166,7 @@ def extract_primary_image(detail_html: str) -> str:
 
 def main():
     now = datetime.now(KST)
-    since = now - timedelta(hours=24)
+    since = now - timedelta(hours=48)
     s = requests.Session()
     s.headers.update(HEADERS)
 
@@ -197,7 +197,7 @@ def main():
     out = {
         "source": LIST_URL,
         "generatedAt": now.isoformat(),
-        "rangeHours": 24,
+        "rangeHours": 48,
         "since": since.isoformat(),
         "today": str(now.date()),
         "yesterday": str((now - timedelta(days=1)).date()),
