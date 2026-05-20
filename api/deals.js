@@ -19,13 +19,19 @@ function dedupe(items = []) {
 module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
-      const feedItems = readFeedItems();
+      const url = new URL(req.url, 'http://localhost');
+      const scope = url.searchParams.get('scope') || 'all';
+
+      const feedItems = scope === 'user' ? [] : readFeedItems();
       let userItems = [];
-      try {
-        const rows = await supabaseRequest('deals?deleted_at=is.null&order=created_at.desc');
-        userItems = (rows || []).map(normalizeUserRow);
-      } catch (_) {
-        userItems = [];
+
+      if (scope !== 'feed') {
+        try {
+          const rows = await supabaseRequest('deals?deleted_at=is.null&order=created_at.desc');
+          userItems = (rows || []).map(normalizeUserRow);
+        } catch (_) {
+          userItems = [];
+        }
       }
 
       const items = dedupe([...userItems, ...feedItems]);

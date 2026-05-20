@@ -104,8 +104,9 @@
       <div class="search-wrap" id="searchWrap">
         <input class="search-input" id="searchInput" type="text" placeholder="최근 48시간 핫딜 검색" />
       </div>
-      <div class="chips">
-        <button class="chip active" type="button">오늘의 핫딜</button>
+      <div class="chips" id="tabs">
+        <button class="chip active" type="button" data-tab="today">오늘의 핫딜</button>
+        <button class="chip" type="button" data-tab="namin">남인의 핫딜</button>
       </div>
     </header>
     <div class="pull-refresh" id="pullRefresh" aria-live="polite">
@@ -124,7 +125,7 @@
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const DEALS_API = '/api/deals';
-    let state = { items: [], keyword: '' };
+    let state = { allItems: [], feedItems: [], userItems: [], keyword: '', activeTab: 'today' };
     let isRefreshing = false;
 
     function normalizeItems(items){
@@ -198,17 +199,32 @@
       return num.toLocaleString('ko-KR');
     }
 
+    function applyItems(items){
+      const cleaned = filterDeleted(dedupeItems(items));
+      state.allItems = cleaned;
+      state.feedItems = cleaned.filter(item => item.source !== 'user');
+      state.userItems = cleaned.filter(item => item.source === 'user');
+      saveItems(cleaned);
+    }
+
+    function getCurrentTabItems(){
+      return state.activeTab === 'namin' ? state.userItems : state.feedItems;
+    }
+
     function getFilteredItems(){
+      const baseItems = getCurrentTabItems();
       const kw = state.keyword.trim().toLowerCase();
-      if(!kw) return state.items;
-      return state.items.filter(i => (i.title || '').toLowerCase().includes(kw));
+      if(!kw) return baseItems;
+      return baseItems.filter(i => (i.title || '').toLowerCase().includes(kw));
     }
 
     function render(){
       const list = document.getElementById('list');
       const items = getFilteredItems();
       if(!items.length){
-        list.innerHTML = '<div class="empty">검색 결과가 없습니다.</div>';
+        list.innerHTML = state.activeTab === 'namin'
+          ? '<div class="empty">남인의 핫딜이 아직 없습니다.</div>'
+          : '<div class="empty">검색 결과가 없습니다.</div>';
         return;
       }
       list.innerHTML = items.map(item => `
@@ -222,6 +238,18 @@
           </div>
         </a>
       `).join('');
+    }
+
+    function bindTabs(){
+      const tabs = document.getElementById('tabs');
+      tabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chip[data-tab]');
+        if(!btn) return;
+        state.activeTab = btn.dataset.tab;
+        tabs.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+      });
     }
 
     function bindSearch(){
@@ -280,13 +308,11 @@
           wrap.style.height = '86px';
           label.textContent = '가지 로딩중...';
         }
-        const res = await fetch(DEALS_API, { cache: 'no-store' });
+        const res = await fetch(`${DEALS_API}?scope=feed`, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
-          const syncedItems = normalizeItems(data.items || data.grouped?.today || []);
-          const items = filterDeleted(dedupeItems(syncedItems));
-          saveItems(items);
-          state.items = items;
+          const feedItems = normalizeItems(data.items || []);
+          applyItems([...state.userItems, ...feedItems]);
           render();
         }
       }catch(_){
@@ -299,6 +325,18 @@
           }, 220);
         }
         isRefreshing = false;
+      }
+    }
+
+    async function refreshNaminDealsBackground(){
+      try{
+        const res = await fetch(`${DEALS_API}?scope=user`, { cache: 'no-store' });
+        if(!res.ok) return;
+        const data = await res.json();
+        const userItems = normalizeItems(data.items || []).filter(item => item.source === 'user');
+        applyItems([...state.feedItems, ...userItems]);
+        if(state.activeTab === 'namin') render();
+      }catch(_){
       }
     }
 
@@ -356,23 +394,32 @@
     function bindAutoSync(){
       const intervalMs = 30000;
       setInterval(() => {
-        if(document.visibilityState === 'visible') refreshFeed({ silent: true });
+        if(document.visibilityState !== 'visible') return;
+        refreshFeed({ silent: true });
+        refreshNaminDealsBackground();
       }, intervalMs);
 
       document.addEventListener('visibilitychange', () => {
-        if(document.visibilityState === 'visible') refreshFeed({ silent: true });
+        if(document.visibilityState !== 'visible') return;
+        refreshFeed({ silent: true });
+        refreshNaminDealsBackground();
       });
 
-      window.addEventListener('focus', () => refreshFeed({ silent: true }));
+      window.addEventListener('focus', () => {
+        refreshFeed({ silent: true });
+        refreshNaminDealsBackground();
+      });
     }
 
     async function init(){
+      const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
+      applyItems(cached);
+      render();
+
       await refreshFeed({ silent: true });
+      refreshNaminDealsBackground();
 
-      if(!state.items.length){
-        state.items = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
-      }
-
+      bindTabs();
       bindSearch();
       bindScrollChrome();
       bindPullToRefresh();
