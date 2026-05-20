@@ -36,6 +36,35 @@ def parse_time_to_date_label(time_text: str, now: datetime) -> str:
 
 
 def extract_buy_link_from_detail(detail_html: str) -> str:
+    # 1) 퀘이사 본문 우측 링크 버튼이 이 함수의 url 변수로 내려오는 경우가 많음
+    m = re.search(
+        r'function\s+contentLinkPrice\(\)\s*\{[\s\S]*?var\s+url\s*=\s*[\'\"]([^\'\"]+)',
+        detail_html,
+        re.I,
+    )
+    if m:
+        candidate = html.unescape(m.group(1)).strip()
+        if candidate.startswith('http'):
+            return candidate
+
+    # 2) 본문 원문(textarea#org_contents) 안의 링크 추출
+    body_m = re.search(r'<textarea[^>]*id="org_contents"[^>]*>([\s\S]*?)</textarea>', detail_html, re.I)
+    if body_m:
+        body_html = html.unescape(body_m.group(1))
+        # a href 우선
+        for hm in re.finditer(r'href=[\"\'](https?://[^\"\']+)', body_html, re.I):
+            link = html.unescape(hm.group(1)).strip()
+            if 'img2.quasarzone.com' in link:
+                continue
+            return link
+        # 텍스트에 직접 노출된 http
+        for tm in re.finditer(r'(https?://[^\s\"\'<>]+)', body_html, re.I):
+            link = html.unescape(tm.group(1)).strip()
+            if 'img2.quasarzone.com' in link:
+                continue
+            return link
+
+    # 3) 메타 설명 URL(축약 URL 제외)
     og_desc_m = re.search(r'<meta property="og:description" content="([^"]*)"', detail_html)
     if og_desc_m:
         desc = html.unescape(og_desc_m.group(1))
@@ -45,7 +74,6 @@ def extract_buy_link_from_detail(detail_html: str) -> str:
             if '…' not in candidate and '...' not in candidate:
                 return candidate
 
-    # 불명확한 배너/광고 링크 오검출 방지: 확실치 않으면 빈 값 반환
     return ''
 
 
