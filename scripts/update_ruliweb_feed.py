@@ -66,6 +66,9 @@ def parse_numeric_price_value(price_text: str) -> int:
 
 def extract_best_price(text: str) -> str:
     t = text or ''
+    # '52 560원'처럼 콤마가 빠진 표기를 우선 보정
+    t = re.sub(r'(?<!\d)(\d{1,3})\s{1,2}(\d{3})(\s*원)', r'\1,\2\3', t)
+
     candidates = []
     for m in re.finditer(r'([0-9][0-9,]*\s*(?:만원대|천원대|원대|만원|천원|원))(?![가-힣A-Za-z])', t):
         raw = m.group(1).replace(' ', '')
