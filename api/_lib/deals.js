@@ -24,6 +24,17 @@ function extractPriceFromTitle(title = '') {
   return '';
 }
 
+function inferKeywordPrice(title = '', currentPrice = '') {
+  const t = String(title || '');
+  const p = String(currentPrice || '').trim();
+  // 우선순위: 무료 > 다양
+  if (/무료/.test(t)) return '무료';
+  if (!p || p === '가격 정보 확인') {
+    if (/다양/.test(t)) return '다양';
+  }
+  return p;
+}
+
 function normalizeFeedItems(items = []) {
   return items.map((item, idx) => {
     const source = item.source || 'feed';
@@ -33,6 +44,7 @@ function normalizeFeedItems(items = []) {
     if (!price && ['ppomppu', 'fmkorea', 'ruliweb'].includes(source)) {
       price = extractPriceFromTitle(title);
     }
+    price = inferKeywordPrice(title, price);
 
     return {
       id: String(item.id ?? idx + 1),

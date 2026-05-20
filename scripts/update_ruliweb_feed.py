@@ -98,6 +98,10 @@ def parse_rows(page_html: str, seen: set):
             if m:
                 price = m.group(1).replace(' ', '')
                 break
+        if '무료' in title:
+            price = '무료'
+        elif price == '가격 정보 확인' and '다양' in title:
+            price = '다양'
 
         items.append(
             {

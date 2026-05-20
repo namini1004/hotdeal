@@ -33,6 +33,8 @@ def parse_time_token(token: str, now: datetime):
 
 def extract_price_from_title(title: str) -> str:
     t = (title or "").strip()
+    if "무료" in t:
+        return "무료"
     patterns = [
         r"([0-9][0-9,]*\s*원)",
         r"([0-9][0-9,]*\s*천원)",
@@ -45,6 +47,8 @@ def extract_price_from_title(title: str) -> str:
         m = re.search(p, t)
         if m:
             return m.group(1).replace(" ", "")
+    if "다양" in t:
+        return "다양"
     return ""
 
 
@@ -68,7 +72,7 @@ def run_page_extract(page, url):
         if (!href || !href.includes("document_srl=")) continue;
 
         const imgEl = li.querySelector("img");
-        const img = imgEl ? imgEl.src : "";
+        const img = imgEl ? ((imgEl.getAttribute('data-src') || imgEl.getAttribute('data-original') || imgEl.getAttribute('src') || '').trim()) : "";
         const lines = txt.split("\\n").map(s => s.trim()).filter(Boolean);
         rows.push({ title, href, img, lines, raw: txt });
       }
@@ -83,7 +87,7 @@ def extract_primary_image(detail_html: str) -> str:
 
     for m in re.finditer(r'<img[^>]+(?:data-src|src)=["\']([^"\']+)["\']', chunk, re.I):
         src = (m.group(1) or "").strip()
-        if not src or src.startswith('data:') or '/logos/mobile/fmkorea.png' in src:
+        if not src or src.startswith('data:') or '/logos/mobile/fmkorea.png' in src or 'transparent.gif' in src:
             continue
         if src.startswith("//"):
             return f"https:{src}"
@@ -115,6 +119,7 @@ def extract_primary_image_in_page(page, url: str) -> str:
         if (!src) continue;
         if (src.startsWith('data:')) continue;
         if (src.includes('/logos/mobile/fmkorea.png')) continue;
+        if (src.includes('transparent.gif')) continue;
         if (src.startsWith('//')) return `https:${src}`;
         return src;
       }

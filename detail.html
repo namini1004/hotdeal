@@ -201,6 +201,24 @@
       return raw;
     }
 
+    function makeJpegFallbackUrl(src){
+      const raw = String(src || '').trim();
+      if(!raw) return '';
+      try{
+        const resolved = new URL(raw, location.origin);
+        if(!/\.webp(?:$|\?)/i.test(resolved.pathname) && !/format=webp/i.test(resolved.search)) return '';
+        if(resolved.pathname === '/api/image-proxy'){
+          const original = resolved.searchParams.get('url');
+          if(!original) return '';
+          const originUrl = new URL(original);
+          return `https://wsrv.nl/?url=${encodeURIComponent(originUrl.host + originUrl.pathname + originUrl.search)}&output=jpg`;
+        }
+        return `https://wsrv.nl/?url=${encodeURIComponent(resolved.host + resolved.pathname + resolved.search)}&output=jpg`;
+      }catch(_){
+        return '';
+      }
+    }
+
     function getCachedItems(){
       return dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]);
     }
@@ -212,7 +230,14 @@
       const imgEl = document.getElementById('img');
       imgEl.src = optimizeImageUrl(item.img);
       imgEl.alt = item.title;
+      imgEl.dataset.webpRetried = '0';
       imgEl.onerror = () => {
+        const next = makeJpegFallbackUrl(imgEl.src);
+        if(imgEl.dataset.webpRetried !== '1' && next){
+          imgEl.dataset.webpRetried = '1';
+          imgEl.src = next;
+          return;
+        }
         imgEl.onerror = null;
         imgEl.src = FALLBACK_IMAGE;
       };
