@@ -10,6 +10,7 @@ import requests
 
 LIST_URL = "https://m.ruliweb.com/market/board/1020"
 BASE = "https://bbs.ruliweb.com"
+MAX_PAGES = 12
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "ruliweb_hotdeals_1day.json"
 KST = timezone(timedelta(hours=9))
@@ -50,16 +51,15 @@ def parse_time_to_datetime(text: str, now: datetime) -> datetime:
     return now
 
 
-def parse_rows(page_html: str):
+def parse_rows(page_html: str, seen: set):
     rows = re.findall(r'<tr class="table_body[^\"]*">[\s\S]*?</tr>', page_html)
     items = []
-    seen = set()
 
     for row in rows:
         if '>공지<' in row:
             continue
 
-        title_m = re.search(r'subject_link deco" href="([^"]+)"[^>]*>\s*<strong>([\s\S]*?)</strong>', row, re.S)
+        title_m = re.search(r'subject_link[^\"]*"\s+href="([^"]+)"[^>]*>([\s\S]*?)</a>', row, re.S)
         if not title_m:
             continue
         source_link = clean(title_m.group(1))
@@ -170,29 +170,42 @@ def main():
     s = requests.Session()
     s.headers.update(HEADERS)
 
-    page_html = s.get(LIST_URL, timeout=25).text
-    rows = parse_rows(page_html)
-
     filtered = []
-    for row in rows:
-        dt = parse_time_to_datetime(row.get('time', ''), now)
-        if dt < since:
+    seen = set()
+
+    for page in range(1, MAX_PAGES + 1):
+        page_url = LIST_URL if page == 1 else f"{BASE}/market/board/1020?page={page}"
+        page_html = s.get(page_url, timeout=25).text
+        rows = parse_rows(page_html, seen)
+        if not rows:
             continue
 
-        try:
-            detail_html = s.get(row['sourceLink'], timeout=25).text
-            img_m = re.search(r'<meta property="og:image" content="([^"]*)"', detail_html)
-            desc_m = re.search(r'<meta property="og:description" content="([^"]*)"', detail_html)
-            primary_img = extract_primary_image(detail_html)
-            row['img'] = to_proxy_image_url(primary_img or (clean(img_m.group(1)) if img_m else ''))
-            row['desc'] = clean(desc_m.group(1)) if desc_m else ''
-            row['buyLink'] = extract_buy_link(detail_html) or row['sourceLink']
-        except Exception:
-            row['buyLink'] = row['sourceLink']
+        older_streak = 0
+        for row in rows:
+            dt = parse_time_to_datetime(row.get('time', ''), now)
+            if dt < since:
+                older_streak += 1
+                continue
 
-        row['date'] = dt.strftime('%Y-%m-%d')
-        row['registeredAt'] = dt.isoformat()
-        filtered.append(row)
+            older_streak = 0
+            try:
+                detail_html = s.get(row['sourceLink'], timeout=25).text
+                img_m = re.search(r'<meta property="og:image" content="([^"]*)"', detail_html)
+                desc_m = re.search(r'<meta property="og:description" content="([^"]*)"', detail_html)
+                primary_img = extract_primary_image(detail_html)
+                row['img'] = to_proxy_image_url(primary_img or (clean(img_m.group(1)) if img_m else ''))
+                row['desc'] = clean(desc_m.group(1)) if desc_m else ''
+                row['buyLink'] = extract_buy_link(detail_html) or row['sourceLink']
+            except Exception:
+                row['buyLink'] = row['sourceLink']
+
+            row['date'] = dt.strftime('%Y-%m-%d')
+            row['registeredAt'] = dt.isoformat()
+            filtered.append(row)
+
+        # 최근 글부터 정렬되어 있으므로, 페이지 전체가 오래된 글이면 종료
+        if older_streak >= len(rows):
+            break
 
     out = {
         "source": LIST_URL,
