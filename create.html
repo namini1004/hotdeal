@@ -328,6 +328,10 @@
 
       const method = editItem ? 'PATCH' : 'POST';
       const targetUrl = editItem ? `${DEALS_API}/${encodeURIComponent(editItem.id)}` : DEALS_API;
+      const submitBtn = document.querySelector('.submit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = editItem ? '수정 중...' : '등록 중...';
+
       fetch(targetUrl, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -340,10 +344,9 @@
         location.href = editItem ? `detail.html?id=${encodeURIComponent(savedId)}` : 'index.html?posted=1';
       })
       .catch(() => {
-        const items = [...readStoredItems(STORAGE_KEY), ...readStoredItems(LEGACY_STORAGE_KEY)];
-        const nextItems = [newItem, ...items.filter(item => String(item.id) !== String(newItem.id) && getDealKey(item) !== getDealKey(newItem))];
-        saveItems(dedupeItems(nextItems));
-        location.href = editItem ? `detail.html?id=${encodeURIComponent(newItem.id)}` : 'index.html?posted=1';
+        alert('서버 저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = editItem ? '수정 완료' : '작성 완료';
       });
     });
 

@@ -131,11 +131,6 @@
       }
     }
 
-    function getUserItems(){
-      return [...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]
-        .filter(item => item.source === 'user' || item.edited || String(item.id || '').startsWith('local-'));
-    }
-
     function dedupeItems(items){
       const seen = new Set();
       return (items || []).filter(item => {
@@ -196,8 +191,8 @@
         const res = await fetch(DEALS_API, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
-          const feedItems = normalizeItems(data.items || data.grouped?.today || []);
-          const all = dedupeItems([...getUserItems(), ...feedItems]);
+          const syncedItems = normalizeItems(data.items || data.grouped?.today || []);
+          const all = dedupeItems(syncedItems);
           saveItems(all);
           return all;
         }

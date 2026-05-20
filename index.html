@@ -158,10 +158,6 @@
       }
     }
 
-    function getUserItems(){
-      return [...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]
-        .filter(item => item.source === 'user' || item.edited || String(item.id || '').startsWith('local-'));
-    }
 
     function dedupeItems(items){
       const seen = new Set();
@@ -287,8 +283,8 @@
         const res = await fetch(DEALS_API, { cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
-          const feedItems = normalizeItems(data.items || data.grouped?.today || []);
-          const items = filterDeleted(dedupeItems([...getUserItems(), ...feedItems]));
+          const syncedItems = normalizeItems(data.items || data.grouped?.today || []);
+          const items = filterDeleted(dedupeItems(syncedItems));
           saveItems(items);
           state.items = items;
           render();
@@ -357,6 +353,19 @@
       }, { passive: true });
     }
 
+    function bindAutoSync(){
+      const intervalMs = 30000;
+      setInterval(() => {
+        if(document.visibilityState === 'visible') refreshFeed({ silent: true });
+      }, intervalMs);
+
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'visible') refreshFeed({ silent: true });
+      });
+
+      window.addEventListener('focus', () => refreshFeed({ silent: true }));
+    }
+
     async function init(){
       await refreshFeed({ silent: true });
 
@@ -367,6 +376,7 @@
       bindSearch();
       bindScrollChrome();
       bindPullToRefresh();
+      bindAutoSync();
       render();
     }
 
