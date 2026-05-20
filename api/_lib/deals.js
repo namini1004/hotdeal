@@ -8,32 +8,55 @@ const FEED_FILES = [
   path.join(process.cwd(), 'assets', 'ruliweb_hotdeals_1day.json'),
 ];
 
-function extractPriceFromTitle(title = '') {
-  const patterns = [
-    /([0-9][0-9,]*\s*원)/,
-    /([0-9][0-9,]*\s*천원)/,
-    /([0-9][0-9,]*\s*만원)/,
-    /([0-9][0-9,]*\s*원대)/,
-    /([0-9][0-9,]*\s*천원대)/,
-    /([0-9][0-9,]*\s*만원대)/,
-  ];
-  for (const p of patterns) {
-    const m = String(title || '').match(p);
-    if (m) return m[1].replace(/\s+/g, '');
-  }
-  return '';
+function parseNumericPriceValue(priceText = '') {
+  const s = String(priceText || '').replace(/\s+/g, '');
+  const num = Number((s.match(/[0-9][0-9,]*/) || ['0'])[0].replace(/,/g, ''));
+  if (!num) return 0;
+  if (s.includes('만원')) return num * 10000;
+  if (s.includes('천원')) return num * 1000;
+  return num;
 }
 
-function inferKeywordPrice(title = '', currentPrice = '') {
+function extractBestPriceFromText(text = '') {
+  const s = String(text || '');
+  const regex = /([0-9][0-9,]*\s*(?:만원대|천원대|원대|만원|천원|원))(?![가-힣A-Za-z])/g;
+  const candidates = [];
+  let m;
+  while ((m = regex.exec(s)) !== null) {
+    const raw = m[1].replace(/\s+/g, '');
+    const value = parseNumericPriceValue(raw);
+    const hasComma = raw.includes(',');
+    candidates.push({ raw, value, hasComma });
+  }
+  if (!candidates.length) return '';
+
+  const over1k = candidates.filter((c) => c.value >= 1000);
+  const pool = over1k.length ? over1k : candidates;
+
+  pool.sort((a, b) => {
+    if (Number(b.hasComma) !== Number(a.hasComma)) return Number(b.hasComma) - Number(a.hasComma);
+    if (b.value !== a.value) return b.value - a.value;
+    return b.raw.length - a.raw.length;
+  });
+  return pool[0].raw;
+}
+
+function inferKeywordPrice(title = '', desc = '', currentPrice = '') {
   const t = String(title || '');
+  const d = String(desc || '');
   const p = String(currentPrice || '').trim();
 
-  const numericWon = extractPriceFromTitle(t);
-  if (numericWon) return numericWon;
+  const fromTitle = extractBestPriceFromText(t);
+  if (fromTitle) return fromTitle;
 
-  if (/무료/.test(t)) return '무료';
   if (!p || p === '가격 정보 확인') {
-    if (/다양/.test(t)) return '다양';
+    const fromDesc = extractBestPriceFromText(d);
+    if (fromDesc) return fromDesc;
+  }
+
+  if ((/무료/.test(t) || /무료/.test(d)) && (!p || p === '가격 정보 확인')) return '무료';
+  if (!p || p === '가격 정보 확인') {
+    if (/다양/.test(t) || /다양/.test(d)) return '다양';
   }
   return p;
 }
@@ -45,9 +68,9 @@ function normalizeFeedItems(items = []) {
     let price = item.price || '';
 
     if (!price && ['ppomppu', 'fmkorea', 'ruliweb'].includes(source)) {
-      price = extractPriceFromTitle(title);
+      price = extractBestPriceFromText(title);
     }
-    price = inferKeywordPrice(title, price);
+    price = inferKeywordPrice(title, item.desc || '', price);
 
     return {
       id: String(item.id ?? idx + 1),

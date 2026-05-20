@@ -51,6 +51,35 @@ def parse_time_to_datetime(text: str, now: datetime) -> datetime:
     return now
 
 
+def parse_numeric_price_value(price_text: str) -> int:
+    s = (price_text or '').replace(' ', '')
+    m = re.search(r'[0-9][0-9,]*', s)
+    if not m:
+        return 0
+    n = int(m.group(0).replace(',', ''))
+    if '만원' in s:
+        return n * 10000
+    if '천원' in s:
+        return n * 1000
+    return n
+
+
+def extract_best_price(text: str) -> str:
+    t = text or ''
+    candidates = []
+    for m in re.finditer(r'([0-9][0-9,]*\s*(?:만원대|천원대|원대|만원|천원|원))(?![가-힣A-Za-z])', t):
+        raw = m.group(1).replace(' ', '')
+        candidates.append((raw, parse_numeric_price_value(raw), (',' in raw)))
+
+    if not candidates:
+        return ''
+
+    over_1k = [c for c in candidates if c[1] >= 1000]
+    pool = over_1k if over_1k else candidates
+    pool.sort(key=lambda x: (x[2], x[1], len(x[0])), reverse=True)
+    return pool[0][0]
+
+
 def parse_rows(page_html: str, seen: set):
     rows = re.findall(r'<tr class="table_body[^\"]*">[\s\S]*?</tr>', page_html)
     items = []
@@ -83,24 +112,8 @@ def parse_rows(page_html: str, seen: set):
         time_m = re.search(r'<td class="time">\s*([^<]+)\s*</td>', row, re.S)
         time_text = clean(time_m.group(1)) if time_m else ''
 
-        patterns = [
-            r'\(([0-9,]+\s*원)\)',
-            r'([0-9][0-9,]*\s*원)',
-            r'([0-9][0-9,]*\s*천원)',
-            r'([0-9][0-9,]*\s*만원)',
-            r'([0-9][0-9,]*\s*원대)',
-            r'([0-9][0-9,]*\s*천원대)',
-            r'([0-9][0-9,]*\s*만원대)',
-        ]
-        price = '가격 정보 확인'
-        title_numeric_price = ''
-        for p in patterns:
-            m = re.search(p, title)
-            if m:
-                title_numeric_price = m.group(1).replace(' ', '')
-                price = title_numeric_price
-                break
-        if not title_numeric_price and '무료' in title:
+        price = extract_best_price(title) or '가격 정보 확인'
+        if price == '가격 정보 확인' and '무료' in title:
             price = '무료'
         elif price == '가격 정보 확인' and '다양' in title:
             price = '다양'
@@ -142,6 +155,12 @@ def extract_buy_link(detail_html: str) -> str:
             continue
         return link
     return ''
+
+
+def extract_price_from_detail(detail_html: str) -> str:
+    chunk = get_content_chunk(detail_html)
+    text_only = clean(re.sub(r'<[^>]+>', ' ', chunk))
+    return extract_best_price(text_only)
 
 
 def extract_primary_image(detail_html: str) -> str:
@@ -201,6 +220,14 @@ def main():
                 primary_img = extract_primary_image(detail_html)
                 row['img'] = to_proxy_image_url(primary_img or (clean(img_m.group(1)) if img_m else ''))
                 row['desc'] = clean(desc_m.group(1)) if desc_m else ''
+                if row.get('price') in {'', '가격 정보 확인'}:
+                    body_price = extract_price_from_detail(detail_html)
+                    if body_price:
+                        row['price'] = body_price
+                    elif '무료' in (row.get('title') or '') or '무료' in (row.get('desc') or ''):
+                        row['price'] = '무료'
+                    elif '다양' in (row.get('title') or '') or '다양' in (row.get('desc') or ''):
+                        row['price'] = '다양'
                 row['buyLink'] = extract_buy_link(detail_html) or row['sourceLink']
             except Exception:
                 row['buyLink'] = row['sourceLink']

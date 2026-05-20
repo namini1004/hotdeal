@@ -23,6 +23,7 @@
     .price{margin-top:10px;font-size:28px;font-weight:900;letter-spacing:-.03em}
     .meta{font-size:13px;color:var(--muted);margin:10px 0 16px}
     .desc{font-size:16px;line-height:1.65;letter-spacing:-.01em;white-space:pre-line}
+    .desc a{color:#2563eb;text-decoration:underline;word-break:break-all}
     .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:30}
@@ -223,6 +224,23 @@
       return dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]);
     }
 
+    function escapeHtml(text){
+      return String(text || '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function linkifyText(text){
+      const escaped = escapeHtml(text || '');
+      return escaped.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+      });
+    }
+
     function renderItem(item){
       document.getElementById('title').textContent = item.title;
       document.getElementById('price').textContent = item.price;
@@ -241,7 +259,7 @@
         imgEl.onerror = null;
         imgEl.src = FALLBACK_IMAGE;
       };
-      document.getElementById('desc').textContent = item.desc;
+      document.getElementById('desc').innerHTML = linkifyText(item.desc);
 
       if(item.sourceLink || item.buyLink){
         const sourceBottom = document.getElementById('sourceBottom');
