@@ -35,10 +35,26 @@ def parse_time_to_date_label(time_text: str, now: datetime) -> str:
     return now.strftime("%Y-%m-%d")
 
 
+def extract_buy_link_from_detail(detail_html: str) -> str:
+    og_desc_m = re.search(r'<meta property="og:description" content="([^"]*)"', detail_html)
+    if og_desc_m:
+        desc = html.unescape(og_desc_m.group(1))
+        url_m = re.search(r'(https?://[^\s\]\)"\']+)', desc)
+        if url_m:
+            candidate = url_m.group(1).strip()
+            if '…' not in candidate and '...' not in candidate:
+                return candidate
+
+    # 불명확한 배너/광고 링크 오검출 방지: 확실치 않으면 빈 값 반환
+    return ''
+
+
 def parse_list_items(page_html: str):
     rows = re.findall(r"<tr>[\s\S]*?<\/tr>", page_html)
     items = []
     seen = set()
+    sess = requests.Session()
+    sess.headers.update(HEADERS)
 
     for row in rows:
         link_m = re.search(r'href="(/bbs/qb_saleinfo/views/(\d+))"', row)
@@ -103,7 +119,7 @@ def parse_list_items(page_html: str):
                 "category": category,
                 "desc": "",
                 "img": img,
-                "buyLink": urljoin(BASE, rel_link),
+                "buyLink": "",
                 "sourceLink": urljoin(BASE, rel_link),
                 "source": "quasar",
             }
@@ -127,6 +143,17 @@ def main():
             dt = now
         if dt < since.replace(hour=0, minute=0, second=0, microsecond=0):
             continue
+
+        # 사이트별 룰: 상세에서 실제 구매처 링크 추출
+        try:
+            detail_html = requests.get(row["sourceLink"], headers=HEADERS, timeout=25).text
+            real_link = extract_buy_link_from_detail(detail_html)
+            row["buyLink"] = real_link or row["sourceLink"]
+            if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:
+                row["buyLink"] = row["sourceLink"]
+        except Exception:
+            row["buyLink"] = row["sourceLink"]
+
         row["date"] = date_label
         row["registeredAt"] = f"{date_label}T00:00:00+09:00"
         filtered.append(row)
