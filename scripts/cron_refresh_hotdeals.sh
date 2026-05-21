@@ -3,10 +3,10 @@ set -euo pipefail
 cd /mnt/c/Users/namin/hotdeal-site
 
 # 1) 4개 피드 갱신
-python3 scripts/update_ppomppu_feed.py >/tmp/hotdeal_ppomppu.log 2>&1 || true
-python3 scripts/update_quasar_feed.py  >/tmp/hotdeal_quasar.log 2>&1 || true
-python3 scripts/update_fmkorea_feed.py >/tmp/hotdeal_fmkorea.log 2>&1 || true
-python3 scripts/update_ruliweb_feed.py >/tmp/hotdeal_ruliweb.log 2>&1 || true
+python3 scripts/update_ppomppu_feed.py >/tmp/hotdeal_ppomppu.log 2>&1
+python3 scripts/update_quasar_feed.py  >/tmp/hotdeal_quasar.log 2>&1
+python3 scripts/update_fmkorea_feed.py >/tmp/hotdeal_fmkorea.log 2>&1
+python3 scripts/update_ruliweb_feed.py >/tmp/hotdeal_ruliweb.log 2>&1
 
 # 2) 변경 감지(피드 JSON/썸네일)
 if git diff --quiet -- \
