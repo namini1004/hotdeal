@@ -1,8 +1,8 @@
 {
   "source": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine",
-  "generatedAt": "2026-05-21T14:34:37.890192+09:00",
+  "generatedAt": "2026-05-21T14:57:07.510522+09:00",
   "rangeHours": 48,
-  "since": "2026-05-19T14:34:37.890192+09:00",
+  "since": "2026-05-19T14:57:07.510522+09:00",
   "today": "2026-05-21",
   "yesterday": "2026-05-20",
   "counts": {
@@ -38,7 +38,7 @@
       "time": "05.21",
       "price": "10,900원",
       "likes": 0,
-      "views": 9029,
+      "views": 9542,
       "comments": 23,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -69,25 +69,6 @@
       "registeredAt": "2026-05-21T00:00:00+09:00"
     },
     {
-      "id": "9849884719",
-      "title": "[노스페이스공홈] 슈퍼위크(SS/FW) 기획전 최대 50% 할인 (다양) (무료)",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "05.20",
-      "price": "무료",
-      "likes": 0,
-      "views": 43000,
-      "comments": 23,
-      "category": "기타",
-      "desc": "쇼핑몰:  / 배송:",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849884719_1196365581_5fae447353775de6a5fc9f1f3ebc8856.png?c=20260520165051",
-      "buyLink": "https://www.thenorthfacekorea.co.kr/superweek2026",
-      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=1&document_srl=9849884719",
-      "source": "fmkorea",
-      "date": "2026-05-20",
-      "registeredAt": "2026-05-20T00:00:00+09:00"
-    },
-    {
       "id": "9850262739",
       "title": "[11번가] 서린컴퓨터 AMD 9800X3D_RTX5080_RAM 48GB_팝 비전 2 블랙 조립PC (4,292,410원) (무료)",
       "area": "펨딜",
@@ -107,6 +88,25 @@
       "registeredAt": "2026-05-20T00:00:00+09:00"
     },
     {
+      "id": "9849767926",
+      "title": "[네이버] 삼성 26년 인버터 제습기 18L AY70H18100GVD 1등급 연속배수 빅토리 그레이 (363,950원) (무배)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.20",
+      "price": "363,950원",
+      "likes": 0,
+      "views": 26000,
+      "comments": 56,
+      "category": "기타",
+      "desc": "쇼핑몰:  / 배송:",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849767926_1196365581_cd1730514ef70d1a4a88cc7bfbf95376.png?c=20260520161909",
+      "buyLink": "https://smartstore.naver.com/hdmart/products/13137331593",
+      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=1&document_srl=9849767926",
+      "source": "fmkorea",
+      "date": "2026-05-20",
+      "registeredAt": "2026-05-20T00:00:00+09:00"
+    },
+    {
       "id": "9851861830",
       "title": "오리온 비쵸비 125g, 6개 티멤버십",
       "area": "펨딜",
@@ -115,7 +115,7 @@
       "price": "11,770원",
       "likes": 14,
       "views": 0,
-      "comments": 20,
+      "comments": 21,
       "category": "먹거리",
       "desc": "쇼핑몰: 11번가 / 배송: 무료",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9851861830_140x100.crop.webp?c=20260521011850",
@@ -286,7 +286,7 @@
       "price": "$19.6부터",
       "likes": 62,
       "views": 0,
-      "comments": 172,
+      "comments": 176,
       "category": "가전제품",
       "desc": "쇼핑몰: 알리 / 배송: 무료",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9851027107_140x100.crop.webp?c=20260521031104",
@@ -303,7 +303,7 @@
       "dist": "PC제품",
       "time": "01:14",
       "price": "4,292,410원",
-      "likes": 15,
+      "likes": 16,
       "views": 0,
       "comments": 40,
       "category": "PC제품",
@@ -360,7 +360,7 @@
       "dist": "SW/게임",
       "time": "20:35",
       "price": "0원",
-      "likes": 24,
+      "likes": 25,
       "views": 0,
       "comments": 4,
       "category": "SW/게임",
@@ -418,7 +418,7 @@
       "time": "05.21",
       "price": "10,900원",
       "likes": 0,
-      "views": 9029,
+      "views": 9542,
       "comments": 23,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -449,25 +449,6 @@
       "registeredAt": "2026-05-21T00:00:00+09:00"
     },
     {
-      "id": "9849884719",
-      "title": "[노스페이스공홈] 슈퍼위크(SS/FW) 기획전 최대 50% 할인 (다양) (무료)",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "05.20",
-      "price": "무료",
-      "likes": 0,
-      "views": 43000,
-      "comments": 23,
-      "category": "기타",
-      "desc": "쇼핑몰:  / 배송:",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849884719_1196365581_5fae447353775de6a5fc9f1f3ebc8856.png?c=20260520165051",
-      "buyLink": "https://www.thenorthfacekorea.co.kr/superweek2026",
-      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9849884719",
-      "source": "fmkorea",
-      "date": "2026-05-20",
-      "registeredAt": "2026-05-20T00:00:00+09:00"
-    },
-    {
       "id": "9850262739",
       "title": "[11번가] 서린컴퓨터 AMD 9800X3D_RTX5080_RAM 48GB_팝 비전 2 블랙 조립PC (4,292,410원) (무료)",
       "area": "펨딜",
@@ -487,13 +468,32 @@
       "registeredAt": "2026-05-20T00:00:00+09:00"
     },
     {
+      "id": "9849767926",
+      "title": "[네이버] 삼성 26년 인버터 제습기 18L AY70H18100GVD 1등급 연속배수 빅토리 그레이 (363,950원) (무배)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.20",
+      "price": "363,950원",
+      "likes": 0,
+      "views": 26000,
+      "comments": 56,
+      "category": "기타",
+      "desc": "쇼핑몰:  / 배송:",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849767926_1196365581_cd1730514ef70d1a4a88cc7bfbf95376.png?c=20260520161909",
+      "buyLink": "https://smartstore.naver.com/hdmart/products/13137331593",
+      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9849767926",
+      "source": "fmkorea",
+      "date": "2026-05-20",
+      "registeredAt": "2026-05-20T00:00:00+09:00"
+    },
+    {
       "id": "9849884719",
       "title": "슈퍼위크(SS/FW) 기획전 최대 50...",
       "area": "펨딜",
       "dist": "의류",
       "time": "18:21",
       "price": "다양",
-      "likes": 15,
+      "likes": 14,
       "views": 0,
       "comments": 23,
       "category": "의류",
@@ -541,7 +541,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848919982",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9848625520",
@@ -560,7 +560,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848625520",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9848414062",
@@ -579,7 +579,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848414062",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9848616714",
@@ -598,7 +598,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848616714",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9847597026",
@@ -617,7 +617,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847597026",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9848322880",
@@ -636,7 +636,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848322880",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9844733597",
@@ -655,7 +655,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844733597",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9847639733",
@@ -674,7 +674,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847639733",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9847617527",
@@ -693,7 +693,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847617527",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9846239030",
@@ -712,7 +712,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9846239030",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9845864128",
@@ -731,7 +731,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845864128",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9847027062",
@@ -750,7 +750,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847027062",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9845660533",
@@ -769,7 +769,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845660533",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9850099106",
@@ -798,7 +798,7 @@
       "time": "05.21",
       "price": "10,900원",
       "likes": 0,
-      "views": 9029,
+      "views": 9542,
       "comments": 23,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -829,25 +829,6 @@
       "registeredAt": "2026-05-21T00:00:00+09:00"
     },
     {
-      "id": "9849884719",
-      "title": "[노스페이스공홈] 슈퍼위크(SS/FW) 기획전 최대 50% 할인 (다양) (무료)",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "05.20",
-      "price": "무료",
-      "likes": 0,
-      "views": 43000,
-      "comments": 23,
-      "category": "기타",
-      "desc": "쇼핑몰:  / 배송:",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849884719_1196365581_5fae447353775de6a5fc9f1f3ebc8856.png?c=20260520165051",
-      "buyLink": "https://www.thenorthfacekorea.co.kr/superweek2026",
-      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9849884719",
-      "source": "fmkorea",
-      "date": "2026-05-20",
-      "registeredAt": "2026-05-20T00:00:00+09:00"
-    },
-    {
       "id": "9850262739",
       "title": "[11번가] 서린컴퓨터 AMD 9800X3D_RTX5080_RAM 48GB_팝 비전 2 블랙 조립PC (4,292,410원) (무료)",
       "area": "펨딜",
@@ -862,6 +843,25 @@
       "img": "https://image.fmkorea.com/files/attach/new5/20260520/9850262739_1196365581_9be103c4b65624cf29913741603bbf52.png?c=20260520183150",
       "buyLink": "https://www.11st.co.kr/products/9244637743",
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9850262739",
+      "source": "fmkorea",
+      "date": "2026-05-20",
+      "registeredAt": "2026-05-20T00:00:00+09:00"
+    },
+    {
+      "id": "9849767926",
+      "title": "[네이버] 삼성 26년 인버터 제습기 18L AY70H18100GVD 1등급 연속배수 빅토리 그레이 (363,950원) (무배)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.20",
+      "price": "363,950원",
+      "likes": 0,
+      "views": 26000,
+      "comments": 56,
+      "category": "기타",
+      "desc": "쇼핑몰:  / 배송:",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849767926_1196365581_cd1730514ef70d1a4a88cc7bfbf95376.png?c=20260520161909",
+      "buyLink": "https://smartstore.naver.com/hdmart/products/13137331593",
+      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9849767926",
       "source": "fmkorea",
       "date": "2026-05-20",
       "registeredAt": "2026-05-20T00:00:00+09:00"
@@ -883,7 +883,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9846275422",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9844410772",
@@ -902,7 +902,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844410772",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9844016727",
@@ -921,7 +921,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844016727",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9844114923",
@@ -940,7 +940,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844114923",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9842650488",
@@ -959,7 +959,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9842650488",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9842131724",
@@ -978,7 +978,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9842131724",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9843896571",
@@ -997,7 +997,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9843896571",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9845307233",
@@ -1016,7 +1016,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845307233",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9842602697",
@@ -1035,7 +1035,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9842602697",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9843922902",
@@ -1054,7 +1054,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9843922902",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9845301602",
@@ -1073,7 +1073,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845301602",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9841751012",
@@ -1092,7 +1092,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9841751012",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9844827351",
@@ -1111,7 +1111,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844827351",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9842001114",
@@ -1130,7 +1130,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9842001114",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     },
     {
       "id": "9841613046",
@@ -1149,7 +1149,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9841613046",
       "source": "fmkorea",
       "date": "2026-05-21",
-      "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+      "registeredAt": "2026-05-21T14:57:07.510522+09:00"
     }
   ],
   "grouped": {
@@ -1181,7 +1181,7 @@
         "time": "05.21",
         "price": "10,900원",
         "likes": 0,
-        "views": 9029,
+        "views": 9542,
         "comments": 23,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1212,25 +1212,6 @@
         "registeredAt": "2026-05-21T00:00:00+09:00"
       },
       {
-        "id": "9849884719",
-        "title": "[노스페이스공홈] 슈퍼위크(SS/FW) 기획전 최대 50% 할인 (다양) (무료)",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "05.20",
-        "price": "무료",
-        "likes": 0,
-        "views": 43000,
-        "comments": 23,
-        "category": "기타",
-        "desc": "쇼핑몰:  / 배송:",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849884719_1196365581_5fae447353775de6a5fc9f1f3ebc8856.png?c=20260520165051",
-        "buyLink": "https://www.thenorthfacekorea.co.kr/superweek2026",
-        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=1&document_srl=9849884719",
-        "source": "fmkorea",
-        "date": "2026-05-20",
-        "registeredAt": "2026-05-20T00:00:00+09:00"
-      },
-      {
         "id": "9850262739",
         "title": "[11번가] 서린컴퓨터 AMD 9800X3D_RTX5080_RAM 48GB_팝 비전 2 블랙 조립PC (4,292,410원) (무료)",
         "area": "펨딜",
@@ -1250,6 +1231,25 @@
         "registeredAt": "2026-05-20T00:00:00+09:00"
       },
       {
+        "id": "9849767926",
+        "title": "[네이버] 삼성 26년 인버터 제습기 18L AY70H18100GVD 1등급 연속배수 빅토리 그레이 (363,950원) (무배)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.20",
+        "price": "363,950원",
+        "likes": 0,
+        "views": 26000,
+        "comments": 56,
+        "category": "기타",
+        "desc": "쇼핑몰:  / 배송:",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849767926_1196365581_cd1730514ef70d1a4a88cc7bfbf95376.png?c=20260520161909",
+        "buyLink": "https://smartstore.naver.com/hdmart/products/13137331593",
+        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=1&document_srl=9849767926",
+        "source": "fmkorea",
+        "date": "2026-05-20",
+        "registeredAt": "2026-05-20T00:00:00+09:00"
+      },
+      {
         "id": "9851861830",
         "title": "오리온 비쵸비 125g, 6개 티멤버십",
         "area": "펨딜",
@@ -1258,7 +1258,7 @@
         "price": "11,770원",
         "likes": 14,
         "views": 0,
-        "comments": 20,
+        "comments": 21,
         "category": "먹거리",
         "desc": "쇼핑몰: 11번가 / 배송: 무료",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9851861830_140x100.crop.webp?c=20260521011850",
@@ -1429,7 +1429,7 @@
         "price": "$19.6부터",
         "likes": 62,
         "views": 0,
-        "comments": 172,
+        "comments": 176,
         "category": "가전제품",
         "desc": "쇼핑몰: 알리 / 배송: 무료",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9851027107_140x100.crop.webp?c=20260521031104",
@@ -1446,7 +1446,7 @@
         "dist": "PC제품",
         "time": "01:14",
         "price": "4,292,410원",
-        "likes": 15,
+        "likes": 16,
         "views": 0,
         "comments": 40,
         "category": "PC제품",
@@ -1503,7 +1503,7 @@
         "dist": "SW/게임",
         "time": "20:35",
         "price": "0원",
-        "likes": 24,
+        "likes": 25,
         "views": 0,
         "comments": 4,
         "category": "SW/게임",
@@ -1561,7 +1561,7 @@
         "time": "05.21",
         "price": "10,900원",
         "likes": 0,
-        "views": 9029,
+        "views": 9542,
         "comments": 23,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1592,25 +1592,6 @@
         "registeredAt": "2026-05-21T00:00:00+09:00"
       },
       {
-        "id": "9849884719",
-        "title": "[노스페이스공홈] 슈퍼위크(SS/FW) 기획전 최대 50% 할인 (다양) (무료)",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "05.20",
-        "price": "무료",
-        "likes": 0,
-        "views": 43000,
-        "comments": 23,
-        "category": "기타",
-        "desc": "쇼핑몰:  / 배송:",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849884719_1196365581_5fae447353775de6a5fc9f1f3ebc8856.png?c=20260520165051",
-        "buyLink": "https://www.thenorthfacekorea.co.kr/superweek2026",
-        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9849884719",
-        "source": "fmkorea",
-        "date": "2026-05-20",
-        "registeredAt": "2026-05-20T00:00:00+09:00"
-      },
-      {
         "id": "9850262739",
         "title": "[11번가] 서린컴퓨터 AMD 9800X3D_RTX5080_RAM 48GB_팝 비전 2 블랙 조립PC (4,292,410원) (무료)",
         "area": "펨딜",
@@ -1630,13 +1611,32 @@
         "registeredAt": "2026-05-20T00:00:00+09:00"
       },
       {
+        "id": "9849767926",
+        "title": "[네이버] 삼성 26년 인버터 제습기 18L AY70H18100GVD 1등급 연속배수 빅토리 그레이 (363,950원) (무배)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.20",
+        "price": "363,950원",
+        "likes": 0,
+        "views": 26000,
+        "comments": 56,
+        "category": "기타",
+        "desc": "쇼핑몰:  / 배송:",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849767926_1196365581_cd1730514ef70d1a4a88cc7bfbf95376.png?c=20260520161909",
+        "buyLink": "https://smartstore.naver.com/hdmart/products/13137331593",
+        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9849767926",
+        "source": "fmkorea",
+        "date": "2026-05-20",
+        "registeredAt": "2026-05-20T00:00:00+09:00"
+      },
+      {
         "id": "9849884719",
         "title": "슈퍼위크(SS/FW) 기획전 최대 50...",
         "area": "펨딜",
         "dist": "의류",
         "time": "18:21",
         "price": "다양",
-        "likes": 15,
+        "likes": 14,
         "views": 0,
         "comments": 23,
         "category": "의류",
@@ -1684,7 +1684,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848919982",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9848625520",
@@ -1703,7 +1703,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848625520",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9848414062",
@@ -1722,7 +1722,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848414062",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9848616714",
@@ -1741,7 +1741,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848616714",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9847597026",
@@ -1760,7 +1760,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847597026",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9848322880",
@@ -1779,7 +1779,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848322880",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9844733597",
@@ -1798,7 +1798,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844733597",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9847639733",
@@ -1817,7 +1817,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847639733",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9847617527",
@@ -1836,7 +1836,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847617527",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9846239030",
@@ -1855,7 +1855,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9846239030",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9845864128",
@@ -1874,7 +1874,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845864128",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9847027062",
@@ -1893,7 +1893,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847027062",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9845660533",
@@ -1912,7 +1912,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845660533",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9850099106",
@@ -1941,7 +1941,7 @@
         "time": "05.21",
         "price": "10,900원",
         "likes": 0,
-        "views": 9029,
+        "views": 9542,
         "comments": 23,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1972,25 +1972,6 @@
         "registeredAt": "2026-05-21T00:00:00+09:00"
       },
       {
-        "id": "9849884719",
-        "title": "[노스페이스공홈] 슈퍼위크(SS/FW) 기획전 최대 50% 할인 (다양) (무료)",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "05.20",
-        "price": "무료",
-        "likes": 0,
-        "views": 43000,
-        "comments": 23,
-        "category": "기타",
-        "desc": "쇼핑몰:  / 배송:",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849884719_1196365581_5fae447353775de6a5fc9f1f3ebc8856.png?c=20260520165051",
-        "buyLink": "https://www.thenorthfacekorea.co.kr/superweek2026",
-        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9849884719",
-        "source": "fmkorea",
-        "date": "2026-05-20",
-        "registeredAt": "2026-05-20T00:00:00+09:00"
-      },
-      {
         "id": "9850262739",
         "title": "[11번가] 서린컴퓨터 AMD 9800X3D_RTX5080_RAM 48GB_팝 비전 2 블랙 조립PC (4,292,410원) (무료)",
         "area": "펨딜",
@@ -2005,6 +1986,25 @@
         "img": "https://image.fmkorea.com/files/attach/new5/20260520/9850262739_1196365581_9be103c4b65624cf29913741603bbf52.png?c=20260520183150",
         "buyLink": "https://www.11st.co.kr/products/9244637743",
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9850262739",
+        "source": "fmkorea",
+        "date": "2026-05-20",
+        "registeredAt": "2026-05-20T00:00:00+09:00"
+      },
+      {
+        "id": "9849767926",
+        "title": "[네이버] 삼성 26년 인버터 제습기 18L AY70H18100GVD 1등급 연속배수 빅토리 그레이 (363,950원) (무배)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.20",
+        "price": "363,950원",
+        "likes": 0,
+        "views": 26000,
+        "comments": 56,
+        "category": "기타",
+        "desc": "쇼핑몰:  / 배송:",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260520/9849767926_1196365581_cd1730514ef70d1a4a88cc7bfbf95376.png?c=20260520161909",
+        "buyLink": "https://smartstore.naver.com/hdmart/products/13137331593",
+        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9849767926",
         "source": "fmkorea",
         "date": "2026-05-20",
         "registeredAt": "2026-05-20T00:00:00+09:00"
@@ -2026,7 +2026,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9846275422",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9844410772",
@@ -2045,7 +2045,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844410772",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9844016727",
@@ -2064,7 +2064,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844016727",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9844114923",
@@ -2083,7 +2083,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844114923",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9842650488",
@@ -2102,7 +2102,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9842650488",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9842131724",
@@ -2121,7 +2121,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9842131724",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9843896571",
@@ -2140,7 +2140,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9843896571",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9845307233",
@@ -2159,7 +2159,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845307233",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9842602697",
@@ -2178,7 +2178,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9842602697",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9843922902",
@@ -2197,7 +2197,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9843922902",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9845301602",
@@ -2216,7 +2216,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845301602",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9841751012",
@@ -2235,7 +2235,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9841751012",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9844827351",
@@ -2254,7 +2254,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844827351",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9842001114",
@@ -2273,7 +2273,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9842001114",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       },
       {
         "id": "9841613046",
@@ -2292,7 +2292,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9841613046",
         "source": "fmkorea",
         "date": "2026-05-21",
-        "registeredAt": "2026-05-21T14:34:37.890192+09:00"
+        "registeredAt": "2026-05-21T14:57:07.510522+09:00"
       }
     ],
     "yesterday": []
