@@ -53,12 +53,12 @@
 
     <section class="panel" aria-label="로그인">
       <div id="loggedOut">
-        <a class="login-btn kakao" id="kakaoLogin" href="/api/auth/kakao/start">
+        <a class="login-btn kakao" id="kakaoLogin" href="/api/auth?action=start&provider=kakao">
           <span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span>
           카카오톡으로 계속하기
         </a>
         <div style="height:10px"></div>
-        <a class="login-btn google" id="googleLogin" href="/api/auth/google/start">
+        <a class="login-btn google" id="googleLogin" href="/api/auth?action=start&provider=google">
           <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
           Google로 계속하기
         </a>
@@ -124,7 +124,7 @@
 
     async function loadConfig(){
       try{
-        const res = await fetch('/api/auth/config');
+        const res = await fetch('/api/auth?action=config');
         if(!res.ok) throw new Error('config');
         const data = await res.json();
         if(!data.providers?.session){
@@ -143,7 +143,7 @@
 
     async function loadMe(){
       try{
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/auth?action=me');
         if(!res.ok) return;
         const data = await res.json();
         if(!data.user) return;
@@ -163,7 +163,7 @@
     }
 
     logoutBtn.addEventListener('click', async () => {
-      await fetch('/api/auth/logout', { method:'POST' });
+      await fetch('/api/auth?action=logout', { method:'POST' });
       location.href = 'my-gaji.html';
     });
 

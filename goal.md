@@ -76,7 +76,7 @@ PWA is still a website, but it adds installability, app-like launch behavior, ic
 Google login needs:
 
 - Google Cloud OAuth client for a web application.
-- Authorized redirect URI: `https://hotdeal-omega.vercel.app/api/auth/google/callback`
+- Authorized redirect URI: `https://hotdeal-omega.vercel.app/api/auth`
 - Vercel environment variables:
   - `GOOGLE_CLIENT_ID`
   - `GOOGLE_CLIENT_SECRET`
@@ -85,7 +85,7 @@ Kakao login needs:
 
 - Kakao Developers app.
 - Kakao Login enabled.
-- Redirect URI: `https://hotdeal-omega.vercel.app/api/auth/kakao/callback`
+- Redirect URI: `https://hotdeal-omega.vercel.app/api/auth`
 - Vercel environment variables:
   - `KAKAO_REST_API_KEY`
   - `KAKAO_CLIENT_SECRET` if client secret is enabled in Kakao settings.
