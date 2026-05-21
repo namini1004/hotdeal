@@ -1,8 +1,8 @@
 {
   "source": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine",
-  "generatedAt": "2026-05-22T03:59:56.136061+09:00",
+  "generatedAt": "2026-05-22T04:35:13.277145+09:00",
   "rangeHours": 48,
-  "since": "2026-05-20T03:59:56.136061+09:00",
+  "since": "2026-05-20T04:35:13.277145+09:00",
   "today": "2026-05-22",
   "yesterday": "2026-05-21",
   "counts": {
@@ -19,7 +19,7 @@
       "time": "05.21",
       "price": "1만원",
       "likes": 0,
-      "views": 53000,
+      "views": 54000,
       "comments": 51,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -50,6 +50,25 @@
       "registeredAt": "2026-05-21T00:00:00+09:00"
     },
     {
+      "id": "9856137183",
+      "title": "[스팀] Car Mechanic Simulator 2018 (무료) (무배)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.22",
+      "price": "무료",
+      "likes": 0,
+      "views": 3530,
+      "comments": 1,
+      "category": "기타",
+      "desc": "쇼핑몰:  / 배송:",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260522/9856137183_1196365581_3dd090d45dd80efd9264f8806301d970.jpg?c=20260522022240",
+      "buyLink": "https://store.steampowered.com/app/645630/Car_Mechanic_Simulator_2018/",
+      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=1&document_srl=9856137183",
+      "source": "fmkorea",
+      "date": "2026-05-22",
+      "registeredAt": "2026-05-22T00:00:00+09:00"
+    },
+    {
       "id": "9853888305",
       "title": "[모나] 5G 6기가 500분 200건 평생할인 LG망 (1,980원) (무배)",
       "area": "펨딜",
@@ -57,7 +76,7 @@
       "time": "05.21",
       "price": "1,980원",
       "likes": 0,
-      "views": 40000,
+      "views": 41000,
       "comments": 75,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -88,34 +107,15 @@
       "registeredAt": "2026-05-21T00:00:00+09:00"
     },
     {
-      "id": "9854411575",
-      "title": "[구글플레이] 갤럭시 워치페이스 다색, GL101 등 3종 (0원) (무료)",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "05.21",
-      "price": "0원",
-      "likes": 0,
-      "views": 15000,
-      "comments": 4,
-      "category": "기타",
-      "desc": "쇼핑몰:  / 배송:",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260521/9854411575_1196365581_99b983892094b5c6d2fc3736e15da7d1.webp?c=20260521182928",
-      "buyLink": "https://play.google.com/store/apps/details?id=com.watchfacestudio.Multicolor",
-      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=1&document_srl=9854411575",
-      "source": "fmkorea",
-      "date": "2026-05-21",
-      "registeredAt": "2026-05-21T00:00:00+09:00"
-    },
-    {
       "id": "9856137183",
       "title": "Car Mechanic Simulator 2018",
       "area": "펨딜",
       "dist": "SW/게임",
       "time": "02:53",
       "price": "무료",
-      "likes": 20,
+      "likes": 25,
       "views": 0,
-      "comments": 0,
+      "comments": 1,
       "category": "SW/게임",
       "desc": "쇼핑몰: 스팀 / 배송: 무배",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260522/9856137183_140x100.crop.webp?c=20260522022240",
@@ -132,7 +132,7 @@
       "dist": "SW/게임",
       "time": "02:23",
       "price": "무료",
-      "likes": 20,
+      "likes": 23,
       "views": 0,
       "comments": 6,
       "category": "SW/게임",
@@ -151,7 +151,7 @@
       "dist": "SW/게임",
       "time": "02:06",
       "price": "무료",
-      "likes": 21,
+      "likes": 22,
       "views": 0,
       "comments": 10,
       "category": "SW/게임",
@@ -170,7 +170,7 @@
       "dist": "SW/게임",
       "time": "00:47",
       "price": "0원",
-      "likes": 20,
+      "likes": 21,
       "views": 0,
       "comments": 10,
       "category": "SW/게임",
@@ -203,14 +203,14 @@
     },
     {
       "id": "9855666677",
-      "title": "[체험딜] 카스제로2캔 + 레몬...",
+      "title": "[체험딜] 카스제로2캔 + 레...",
       "area": "펨딜",
       "dist": "먹거리",
       "time": "23:56",
       "price": "3,000원",
-      "likes": 47,
+      "likes": 48,
       "views": 0,
-      "comments": 95,
+      "comments": 100,
       "category": "먹거리",
       "desc": "쇼핑몰: 지마켓 / 배송: 0원",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9855666677_140x100.crop.webp?c=20260521232934",
@@ -227,9 +227,9 @@
       "dist": "기타",
       "time": "23:07",
       "price": "0원",
-      "likes": 68,
+      "likes": 74,
       "views": 0,
-      "comments": 87,
+      "comments": 94,
       "category": "기타",
       "desc": "쇼핑몰: 네이버 / 배송: 무료",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9855494690_140x100.crop.webp?c=20260521225013",
@@ -265,9 +265,9 @@
       "dist": "가전제품",
       "time": "21:50",
       "price": "기종별로다름",
-      "likes": 37,
+      "likes": 36,
       "views": 0,
-      "comments": 134,
+      "comments": 135,
       "category": "가전제품",
       "desc": "쇼핑몰: 지마켓 / 배송: 무료",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9854803422_140x100.crop.webp?c=20260521230712",
@@ -360,7 +360,7 @@
       "dist": "세일정보",
       "time": "15:43",
       "price": "무료",
-      "likes": 43,
+      "likes": 44,
       "views": 0,
       "comments": 51,
       "category": "세일정보",
@@ -399,7 +399,7 @@
       "time": "05.21",
       "price": "1만원",
       "likes": 0,
-      "views": 53000,
+      "views": 54000,
       "comments": 51,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -430,6 +430,25 @@
       "registeredAt": "2026-05-21T00:00:00+09:00"
     },
     {
+      "id": "9856137183",
+      "title": "[스팀] Car Mechanic Simulator 2018 (무료) (무배)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.22",
+      "price": "무료",
+      "likes": 0,
+      "views": 3530,
+      "comments": 1,
+      "category": "기타",
+      "desc": "쇼핑몰:  / 배송:",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260522/9856137183_1196365581_3dd090d45dd80efd9264f8806301d970.jpg?c=20260522022240",
+      "buyLink": "https://store.steampowered.com/app/645630/Car_Mechanic_Simulator_2018/",
+      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9856137183",
+      "source": "fmkorea",
+      "date": "2026-05-22",
+      "registeredAt": "2026-05-22T00:00:00+09:00"
+    },
+    {
       "id": "9853888305",
       "title": "[모나] 5G 6기가 500분 200건 평생할인 LG망 (1,980원) (무배)",
       "area": "펨딜",
@@ -437,7 +456,7 @@
       "time": "05.21",
       "price": "1,980원",
       "likes": 0,
-      "views": 40000,
+      "views": 41000,
       "comments": 75,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -463,25 +482,6 @@
       "img": "https://image.fmkorea.com/files/attach/new5/20260521/9854636626_1196365581_d422f2c0ec2772b922fc77cc3d4c950d.png?c=20260521194929",
       "buyLink": "https://www.gamersgate.com/product/clair-obscur-expedition-33/?aff=itad",
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9854636626",
-      "source": "fmkorea",
-      "date": "2026-05-21",
-      "registeredAt": "2026-05-21T00:00:00+09:00"
-    },
-    {
-      "id": "9854411575",
-      "title": "[구글플레이] 갤럭시 워치페이스 다색, GL101 등 3종 (0원) (무료)",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "05.21",
-      "price": "0원",
-      "likes": 0,
-      "views": 15000,
-      "comments": 4,
-      "category": "기타",
-      "desc": "쇼핑몰:  / 배송:",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260521/9854411575_1196365581_99b983892094b5c6d2fc3736e15da7d1.webp?c=20260521182928",
-      "buyLink": "https://play.google.com/store/apps/details?id=com.watchfacestudio.Multicolor",
-      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9854411575",
       "source": "fmkorea",
       "date": "2026-05-21",
       "registeredAt": "2026-05-21T00:00:00+09:00"
@@ -533,7 +533,7 @@
       "price": "939,500원",
       "likes": 9,
       "views": 0,
-      "comments": 144,
+      "comments": 145,
       "category": "PC제품",
       "desc": "쇼핑몰: 쿠팡 / 배송: 무배",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260520/9850708983_140x100.crop.webp?c=20260520201935",
@@ -628,7 +628,7 @@
       "price": "1,420,800원",
       "likes": 16,
       "views": 0,
-      "comments": 115,
+      "comments": 116,
       "category": "PC제품",
       "desc": "쇼핑몰: 네이버 / 배송: 무배",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260520/9849341736_140x100.crop.webp?c=20260520140715",
@@ -693,7 +693,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9850262739",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9849767926",
@@ -712,7 +712,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9849767926",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9850330083",
@@ -731,7 +731,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9850330083",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9850099106",
@@ -750,7 +750,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9850099106",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9850039450",
@@ -769,7 +769,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9850039450",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9853561254",
@@ -779,7 +779,7 @@
       "time": "05.21",
       "price": "1만원",
       "likes": 0,
-      "views": 53000,
+      "views": 54000,
       "comments": 51,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -810,6 +810,25 @@
       "registeredAt": "2026-05-21T00:00:00+09:00"
     },
     {
+      "id": "9856137183",
+      "title": "[스팀] Car Mechanic Simulator 2018 (무료) (무배)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.22",
+      "price": "무료",
+      "likes": 0,
+      "views": 3530,
+      "comments": 1,
+      "category": "기타",
+      "desc": "쇼핑몰:  / 배송:",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260522/9856137183_1196365581_3dd090d45dd80efd9264f8806301d970.jpg?c=20260522022240",
+      "buyLink": "https://store.steampowered.com/app/645630/Car_Mechanic_Simulator_2018/",
+      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9856137183",
+      "source": "fmkorea",
+      "date": "2026-05-22",
+      "registeredAt": "2026-05-22T00:00:00+09:00"
+    },
+    {
       "id": "9853888305",
       "title": "[모나] 5G 6기가 500분 200건 평생할인 LG망 (1,980원) (무배)",
       "area": "펨딜",
@@ -817,7 +836,7 @@
       "time": "05.21",
       "price": "1,980원",
       "likes": 0,
-      "views": 40000,
+      "views": 41000,
       "comments": 75,
       "category": "기타",
       "desc": "쇼핑몰:  / 배송:",
@@ -848,25 +867,6 @@
       "registeredAt": "2026-05-21T00:00:00+09:00"
     },
     {
-      "id": "9854411575",
-      "title": "[구글플레이] 갤럭시 워치페이스 다색, GL101 등 3종 (0원) (무료)",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "05.21",
-      "price": "0원",
-      "likes": 0,
-      "views": 15000,
-      "comments": 4,
-      "category": "기타",
-      "desc": "쇼핑몰:  / 배송:",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260521/9854411575_1196365581_99b983892094b5c6d2fc3736e15da7d1.webp?c=20260521182928",
-      "buyLink": "https://play.google.com/store/apps/details?id=com.watchfacestudio.Multicolor",
-      "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9854411575",
-      "source": "fmkorea",
-      "date": "2026-05-21",
-      "registeredAt": "2026-05-21T00:00:00+09:00"
-    },
-    {
       "id": "9849884719",
       "title": "슈퍼위크(SS/FW) 기획전 최대 50...",
       "area": "펨딜",
@@ -883,7 +883,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9849884719",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9849256007",
@@ -902,7 +902,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9849256007",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9848919982",
@@ -921,7 +921,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848919982",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9848414062",
@@ -940,7 +940,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848414062",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9848616714",
@@ -959,7 +959,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848616714",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9847597026",
@@ -978,7 +978,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847597026",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9848322880",
@@ -997,7 +997,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848322880",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9844733597",
@@ -1016,7 +1016,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844733597",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9847639733",
@@ -1035,7 +1035,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847639733",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9847617527",
@@ -1054,7 +1054,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847617527",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9846239030",
@@ -1073,7 +1073,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9846239030",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9845864128",
@@ -1092,7 +1092,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845864128",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9847027062",
@@ -1111,7 +1111,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847027062",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9845660533",
@@ -1130,7 +1130,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845660533",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     },
     {
       "id": "9846275422",
@@ -1149,7 +1149,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9846275422",
       "source": "fmkorea",
       "date": "2026-05-22",
-      "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+      "registeredAt": "2026-05-22T04:35:13.277145+09:00"
     }
   ],
   "grouped": {
@@ -1162,7 +1162,7 @@
         "time": "05.21",
         "price": "1만원",
         "likes": 0,
-        "views": 53000,
+        "views": 54000,
         "comments": 51,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1193,6 +1193,25 @@
         "registeredAt": "2026-05-21T00:00:00+09:00"
       },
       {
+        "id": "9856137183",
+        "title": "[스팀] Car Mechanic Simulator 2018 (무료) (무배)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.22",
+        "price": "무료",
+        "likes": 0,
+        "views": 3530,
+        "comments": 1,
+        "category": "기타",
+        "desc": "쇼핑몰:  / 배송:",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260522/9856137183_1196365581_3dd090d45dd80efd9264f8806301d970.jpg?c=20260522022240",
+        "buyLink": "https://store.steampowered.com/app/645630/Car_Mechanic_Simulator_2018/",
+        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=1&document_srl=9856137183",
+        "source": "fmkorea",
+        "date": "2026-05-22",
+        "registeredAt": "2026-05-22T00:00:00+09:00"
+      },
+      {
         "id": "9853888305",
         "title": "[모나] 5G 6기가 500분 200건 평생할인 LG망 (1,980원) (무배)",
         "area": "펨딜",
@@ -1200,7 +1219,7 @@
         "time": "05.21",
         "price": "1,980원",
         "likes": 0,
-        "views": 40000,
+        "views": 41000,
         "comments": 75,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1231,34 +1250,15 @@
         "registeredAt": "2026-05-21T00:00:00+09:00"
       },
       {
-        "id": "9854411575",
-        "title": "[구글플레이] 갤럭시 워치페이스 다색, GL101 등 3종 (0원) (무료)",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "05.21",
-        "price": "0원",
-        "likes": 0,
-        "views": 15000,
-        "comments": 4,
-        "category": "기타",
-        "desc": "쇼핑몰:  / 배송:",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260521/9854411575_1196365581_99b983892094b5c6d2fc3736e15da7d1.webp?c=20260521182928",
-        "buyLink": "https://play.google.com/store/apps/details?id=com.watchfacestudio.Multicolor",
-        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=1&document_srl=9854411575",
-        "source": "fmkorea",
-        "date": "2026-05-21",
-        "registeredAt": "2026-05-21T00:00:00+09:00"
-      },
-      {
         "id": "9856137183",
         "title": "Car Mechanic Simulator 2018",
         "area": "펨딜",
         "dist": "SW/게임",
         "time": "02:53",
         "price": "무료",
-        "likes": 20,
+        "likes": 25,
         "views": 0,
-        "comments": 0,
+        "comments": 1,
         "category": "SW/게임",
         "desc": "쇼핑몰: 스팀 / 배송: 무배",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260522/9856137183_140x100.crop.webp?c=20260522022240",
@@ -1275,7 +1275,7 @@
         "dist": "SW/게임",
         "time": "02:23",
         "price": "무료",
-        "likes": 20,
+        "likes": 23,
         "views": 0,
         "comments": 6,
         "category": "SW/게임",
@@ -1294,7 +1294,7 @@
         "dist": "SW/게임",
         "time": "02:06",
         "price": "무료",
-        "likes": 21,
+        "likes": 22,
         "views": 0,
         "comments": 10,
         "category": "SW/게임",
@@ -1313,7 +1313,7 @@
         "dist": "SW/게임",
         "time": "00:47",
         "price": "0원",
-        "likes": 20,
+        "likes": 21,
         "views": 0,
         "comments": 10,
         "category": "SW/게임",
@@ -1346,14 +1346,14 @@
       },
       {
         "id": "9855666677",
-        "title": "[체험딜] 카스제로2캔 + 레몬...",
+        "title": "[체험딜] 카스제로2캔 + 레...",
         "area": "펨딜",
         "dist": "먹거리",
         "time": "23:56",
         "price": "3,000원",
-        "likes": 47,
+        "likes": 48,
         "views": 0,
-        "comments": 95,
+        "comments": 100,
         "category": "먹거리",
         "desc": "쇼핑몰: 지마켓 / 배송: 0원",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9855666677_140x100.crop.webp?c=20260521232934",
@@ -1370,9 +1370,9 @@
         "dist": "기타",
         "time": "23:07",
         "price": "0원",
-        "likes": 68,
+        "likes": 74,
         "views": 0,
-        "comments": 87,
+        "comments": 94,
         "category": "기타",
         "desc": "쇼핑몰: 네이버 / 배송: 무료",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9855494690_140x100.crop.webp?c=20260521225013",
@@ -1408,9 +1408,9 @@
         "dist": "가전제품",
         "time": "21:50",
         "price": "기종별로다름",
-        "likes": 37,
+        "likes": 36,
         "views": 0,
-        "comments": 134,
+        "comments": 135,
         "category": "가전제품",
         "desc": "쇼핑몰: 지마켓 / 배송: 무료",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260521/9854803422_140x100.crop.webp?c=20260521230712",
@@ -1503,7 +1503,7 @@
         "dist": "세일정보",
         "time": "15:43",
         "price": "무료",
-        "likes": 43,
+        "likes": 44,
         "views": 0,
         "comments": 51,
         "category": "세일정보",
@@ -1542,7 +1542,7 @@
         "time": "05.21",
         "price": "1만원",
         "likes": 0,
-        "views": 53000,
+        "views": 54000,
         "comments": 51,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1573,6 +1573,25 @@
         "registeredAt": "2026-05-21T00:00:00+09:00"
       },
       {
+        "id": "9856137183",
+        "title": "[스팀] Car Mechanic Simulator 2018 (무료) (무배)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.22",
+        "price": "무료",
+        "likes": 0,
+        "views": 3530,
+        "comments": 1,
+        "category": "기타",
+        "desc": "쇼핑몰:  / 배송:",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260522/9856137183_1196365581_3dd090d45dd80efd9264f8806301d970.jpg?c=20260522022240",
+        "buyLink": "https://store.steampowered.com/app/645630/Car_Mechanic_Simulator_2018/",
+        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9856137183",
+        "source": "fmkorea",
+        "date": "2026-05-22",
+        "registeredAt": "2026-05-22T00:00:00+09:00"
+      },
+      {
         "id": "9853888305",
         "title": "[모나] 5G 6기가 500분 200건 평생할인 LG망 (1,980원) (무배)",
         "area": "펨딜",
@@ -1580,7 +1599,7 @@
         "time": "05.21",
         "price": "1,980원",
         "likes": 0,
-        "views": 40000,
+        "views": 41000,
         "comments": 75,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1606,25 +1625,6 @@
         "img": "https://image.fmkorea.com/files/attach/new5/20260521/9854636626_1196365581_d422f2c0ec2772b922fc77cc3d4c950d.png?c=20260521194929",
         "buyLink": "https://www.gamersgate.com/product/clair-obscur-expedition-33/?aff=itad",
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9854636626",
-        "source": "fmkorea",
-        "date": "2026-05-21",
-        "registeredAt": "2026-05-21T00:00:00+09:00"
-      },
-      {
-        "id": "9854411575",
-        "title": "[구글플레이] 갤럭시 워치페이스 다색, GL101 등 3종 (0원) (무료)",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "05.21",
-        "price": "0원",
-        "likes": 0,
-        "views": 15000,
-        "comments": 4,
-        "category": "기타",
-        "desc": "쇼핑몰:  / 배송:",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260521/9854411575_1196365581_99b983892094b5c6d2fc3736e15da7d1.webp?c=20260521182928",
-        "buyLink": "https://play.google.com/store/apps/details?id=com.watchfacestudio.Multicolor",
-        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=2&document_srl=9854411575",
         "source": "fmkorea",
         "date": "2026-05-21",
         "registeredAt": "2026-05-21T00:00:00+09:00"
@@ -1676,7 +1676,7 @@
         "price": "939,500원",
         "likes": 9,
         "views": 0,
-        "comments": 144,
+        "comments": 145,
         "category": "PC제품",
         "desc": "쇼핑몰: 쿠팡 / 배송: 무배",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260520/9850708983_140x100.crop.webp?c=20260520201935",
@@ -1771,7 +1771,7 @@
         "price": "1,420,800원",
         "likes": 16,
         "views": 0,
-        "comments": 115,
+        "comments": 116,
         "category": "PC제품",
         "desc": "쇼핑몰: 네이버 / 배송: 무배",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260520/9849341736_140x100.crop.webp?c=20260520140715",
@@ -1836,7 +1836,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9850262739",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9849767926",
@@ -1855,7 +1855,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9849767926",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9850330083",
@@ -1874,7 +1874,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9850330083",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9850099106",
@@ -1893,7 +1893,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9850099106",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9850039450",
@@ -1912,7 +1912,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9850039450",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9853561254",
@@ -1922,7 +1922,7 @@
         "time": "05.21",
         "price": "1만원",
         "likes": 0,
-        "views": 53000,
+        "views": 54000,
         "comments": 51,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1953,6 +1953,25 @@
         "registeredAt": "2026-05-21T00:00:00+09:00"
       },
       {
+        "id": "9856137183",
+        "title": "[스팀] Car Mechanic Simulator 2018 (무료) (무배)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.22",
+        "price": "무료",
+        "likes": 0,
+        "views": 3530,
+        "comments": 1,
+        "category": "기타",
+        "desc": "쇼핑몰:  / 배송:",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260522/9856137183_1196365581_3dd090d45dd80efd9264f8806301d970.jpg?c=20260522022240",
+        "buyLink": "https://store.steampowered.com/app/645630/Car_Mechanic_Simulator_2018/",
+        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9856137183",
+        "source": "fmkorea",
+        "date": "2026-05-22",
+        "registeredAt": "2026-05-22T00:00:00+09:00"
+      },
+      {
         "id": "9853888305",
         "title": "[모나] 5G 6기가 500분 200건 평생할인 LG망 (1,980원) (무배)",
         "area": "펨딜",
@@ -1960,7 +1979,7 @@
         "time": "05.21",
         "price": "1,980원",
         "likes": 0,
-        "views": 40000,
+        "views": 41000,
         "comments": 75,
         "category": "기타",
         "desc": "쇼핑몰:  / 배송:",
@@ -1991,25 +2010,6 @@
         "registeredAt": "2026-05-21T00:00:00+09:00"
       },
       {
-        "id": "9854411575",
-        "title": "[구글플레이] 갤럭시 워치페이스 다색, GL101 등 3종 (0원) (무료)",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "05.21",
-        "price": "0원",
-        "likes": 0,
-        "views": 15000,
-        "comments": 4,
-        "category": "기타",
-        "desc": "쇼핑몰:  / 배송:",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260521/9854411575_1196365581_99b983892094b5c6d2fc3736e15da7d1.webp?c=20260521182928",
-        "buyLink": "https://play.google.com/store/apps/details?id=com.watchfacestudio.Multicolor",
-        "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&page=3&document_srl=9854411575",
-        "source": "fmkorea",
-        "date": "2026-05-21",
-        "registeredAt": "2026-05-21T00:00:00+09:00"
-      },
-      {
         "id": "9849884719",
         "title": "슈퍼위크(SS/FW) 기획전 최대 50...",
         "area": "펨딜",
@@ -2026,7 +2026,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9849884719",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9849256007",
@@ -2045,7 +2045,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9849256007",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9848919982",
@@ -2064,7 +2064,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848919982",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9848414062",
@@ -2083,7 +2083,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848414062",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9848616714",
@@ -2102,7 +2102,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848616714",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9847597026",
@@ -2121,7 +2121,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847597026",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9848322880",
@@ -2140,7 +2140,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9848322880",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9844733597",
@@ -2159,7 +2159,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9844733597",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9847639733",
@@ -2178,7 +2178,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847639733",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9847617527",
@@ -2197,7 +2197,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847617527",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9846239030",
@@ -2216,7 +2216,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9846239030",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9845864128",
@@ -2235,7 +2235,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845864128",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9847027062",
@@ -2254,7 +2254,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9847027062",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9845660533",
@@ -2273,7 +2273,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9845660533",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       },
       {
         "id": "9846275422",
@@ -2292,7 +2292,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9846275422",
         "source": "fmkorea",
         "date": "2026-05-22",
-        "registeredAt": "2026-05-22T03:59:56.136061+09:00"
+        "registeredAt": "2026-05-22T04:35:13.277145+09:00"
       }
     ],
     "yesterday": []
