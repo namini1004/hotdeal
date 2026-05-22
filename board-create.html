@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>게시글 작성</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@500');
+    :root{--line:#eee9f8;--muted:#8b95a1;--bg:#f8f5ff;--brand:#7c3aed;--page:#f7f4ff}
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;color:#111827;font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:28px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
+    .back .material-symbols-outlined{font-size:18px}
+    .app{max-width:720px;margin:0 auto;min-height:100vh;padding-bottom:96px}
+    .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+    .title{font-size:19px;font-weight:800;letter-spacing:-.02em}
+    .top-spacer{width:48px;height:48px}
+    .back{width:48px;height:48px;display:grid;place-items:center;border-radius:999px;color:#111;text-decoration:none}
+    .back:active{background:#f4f6f8}
+    .wrap{padding:14px 16px}
+    .field{border-top:1px solid var(--line);padding:14px 0}
+    .field:first-of-type{border-top:none;padding-top:0}
+    label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+    input,textarea{width:100%;border:none;outline:none;font:inherit;font-size:16px;color:#111;background:#fff}
+    textarea{min-height:180px;line-height:1.65;resize:none}
+    .hint{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+    .photo{border:1px solid #e3e7ec;border-radius:12px;width:96px;height:96px;display:grid;place-items:center;color:#7c3aed;font-size:13px;font-weight:700;margin-bottom:16px;background:var(--bg);cursor:pointer;overflow:hidden;text-align:center}
+    .photo .material-symbols-outlined{font-size:28px}
+    .photo-text{display:grid;gap:4px;place-items:center}
+    .photo-preview{width:100%;height:100%;object-fit:cover;display:none}
+    .photo.has-image .photo-text{display:none}
+    .photo.has-image .photo-preview{display:block}
+    .file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+    .bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:720px;padding:12px 14px calc(env(safe-area-inset-bottom) + 12px);background:#fff;border-top:1px solid var(--line)}
+    .submit{width:100%;height:50px;border:none;border-radius:14px;background:var(--brand);color:#fff;font-size:17px;font-weight:800}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <a class="back" href="board.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
+      <div class="title">게시글 작성</div>
+      <div class="top-spacer" aria-hidden="true"></div>
+    </header>
+
+    <form class="wrap" id="form">
+      <div class="field">
+        <label for="dealUrl">핫딜주소</label>
+        <input id="dealUrl" inputmode="url" placeholder="https://..." />
+        <div class="hint">입력 후 1초 뒤 대표 이미지/제목/내용을 자동으로 가져옵니다.</div>
+      </div>
+
+      <button class="photo" id="photoButton" type="button">
+        <span class="photo-text"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span><span>사진 첨부</span></span>
+        <img class="photo-preview" id="photoPreview" alt="첨부한 사진 미리보기">
+      </button>
+      <input class="file-input" id="photoInput" type="file" accept="image/*" />
+
+      <div class="field">
+        <label for="title">제목</label>
+        <input id="title" maxlength="80" placeholder="제목을 입력해주세요." required />
+      </div>
+
+      <div class="field">
+        <label for="body">내용</label>
+        <textarea id="body" placeholder="공유하고 싶은 이야기를 적어주세요."></textarea>
+      </div>
+    </form>
+  </div>
+
+  <div class="bottom">
+    <button class="submit" form="form" type="submit">작성 완료</button>
+  </div>
+
+  <script>
+    const BOARD_API = '/api/board-posts';
+    const LINK_PREVIEW_API = '/api/link-preview';
+    const STORAGE_KEY = 'gaji_board_posts_v1';
+    let selectedImage = '';
+    let previewImage = '';
+    let previewUrl = '';
+    let previewTimer = null;
+
+    function normalizeDealUrl(value){
+      const raw = String(value || '').trim();
+      if(!raw) return '';
+      return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    }
+
+    function normalizePosts(posts){
+      return (posts || []).map((post, idx) => ({
+        id: String(post.id || `local-${idx}`),
+        title: post.title || '제목 없음',
+        body: post.body || '',
+        img: post.img || '',
+        sourceLink: post.sourceLink || '',
+        author: post.author || '익명',
+        createdAt: post.createdAt || new Date().toISOString(),
+      }));
+    }
+
+    function readLocalPosts(){
+      try{ return normalizePosts(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); }catch(_){ return []; }
+    }
+
+    function saveLocalPosts(posts){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizePosts(posts)));
+    }
+
+    async function fetchLinkPreview(url){
+      if(!url || previewUrl === url) return;
+      previewUrl = url;
+      try{
+        const res = await fetch(`${LINK_PREVIEW_API}?url=${encodeURIComponent(url)}`);
+        if(!res.ok) return;
+        const data = await res.json();
+        if(!data?.ok) return;
+        const titleEl = document.getElementById('title');
+        const bodyEl = document.getElementById('body');
+        if(!titleEl.value.trim() && data.title) titleEl.value = data.title.trim();
+        if(!bodyEl.value.trim() && data.description) bodyEl.value = data.description.trim();
+        if(!selectedImage && !previewImage && data.image){
+          previewImage = data.image;
+          document.getElementById('photoPreview').src = data.image;
+          document.getElementById('photoButton').classList.add('has-image');
+        }
+      }catch(_){ }
+    }
+
+    function readFileAsDataURL(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('read failed'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function compressImageFile(file){
+      const rawDataUrl = await readFileAsDataURL(file);
+      const img = await new Promise((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error('image decode failed'));
+        el.src = rawDataUrl;
+      });
+      let maxSide = 960;
+      let quality = 0.76;
+      let result = rawDataUrl;
+      for(let attempt = 0; attempt < 8; attempt += 1){
+        const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * ratio));
+        const height = Math.max(1, Math.round(img.height * ratio));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        result = canvas.toDataURL('image/jpeg', quality);
+        if(result.length <= 50000) return result;
+        if(quality > 0.42) quality = Math.max(0.42, quality - 0.07);
+        else maxSide = Math.max(480, Math.round(maxSide * 0.88));
+      }
+      return result;
+    }
+
+    async function uploadImage(imageData){
+      const res = await fetch('/api/upload-image', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ imageData, folder:'board' })
+      });
+      if(!res.ok) throw new Error('image upload failed');
+      const data = await res.json();
+      return data.url || '';
+    }
+
+    document.getElementById('photoButton').addEventListener('click', () => {
+      document.getElementById('photoInput').click();
+    });
+
+    document.getElementById('photoInput').addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if(!file || !file.type.startsWith('image/')) return;
+      try{
+        selectedImage = await compressImageFile(file);
+        previewImage = '';
+        document.getElementById('photoPreview').src = selectedImage;
+        document.getElementById('photoButton').classList.add('has-image');
+      }catch(_){
+        alert('이미지 처리에 실패했습니다.');
+      }
+    });
+
+    const dealUrlInput = document.getElementById('dealUrl');
+    const schedulePreview = (delayMs = 1000) => {
+      const normalized = normalizeDealUrl(dealUrlInput.value);
+      if(!normalized){ previewUrl = ''; return; }
+      if(previewTimer) clearTimeout(previewTimer);
+      previewTimer = setTimeout(() => fetchLinkPreview(normalized), delayMs);
+    };
+    dealUrlInput.addEventListener('input', () => schedulePreview(1000));
+    dealUrlInput.addEventListener('blur', () => schedulePreview(0));
+    dealUrlInput.addEventListener('change', () => schedulePreview(0));
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value.trim();
+      const body = document.getElementById('body').value.trim();
+      const sourceLink = normalizeDealUrl(dealUrlInput.value);
+      if(!title) return;
+
+      const btn = document.querySelector('.submit');
+      btn.disabled = true;
+      btn.textContent = '등록 중...';
+
+      let img = previewImage || '';
+      try{
+        if(selectedImage){
+          btn.textContent = '사진 업로드 중...';
+          img = await uploadImage(selectedImage);
+        }
+      }catch(_){
+        img = selectedImage || previewImage;
+      }
+
+      const post = { id:`local-${Date.now()}`, title, body, img, sourceLink, author:'익명', createdAt:new Date().toISOString() };
+
+      try{
+        const res = await fetch(BOARD_API, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify(post)
+        });
+        if(!res.ok) throw new Error('api failed');
+        const data = await res.json();
+        const saved = normalizePosts([data.item || post])[0];
+        const next = [saved, ...readLocalPosts().filter(v => String(v.id) !== String(saved.id))];
+        saveLocalPosts(next);
+        location.href = `board.html?id=${encodeURIComponent(saved.id)}`;
+      }catch(_){
+        const next = [post, ...readLocalPosts()];
+        saveLocalPosts(next);
+        location.href = `board.html?id=${encodeURIComponent(post.id)}`;
+      }
+    });
+  </script>
+</body>
+</html>

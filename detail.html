@@ -328,7 +328,7 @@
     function editCurrentDeal(){
       if(!currentItem) return;
       closeSheet();
-      location.href = `create.html?editId=${encodeURIComponent(currentItem.id)}`;
+      location.href = `index-create.html?editId=${encodeURIComponent(currentItem.id)}`;
     }
 
     async function copyShareUrl(url){

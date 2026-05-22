@@ -431,14 +431,7 @@
 
     function bindListControls(){
       document.getElementById('writeBtn').addEventListener('click', () => {
-        history.pushState(null, '', 'board.html?new=1');
-        state.selectedImage = '';
-        state.previewImage = '';
-        state.previewUrl = '';
-        document.getElementById('form').reset();
-        document.getElementById('photoButton').classList.remove('has-image');
-        document.getElementById('photoPreview').removeAttribute('src');
-        setView('form');
+        location.href = 'board-create.html';
       });
       document.getElementById('searchToggle').addEventListener('click', () => {
         const wrap = document.getElementById('searchWrap');
@@ -455,10 +448,6 @@
       bindForm();
       bindListControls();
       const params = new URLSearchParams(location.search);
-      if(params.has('new')){
-        setView('form');
-        return;
-      }
       const id = params.get('id');
       if(id){
         await loadPost(id);
