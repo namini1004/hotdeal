@@ -365,3 +365,119 @@ cd C:\users\namin\hotdeal-android
 git status --short
 git log --oneline -5
 ```
+
+---
+
+## 11) 2026-05-22 작업 메모
+
+내일 이어서 볼 때는 이 섹션을 우선 확인하면 됩니다.
+
+### 최종 구조 결정
+
+- `hotdeal-site`는 웹/PWA/콘텐츠 UI의 중심으로 유지합니다.
+- `hotdeal-android`는 Android WebView 셸로 두고, 하단 4탭/푸시/공유 받기/권한 같은 네이티브 기능만 맡깁니다.
+- 이 방향을 `goal.md`에 정리했습니다.
+- 프로젝트 규칙은 `rule.md`에 추가했습니다.
+  - Git repo가 연결되어 있으면 모든 완료 변경은 요청사항 설명으로 커밋합니다.
+  - remote가 있으면 푸시까지 합니다.
+
+### Vercel Hobby 함수 제한 대응
+
+- Hobby 플랜은 Serverless Functions 수 제한 때문에 auth API를 여러 파일로 쪼개면 배포 실패가 납니다.
+- 기존 `/api/auth/config`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/google/start`, `/api/auth/google/callback` 등을 하나로 합쳤습니다.
+- 현재 인증 엔드포인트는 단일 함수입니다.
+
+```text
+/api/auth?action=config
+/api/auth?action=me
+/api/auth?action=logout
+/api/auth?action=start&provider=google
+/api/auth  # Google OAuth callback
+```
+
+- Kakao 로그인 코드는 제거했습니다. 나중에 다시 지원할 때 Google 구조를 참고해 단일 `api/auth.js` 안에 provider 분기로 넣으면 됩니다.
+
+### Google 로그인 상태
+
+- `my-gaji.html`은 Google 로그인만 노출합니다.
+- 필요한 Vercel 환경변수:
+
+```text
+AUTH_SESSION_SECRET
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+```
+
+- 사용자가 로컬에 만든 파일:
+
+```text
+oauth_clientid.txt  -> GOOGLE_CLIENT_ID
+oauth_secret.txt    -> GOOGLE_CLIENT_SECRET
+autn_session.txt    -> AUTH_SESSION_SECRET
+```
+
+- 위 로컬 파일들은 `.gitignore`에 추가되어 Git에 올라가지 않습니다.
+- Google Cloud OAuth Redirect URI:
+
+```text
+https://hotdeal-omega.vercel.app/api/auth
+```
+
+- 2026-05-22 확인 결과:
+
+```json
+{"providers":{"google":true,"session":true},"ready":true}
+```
+
+- `/api/auth?action=start&provider=google`는 Google 로그인 화면으로 302 이동 확인했습니다.
+- 깨진 세션 쿠키가 있어도 `/api/auth?action=me`가 `{"user":null}`을 반환하도록 방어 코드를 추가했습니다.
+
+### 내 가지 페이지 변경
+
+- URL:
+
+```text
+https://hotdeal-omega.vercel.app/my-gaji.html
+```
+
+- 하단 4탭은 웹 `my-gaji.html`에서 제거했습니다.
+  - Android 쪽 네이티브 하단 탭이 별도로 관리할 예정입니다.
+- 기존 설명 문구는 제거했습니다.
+- Google 로그인 버튼은 컬러 Google `G` 로고 SVG(`assets/google-g.svg`)와 함께 보이도록 변경했습니다.
+- 현재 안내 문구:
+
+```text
+로그인을 하면 글작성 및 저장, 채팅방 입장이 가능합니다.
+```
+
+### 홈/가지가지 UI 정렬
+
+- `board.html` 상단 타이틀 `가지가지 한다`의 위치, 크기, 검색 아이콘 크기를 `index.html`의 `가지고 싶다`와 맞췄습니다.
+- `board.html`의 `+ 글쓰기` FAB도 홈 화면의 크기/구조와 맞췄습니다.
+  - 홈과 동일하게 `+` 텍스트 기반 구조 사용
+  - 기본 크기: `min-width:108px`, `height:52px`
+  - PC 크기: `min-width:116px`, `height:56px`
+
+### 최근 주요 커밋
+
+```text
+f47bbe2 요구사항: 글쓰기 버튼과 내 가지 Google 로그인 화면 정리
+1fef5d3 요구사항: 가지가지 상단 타이틀과 검색 아이콘 정렬
+b20fbee 요구사항: Kakao 로그인 코드 제거
+1430100 요구사항: OAuth 세션 시크릿 로컬 파일 git 제외
+b03212b 요구사항: OAuth 로컬 설정 파일 git 제외
+7916083 요구사항: 내 가지를 Google 로그인 우선 화면으로 정리
+```
+
+### 다음 작업 후보
+
+- Google 로그인 실제 브라우저 완료 플로우 확인
+  - Google Cloud OAuth 설정에서 Authorized redirect URI가 정확히 `https://hotdeal-omega.vercel.app/api/auth`인지 확인
+  - OAuth 동의 화면 test user에 사용자 계정이 들어갔는지 확인
+- 로그인 성공 후 글쓰기/저장/채팅방 입장 제한을 실제로 적용할지 결정
+- `my-gaji.html`에 찜한 핫딜/최근 본 핫딜을 localStorage 기반으로 추가할지 결정
+- PWA 작업 시작:
+  - `manifest.webmanifest`
+  - 앱 아이콘
+  - service worker
+  - mobile/desktop install 확인
