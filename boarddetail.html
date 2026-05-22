@@ -165,9 +165,13 @@
       input.remove();
     }
 
+    function getCanonicalShareUrl(){
+      return `https://gaji.run${location.pathname}${location.search || ''}`;
+    }
+
     async function shareCurrentPost(){
       const title = currentPost?.title || document.title;
-      const url = location.href;
+      const url = getCanonicalShareUrl();
       if(window.HotdealAndroid?.share){
         window.HotdealAndroid.share(title, url);
         return;

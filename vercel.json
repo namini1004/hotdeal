@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "hotdeal-omega.vercel.app"
+        }
+      ],
+      "destination": "https://gaji.run/:path*",
+      "permanent": true
+    }
+  ]
+}
