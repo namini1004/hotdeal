@@ -27,6 +27,7 @@
     .logout-btn{border:none;background:var(--brand-soft);color:var(--brand)}
     .hint{margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.55;letter-spacing:-.01em;text-align:center}
     .status{margin-top:14px;padding:12px;border-radius:12px;background:var(--brand-soft);color:#4c1d95;font-size:13px;font-weight:700;line-height:1.45;display:none}
+    .panel.loading #loggedOut,.panel.loading #loggedIn,.panel.loading #accountActions{display:none!important}
     @media (min-width: 760px){
       body{background:var(--page)}
       .app{max-width:760px;margin:24px auto;padding:28px;border:1px solid var(--line);border-radius:22px;box-shadow:0 14px 38px rgba(17,24,39,.06)}
@@ -39,7 +40,7 @@
   <main class="app">
     <h1 class="title"><span class="brand">내 가지</span></h1>
 
-    <section class="panel" aria-label="Google 로그인">
+    <section class="panel loading" id="accountPanel" aria-label="Google 로그인">
       <div id="loggedOut">
         <a class="google-btn" id="googleLogin" href="/api/auth?action=start&provider=google">
           <img class="google-icon" src="assets/google-g.svg" alt="" />
@@ -67,7 +68,9 @@
   </main>
 
   <script>
+    const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const statusBox = document.getElementById('statusBox');
+    const accountPanel = document.getElementById('accountPanel');
     const googleLogin = document.getElementById('googleLogin');
     const loggedOut = document.getElementById('loggedOut');
     const loggedIn = document.getElementById('loggedIn');
@@ -86,6 +89,55 @@
         event.preventDefault();
         showStatus(reason);
       });
+    }
+
+    function setLoading(loading){
+      if(loading){ accountPanel.classList.add('loading'); return; }
+      accountPanel.classList.remove('loading');
+    }
+
+    function clearAvatar(){
+      const img = document.getElementById('avatarImg');
+      img.removeAttribute('src');
+      img.style.display = 'none';
+      document.getElementById('avatarFallback').style.display = 'grid';
+    }
+
+    function renderLoggedOut(){
+      loggedOut.style.display = 'block';
+      loggedIn.style.display = 'none';
+      accountActions.style.display = 'none';
+      clearAvatar();
+      try{ localStorage.removeItem(USER_CACHE_KEY); }catch(_){ }
+    }
+
+    function renderLoggedIn(user){
+      if(!user) return renderLoggedOut();
+      loggedOut.style.display = 'none';
+      loggedIn.style.display = 'flex';
+      accountActions.style.display = 'grid';
+      document.getElementById('userName').textContent = user.name || '사용자';
+      document.getElementById('userEmail').textContent = user.email || '';
+      document.getElementById('userProvider').textContent = user.provider === 'google' ? 'Google 로그인' : '로그인됨';
+      const fallbackText = (user.name || user.email || '가').trim().charAt(0) || '가';
+      document.getElementById('avatarFallback').textContent = fallbackText;
+      if(user.avatar){
+        const img = document.getElementById('avatarImg');
+        img.src = user.avatar;
+        img.style.display = 'block';
+        document.getElementById('avatarFallback').style.display = 'none';
+      }else{
+        clearAvatar();
+      }
+      try{ localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)); }catch(_){ }
+    }
+
+    function loadCachedUser(){
+      try{
+        const cached = JSON.parse(localStorage.getItem(USER_CACHE_KEY) || 'null');
+        if(cached && typeof cached === 'object') return cached;
+      }catch(_){ }
+      return null;
     }
 
     async function loadConfig(){
@@ -107,32 +159,36 @@
     async function loadMe(){
       try{
         const res = await fetch('/api/auth?action=me');
-        if(!res.ok) return;
+        if(!res.ok) return false;
         const data = await res.json();
-        if(!data.user) return;
-        loggedOut.style.display = 'none';
-        loggedIn.style.display = 'flex';
-        accountActions.style.display = 'grid';
-        document.getElementById('userName').textContent = data.user.name || '사용자';
-        document.getElementById('userEmail').textContent = data.user.email || '';
-        document.getElementById('userProvider').textContent = data.user.provider === 'google' ? 'Google 로그인' : '로그인됨';
-        if(data.user.avatar){
-          const img = document.getElementById('avatarImg');
-          img.src = data.user.avatar;
-          img.style.display = 'block';
-          document.getElementById('avatarFallback').style.display = 'none';
+        if(data.user){
+          renderLoggedIn(data.user);
+          return true;
         }
-      }catch(_){}
+        renderLoggedOut();
+        return false;
+      }catch(_){
+        return false;
+      }finally{
+        setLoading(false);
+      }
     }
 
     logoutBtn.addEventListener('click', async () => {
       await fetch('/api/auth?action=logout', { method:'POST' });
+      try{ localStorage.removeItem(USER_CACHE_KEY); }catch(_){ }
       location.href = 'my-gaji.html';
     });
 
     const params = new URLSearchParams(location.search);
     if(params.get('login_error')) showStatus(`로그인 실패: ${params.get('login_error')}`);
     if(params.get('login') === 'success') showStatus('로그인되었습니다.');
+
+    const cachedUser = loadCachedUser();
+    if(cachedUser){
+      renderLoggedIn(cachedUser);
+      setLoading(false);
+    }
 
     loadConfig();
     loadMe();
