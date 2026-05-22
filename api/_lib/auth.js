@@ -122,8 +122,33 @@ function ensureProviderReady(provider) {
   if (provider === 'google' && !status.google) throw new Error('Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
 }
 
+function signStatePayload(payload) {
+  return crypto.createHmac('sha256', getSessionSecret()).update(payload).digest('base64url');
+}
+
 function randomState(provider) {
-  return `${provider}:${crypto.randomBytes(18).toString('hex')}`;
+  const ts = Date.now();
+  const nonce = crypto.randomBytes(18).toString('hex');
+  const payload = `${provider}:${ts}:${nonce}`;
+  const sig = signStatePayload(payload);
+  return `${payload}:${sig}`;
+}
+
+function verifyState(state, maxAgeSec = 600) {
+  try {
+    const parts = String(state || '').split(':');
+    if (parts.length !== 4) return false;
+    const [provider, tsRaw, nonce, sig] = parts;
+    const ts = Number(tsRaw);
+    if (!provider || !Number.isFinite(ts) || !nonce || !sig) return false;
+    if (Math.abs(Date.now() - ts) > maxAgeSec * 1000) return false;
+    const payload = `${provider}:${ts}:${nonce}`;
+    const expected = signStatePayload(payload);
+    if (Buffer.byteLength(sig) !== Buffer.byteLength(expected)) return false;
+    return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+  } catch (_) {
+    return false;
+  }
 }
 
 function redirect(res, location) {
@@ -145,5 +170,6 @@ module.exports = {
   providerStatus,
   ensureProviderReady,
   randomState,
+  verifyState,
   redirect,
 };

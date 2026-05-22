@@ -9,6 +9,7 @@ const {
   parseCookies,
   providerStatus,
   randomState,
+  verifyState,
   redirect,
   setCookie,
   readSession,
@@ -82,7 +83,9 @@ async function finishLogin(req, res, url, provider) {
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const savedState = parseCookies(req)[OAUTH_STATE_COOKIE];
-  if (!code || !state || !savedState || state !== savedState) throw new Error('Invalid OAuth state');
+  const stateMatchesCookie = Boolean(code && state && savedState && state === savedState);
+  const stateSignedValid = Boolean(code && state && verifyState(state));
+  if (!stateMatchesCookie && !stateSignedValid) throw new Error('Invalid OAuth state');
 
   if (provider !== 'google') throw new Error('Unsupported provider');
   const user = await fetchGoogleUser(req, code);
