@@ -429,8 +429,28 @@
       });
     }
 
+    async function ensureLoggedInForWrite(){
+      try{
+        const res = await fetch('/api/auth?action=me', { credentials: 'include', cache: 'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          if(data?.user) return true;
+        }
+      }catch(_){ }
+
+      if(window.HotdealAndroid?.requireLogin){
+        window.HotdealAndroid.requireLogin();
+      }else{
+        alert('로그인하세요.');
+        location.href = 'my-gaji.html';
+      }
+      return false;
+    }
+
     function bindListControls(){
-      document.getElementById('writeBtn').addEventListener('click', () => {
+      document.getElementById('writeBtn').addEventListener('click', async () => {
+        const ok = await ensureLoggedInForWrite();
+        if(!ok) return;
         location.href = 'boardcreate.html';
       });
       document.getElementById('searchToggle').addEventListener('click', () => {
