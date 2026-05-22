@@ -111,6 +111,12 @@
 
     <section class="view" id="formView">
       <form class="form" id="form">
+        <div class="field">
+          <label for="dealUrl">핫딜주소</label>
+          <input id="dealUrl" inputmode="url" placeholder="https://..." />
+          <div class="hint">링크를 입력하면 대표 이미지/제목/내용을 자동으로 채웁니다.</div>
+        </div>
+
         <div class="photo-row">
           <button class="photo" id="photoButton" type="button">
             <span class="photo-text"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span><span>사진 첨부</span></span>
@@ -148,9 +154,10 @@
 
   <script>
     const BOARD_API = '/api/board-posts';
+    const LINK_PREVIEW_API = '/api/link-preview';
     const STORAGE_KEY = 'gaji_board_posts_v1';
     const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=1200&q=80';
-    let state = { posts: [], keyword: '', selectedImage: '' };
+    let state = { posts: [], keyword: '', selectedImage: '', previewImage: '', previewUrl: '' };
 
     function normalizePosts(posts){
       return (posts || []).map((post, idx) => ({
@@ -277,6 +284,37 @@
       });
     }
 
+    function normalizeDealUrl(value){
+      const raw = String(value || '').trim();
+      if(!raw) return '';
+      return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    }
+
+    async function fetchLinkPreview(url){
+      if(!url || state.previewUrl === url) return;
+      state.previewUrl = url;
+      try{
+        const res = await fetch(`${LINK_PREVIEW_API}?url=${encodeURIComponent(url)}`);
+        if(!res.ok) return;
+        const data = await res.json();
+        if(!data?.ok) return;
+
+        const titleEl = document.getElementById('title');
+        const bodyEl = document.getElementById('body');
+        const photoPreview = document.getElementById('photoPreview');
+        const photoButton = document.getElementById('photoButton');
+
+        if(!titleEl.value.trim() && data.title) titleEl.value = data.title.trim();
+        if(!bodyEl.value.trim() && data.description) bodyEl.value = data.description.trim();
+
+        if(!state.selectedImage && !state.previewImage && data.image){
+          state.previewImage = data.image;
+          photoPreview.src = data.image;
+          photoButton.classList.add('has-image');
+        }
+      }catch(_){ }
+    }
+
     async function compressImageFile(file){
       const rawDataUrl = await readFileAsDataURL(file);
       const img = await new Promise((resolve, reject) => {
@@ -321,12 +359,16 @@
     function bindForm(){
       const photoInput = document.getElementById('photoInput');
       const photoButton = document.getElementById('photoButton');
+      const dealUrlInput = document.getElementById('dealUrl');
+      let previewTimer = null;
+
       photoButton.addEventListener('click', () => photoInput.click());
       photoInput.addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
         if(!file || !file.type.startsWith('image/')) return;
         try{
           state.selectedImage = await compressImageFile(file);
+          state.previewImage = '';
           document.getElementById('photoPreview').src = state.selectedImage;
           photoButton.classList.add('has-image');
         }catch(_){
@@ -334,25 +376,38 @@
         }
       });
 
+      const previewHandler = () => {
+        const normalized = normalizeDealUrl(dealUrlInput.value);
+        if(!normalized){
+          state.previewUrl = '';
+          return;
+        }
+        if(previewTimer) clearTimeout(previewTimer);
+        previewTimer = setTimeout(() => fetchLinkPreview(normalized), 250);
+      };
+      dealUrlInput.addEventListener('blur', previewHandler);
+      dealUrlInput.addEventListener('change', previewHandler);
+
       document.getElementById('form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const title = document.getElementById('title').value.trim();
         const body = document.getElementById('body').value.trim();
+        const sourceLink = normalizeDealUrl(dealUrlInput.value);
         if(!title) return;
         const btn = document.querySelector('.submit');
         btn.disabled = true;
         btn.textContent = '등록 중...';
-        let img = '';
+        let img = state.previewImage || '';
         try{
           if(state.selectedImage){
             btn.textContent = '사진 업로드 중...';
             img = await uploadImage(state.selectedImage);
           }
         }catch(_){
-          img = state.selectedImage;
+          img = state.selectedImage || state.previewImage;
         }
 
-        const post = { id:`local-${Date.now()}`, title, body, img, author:'익명', createdAt:new Date().toISOString() };
+        const post = { id:`local-${Date.now()}`, title, body, img, sourceLink, author:'익명', createdAt:new Date().toISOString() };
         try{
           const res = await fetch(BOARD_API, {
             method:'POST',
@@ -376,6 +431,12 @@
     function bindListControls(){
       document.getElementById('writeBtn').addEventListener('click', () => {
         history.pushState(null, '', 'board.html?new=1');
+        state.selectedImage = '';
+        state.previewImage = '';
+        state.previewUrl = '';
+        document.getElementById('form').reset();
+        document.getElementById('photoButton').classList.remove('has-image');
+        document.getElementById('photoPreview').removeAttribute('src');
         setView('form');
       });
       document.getElementById('searchToggle').addEventListener('click', () => {
