@@ -7,7 +7,7 @@
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
     @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@500');
-    :root{--bg:#fff;--page:#f7f4ff;--text:#171325;--muted:#7c8594;--line:#eee9f8;--brand:#7c3aed;--brand-soft:#f3edff;--kakao:#fee500}
+    :root{--bg:#fff;--page:#f7f4ff;--text:#171325;--muted:#7c8594;--line:#eee9f8;--brand:#7c3aed;--brand-soft:#f3edff}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:24px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
@@ -24,14 +24,14 @@
     .actions{display:grid;gap:10px;margin-top:16px}
     .login-btn,.logout-btn{width:100%;height:52px;border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:9px;font-size:16px;font-weight:850;letter-spacing:-.02em;text-decoration:none;color:var(--text);background:#fff;cursor:pointer}
     .login-btn.google{background:#fff}
-    .login-btn.kakao{background:var(--kakao);border-color:var(--kakao)}
     .login-btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
     .logout-btn{background:var(--brand-soft);border-color:var(--brand-soft);color:var(--brand)}
     .hint{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.5;letter-spacing:-.01em}
     .status{margin-top:14px;padding:12px;border-radius:12px;background:var(--brand-soft);color:#4c1d95;font-size:13px;font-weight:700;line-height:1.45;display:none}
     .section-title{margin:24px 0 10px;font-size:15px;font-weight:900;letter-spacing:-.02em}
     .placeholder{display:grid;gap:8px}
-    .placeholder-row{height:48px;border-radius:12px;background:#faf8ff;border:1px solid var(--line);display:flex;align-items:center;padding:0 14px;color:var(--muted);font-size:14px;font-weight:700}
+    .placeholder-row{height:48px;border-radius:12px;background:#faf8ff;border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:var(--muted);font-size:14px;font-weight:700}
+    .placeholder-row strong{color:var(--text);font-size:14px}
     .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:64px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #ececf1;z-index:10}
     .bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(4,1fr)}
     .nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:700}
@@ -49,20 +49,15 @@
 <body>
   <main class="app">
     <h1 class="title"><span class="brand">내 가지</span></h1>
-    <p class="lead">웹과 앱에서 같은 계정으로 글쓰기, 알림, 저장한 핫딜을 이어서 사용할 수 있게 준비 중입니다.</p>
+    <p class="lead">찜한 핫딜과 최근 본 핫딜은 로그인 없이 먼저 쓰고, Google 로그인은 내 활동을 이어가기 위한 선택 기능으로 준비합니다.</p>
 
-    <section class="panel" aria-label="로그인">
+    <section class="panel" aria-label="Google 로그인">
       <div id="loggedOut">
-        <a class="login-btn kakao" id="kakaoLogin" href="/api/auth?action=start&provider=kakao">
-          <span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span>
-          카카오톡으로 계속하기
-        </a>
-        <div style="height:10px"></div>
         <a class="login-btn google" id="googleLogin" href="/api/auth?action=start&provider=google">
           <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
           Google로 계속하기
         </a>
-        <p class="hint">로그인은 웹에서 처리하고 Android 앱은 같은 웹 세션을 사용합니다.</p>
+        <p class="hint">처음에는 로그인 없이도 사용할 수 있습니다. 로그인하면 나중에 찜, 최근 본 핫딜, 알림 설정을 기기 밖에서도 이어갈 수 있게 확장합니다.</p>
       </div>
 
       <div class="profile" id="loggedIn">
@@ -71,7 +66,7 @@
         <div>
           <div class="name" id="userName">사용자</div>
           <div class="email" id="userEmail"></div>
-          <div class="provider" id="userProvider"></div>
+          <div class="provider" id="userProvider">Google 로그인</div>
         </div>
       </div>
 
@@ -84,9 +79,9 @@
 
     <h2 class="section-title">내 활동</h2>
     <div class="placeholder">
-      <div class="placeholder-row">내가 쓴 핫딜</div>
-      <div class="placeholder-row">저장한 핫딜</div>
-      <div class="placeholder-row">알림 설정</div>
+      <div class="placeholder-row"><strong>찜한 핫딜</strong><span>이 기기에 저장</span></div>
+      <div class="placeholder-row"><strong>최근 본 핫딜</strong><span>준비 중</span></div>
+      <div class="placeholder-row"><strong>알림 키워드</strong><span>준비 중</span></div>
     </div>
   </main>
 
@@ -102,7 +97,6 @@
   <script>
     const statusBox = document.getElementById('statusBox');
     const googleLogin = document.getElementById('googleLogin');
-    const kakaoLogin = document.getElementById('kakaoLogin');
     const loggedOut = document.getElementById('loggedOut');
     const loggedIn = document.getElementById('loggedIn');
     const accountActions = document.getElementById('accountActions');
@@ -129,15 +123,12 @@
         const data = await res.json();
         if(!data.providers?.session){
           disableLogin(googleLogin, 'AUTH_SESSION_SECRET 설정이 필요합니다.');
-          disableLogin(kakaoLogin, 'AUTH_SESSION_SECRET 설정이 필요합니다.');
-          showStatus('Vercel 환경 변수 설정 후 로그인을 사용할 수 있습니다.');
+          showStatus('Vercel 환경 변수 설정 후 Google 로그인을 사용할 수 있습니다.');
           return;
         }
         if(!data.providers?.google) disableLogin(googleLogin, 'GOOGLE_CLIENT_ID와 GOOGLE_CLIENT_SECRET 설정이 필요합니다.');
-        if(!data.providers?.kakao) disableLogin(kakaoLogin, 'KAKAO_REST_API_KEY 설정이 필요합니다.');
       }catch(_){
-        disableLogin(googleLogin, '로컬 정적 서버에서는 API 로그인을 확인할 수 없습니다. Vercel 배포 또는 vercel dev에서 확인해주세요.');
-        disableLogin(kakaoLogin, '로컬 정적 서버에서는 API 로그인을 확인할 수 없습니다. Vercel 배포 또는 vercel dev에서 확인해주세요.');
+        disableLogin(googleLogin, '정적 로컬 서버에서는 API 로그인을 확인할 수 없습니다. Vercel 배포 또는 vercel dev에서 확인해주세요.');
       }
     }
 
@@ -152,7 +143,7 @@
         accountActions.style.display = 'grid';
         document.getElementById('userName').textContent = data.user.name || '사용자';
         document.getElementById('userEmail').textContent = data.user.email || '';
-        document.getElementById('userProvider').textContent = data.user.provider === 'kakao' ? '카카오톡 로그인' : 'Google 로그인';
+        document.getElementById('userProvider').textContent = data.user.provider === 'google' ? 'Google 로그인' : '로그인됨';
         if(data.user.avatar){
           const img = document.getElementById('avatarImg');
           img.src = data.user.avatar;
