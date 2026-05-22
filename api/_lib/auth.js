@@ -126,10 +126,13 @@ function signStatePayload(payload) {
   return crypto.createHmac('sha256', getSessionSecret()).update(payload).digest('base64url');
 }
 
-function randomState(provider) {
+function randomState(provider, returnTo = '') {
   const ts = Date.now();
   const nonce = crypto.randomBytes(18).toString('hex');
-  const payload = `${provider}:${ts}:${nonce}`;
+  const safeReturnTo = String(returnTo || '').trim();
+  const payload = safeReturnTo
+    ? `${provider}:${ts}:${nonce}:${safeReturnTo}`
+    : `${provider}:${ts}:${nonce}`;
   const sig = signStatePayload(payload);
   return `${payload}:${sig}`;
 }
@@ -137,18 +140,37 @@ function randomState(provider) {
 function verifyState(state, maxAgeSec = 600) {
   try {
     const parts = String(state || '').split(':');
-    if (parts.length !== 4) return false;
-    const [provider, tsRaw, nonce, sig] = parts;
+    if (parts.length !== 4 && parts.length !== 5) return false;
+
+    const [provider, tsRaw, nonce] = parts;
+    const sig = parts[parts.length - 1];
+    const returnTo = parts.length === 5 ? parts[3] : '';
+
     const ts = Number(tsRaw);
     if (!provider || !Number.isFinite(ts) || !nonce || !sig) return false;
     if (Math.abs(Date.now() - ts) > maxAgeSec * 1000) return false;
-    const payload = `${provider}:${ts}:${nonce}`;
+
+    const payload = returnTo
+      ? `${provider}:${ts}:${nonce}:${returnTo}`
+      : `${provider}:${ts}:${nonce}`;
+
     const expected = signStatePayload(payload);
     if (Buffer.byteLength(sig) !== Buffer.byteLength(expected)) return false;
     return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
   } catch (_) {
     return false;
   }
+}
+
+function parseState(state) {
+  const parts = String(state || '').split(':');
+  if (parts.length === 4) {
+    return { provider: parts[0] || '', returnTo: '', valid: verifyState(state) };
+  }
+  if (parts.length === 5) {
+    return { provider: parts[0] || '', returnTo: parts[3] || '', valid: verifyState(state) };
+  }
+  return { provider: '', returnTo: '', valid: false };
 }
 
 function redirect(res, location) {
@@ -171,5 +193,6 @@ module.exports = {
   ensureProviderReady,
   randomState,
   verifyState,
+  parseState,
   redirect,
 };

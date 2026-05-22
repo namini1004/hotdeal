@@ -9,7 +9,7 @@ const {
   parseCookies,
   providerStatus,
   randomState,
-  verifyState,
+  parseState,
   redirect,
   setCookie,
   readSession,
@@ -56,11 +56,12 @@ async function fetchGoogleUser(req, code) {
   };
 }
 
-function startLogin(req, res, provider) {
+function startLogin(req, res, provider, returnTo = '') {
   if (provider !== 'google') throw new Error('Unsupported provider');
   ensureProviderReady(provider);
   const baseUrl = getBaseUrl(req);
-  const state = randomState(provider);
+  const normalizedReturnTo = returnTo === 'app' ? 'app' : '';
+  const state = randomState(provider, normalizedReturnTo);
   setCookie(req, res, OAUTH_STATE_COOKIE, state, 600);
 
   if (provider === 'google') {
@@ -84,14 +85,24 @@ async function finishLogin(req, res, url, provider) {
   const state = url.searchParams.get('state');
   const savedState = parseCookies(req)[OAUTH_STATE_COOKIE];
   const stateMatchesCookie = Boolean(code && state && savedState && state === savedState);
-  const stateSignedValid = Boolean(code && state && verifyState(state));
+  const parsedState = parseState(state);
+  const stateSignedValid = Boolean(code && parsedState.valid);
   if (!stateMatchesCookie && !stateSignedValid) throw new Error('Invalid OAuth state');
+
+  const returnTo = parsedState.returnTo === 'app' ? 'app' : '';
 
   if (provider !== 'google') throw new Error('Unsupported provider');
   const user = await fetchGoogleUser(req, code);
 
-  setCookie(req, res, SESSION_COOKIE, createSession(user), 60 * 60 * 24 * 30);
+  const sessionToken = createSession(user);
+  setCookie(req, res, SESSION_COOKIE, sessionToken, 60 * 60 * 24 * 30);
   clearCookie(req, res, OAUTH_STATE_COOKIE);
+
+  if (returnTo === 'app') {
+    const deepLink = `gaji://auth?login=success&session=${encodeURIComponent(sessionToken)}`;
+    return redirect(res, deepLink);
+  }
+
   return redirect(res, '/my-gaji.html?login=success');
 }
 
@@ -117,7 +128,8 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'start' && req.method === 'GET') {
-      return startLogin(req, res, provider);
+      const returnTo = url.searchParams.get('return_to') || '';
+      return startLogin(req, res, provider, returnTo);
     }
 
     if (action === 'callback' && req.method === 'GET') {
