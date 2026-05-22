@@ -6,15 +6,12 @@
   <title>내 가지</title>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
-    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@500');
     :root{--bg:#fff;--page:#f7f4ff;--text:#171325;--muted:#7c8594;--line:#eee9f8;--brand:#7c3aed;--brand-soft:#f3edff}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-    .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:24px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
-    .app{max-width:430px;margin:0 auto;min-height:100vh;padding:18px 18px 92px;background:#fff}
-    .title{font-size:24px;font-weight:900;letter-spacing:-.04em;margin:10px 0 4px}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding:22px 18px;background:#fff}
+    .title{font-size:24px;font-weight:900;letter-spacing:-.04em;margin:10px 0 18px}
     .brand{color:var(--brand);font-weight:950;letter-spacing:-.08em}
-    .lead{margin:0 0 22px;color:var(--muted);font-size:15px;line-height:1.5;letter-spacing:-.02em}
     .panel{border:1px solid var(--line);border-radius:18px;padding:18px;background:#fff;box-shadow:0 10px 26px rgba(17,24,39,.05)}
     .profile{display:none;align-items:center;gap:12px}
     .avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;background:var(--brand-soft);display:grid;place-items:center;color:var(--brand);font-weight:900}
@@ -22,42 +19,33 @@
     .email{margin-top:3px;color:var(--muted);font-size:13px}
     .provider{margin-top:6px;color:var(--brand);font-size:12px;font-weight:800}
     .actions{display:grid;gap:10px;margin-top:16px}
-    .login-btn,.logout-btn{width:100%;height:52px;border-radius:14px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:9px;font-size:16px;font-weight:850;letter-spacing:-.02em;text-decoration:none;color:var(--text);background:#fff;cursor:pointer}
-    .login-btn.google{background:#fff}
-    .login-btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
-    .logout-btn{background:var(--brand-soft);border-color:var(--brand-soft);color:var(--brand)}
-    .hint{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.5;letter-spacing:-.01em}
+    .google-btn,.logout-btn{width:100%;height:52px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:16px;font-weight:800;letter-spacing:-.01em;text-decoration:none;cursor:pointer}
+    .google-btn{border:1px solid #dadce0;background:#fff;color:#3c4043;box-shadow:0 1px 2px rgba(60,64,67,.08)}
+    .google-btn:active{background:#f8fafd}
+    .google-btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+    .google-icon{width:20px;height:20px;display:block}
+    .logout-btn{border:none;background:var(--brand-soft);color:var(--brand)}
+    .hint{margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.55;letter-spacing:-.01em;text-align:center}
     .status{margin-top:14px;padding:12px;border-radius:12px;background:var(--brand-soft);color:#4c1d95;font-size:13px;font-weight:700;line-height:1.45;display:none}
-    .section-title{margin:24px 0 10px;font-size:15px;font-weight:900;letter-spacing:-.02em}
-    .placeholder{display:grid;gap:8px}
-    .placeholder-row{height:48px;border-radius:12px;background:#faf8ff;border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:var(--muted);font-size:14px;font-weight:700}
-    .placeholder-row strong{color:var(--text);font-size:14px}
-    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:64px;padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid #ececf1;z-index:10}
-    .bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(4,1fr)}
-    .nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:700}
-    .nav-tab .material-symbols-outlined{font-size:24px}
-    .nav-tab.active{color:var(--brand)}
     @media (min-width: 760px){
       body{background:var(--page)}
-      .app{max-width:760px;margin:24px auto;padding:28px 28px 104px;border:1px solid var(--line);border-radius:22px;box-shadow:0 14px 38px rgba(17,24,39,.06)}
+      .app{max-width:760px;margin:24px auto;padding:28px;border:1px solid var(--line);border-radius:22px;box-shadow:0 14px 38px rgba(17,24,39,.06)}
       .title{font-size:28px}
       .panel{padding:22px}
-      .bottom-nav{max-width:760px;border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0}
     }
   </style>
 </head>
 <body>
   <main class="app">
     <h1 class="title"><span class="brand">내 가지</span></h1>
-    <p class="lead">찜한 핫딜과 최근 본 핫딜은 로그인 없이 먼저 쓰고, Google 로그인은 내 활동을 이어가기 위한 선택 기능으로 준비합니다.</p>
 
     <section class="panel" aria-label="Google 로그인">
       <div id="loggedOut">
-        <a class="login-btn google" id="googleLogin" href="/api/auth?action=start&provider=google">
-          <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
-          Google로 계속하기
+        <a class="google-btn" id="googleLogin" href="/api/auth?action=start&provider=google">
+          <img class="google-icon" src="assets/google-g.svg" alt="" />
+          <span>Google로 계속하기</span>
         </a>
-        <p class="hint">처음에는 로그인 없이도 사용할 수 있습니다. 로그인하면 나중에 찜, 최근 본 핫딜, 알림 설정을 기기 밖에서도 이어갈 수 있게 확장합니다.</p>
+        <p class="hint">로그인을 하면 글작성 및 저장, 채팅방 입장이 가능합니다.</p>
       </div>
 
       <div class="profile" id="loggedIn">
@@ -76,23 +64,7 @@
 
       <div class="status" id="statusBox"></div>
     </section>
-
-    <h2 class="section-title">내 활동</h2>
-    <div class="placeholder">
-      <div class="placeholder-row"><strong>찜한 핫딜</strong><span>이 기기에 저장</span></div>
-      <div class="placeholder-row"><strong>최근 본 핫딜</strong><span>준비 중</span></div>
-      <div class="placeholder-row"><strong>알림 키워드</strong><span>준비 중</span></div>
-    </div>
   </main>
-
-  <nav class="bottom-nav" aria-label="하단 내비게이션">
-    <div class="bottom-nav-row">
-      <a class="nav-tab" href="index.html"><span class="material-symbols-outlined">home</span><span>홈</span></a>
-      <a class="nav-tab" href="gajigaji.html"><span class="material-symbols-outlined">deployed_code</span><span>가지가지</span></a>
-      <a class="nav-tab" href="chat.html"><span class="material-symbols-outlined">chat_bubble</span><span>채팅</span></a>
-      <a class="nav-tab active" href="my-gaji.html" aria-current="page"><span class="material-symbols-outlined">person</span><span>내 가지</span></a>
-    </div>
-  </nav>
 
   <script>
     const statusBox = document.getElementById('statusBox');

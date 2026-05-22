@@ -30,7 +30,13 @@ function parseCookies(req) {
     if (idx === -1) return acc;
     const key = part.slice(0, idx).trim();
     const value = part.slice(idx + 1).trim();
-    if (key) acc[key] = decodeURIComponent(value);
+    if (key) {
+      try {
+        acc[key] = decodeURIComponent(value);
+      } catch (_) {
+        acc[key] = value;
+      }
+    }
     return acc;
   }, {});
 }
@@ -88,15 +94,19 @@ function createSession(user) {
 }
 
 function readSession(req) {
-  const token = parseCookies(req)[SESSION_COOKIE];
-  if (!token || !token.includes('.')) return null;
-  const [body, sig] = token.split('.');
-  const expected = sign(body);
-  if (Buffer.byteLength(sig) !== Buffer.byteLength(expected)) return null;
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
-  const payload = JSON.parse(fromBase64url(body));
-  if (!payload.exp || payload.exp < Date.now()) return null;
-  return payload.user || null;
+  try {
+    const token = parseCookies(req)[SESSION_COOKIE];
+    if (!token || !token.includes('.')) return null;
+    const [body, sig] = token.split('.');
+    const expected = sign(body);
+    if (Buffer.byteLength(sig) !== Buffer.byteLength(expected)) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    const payload = JSON.parse(fromBase64url(body));
+    if (!payload.exp || payload.exp < Date.now()) return null;
+    return payload.user || null;
+  } catch (_) {
+    return null;
+  }
 }
 
 function providerStatus() {
