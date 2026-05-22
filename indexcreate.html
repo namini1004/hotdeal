@@ -506,7 +506,7 @@
 
         const data = await res.json();
         const savedId = data?.item?.id || newItem.id;
-        location.href = editItem ? `detail.html?id=${encodeURIComponent(savedId)}` : 'index.html?posted=1';
+        location.href = editItem ? `indexdetail.html?id=${encodeURIComponent(savedId)}` : 'index.html?posted=1';
       }catch(err){
         const reason = err?.message ? `\n(${err.message.slice(0, 160)})` : '';
         alert(`서버 저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.${reason}`);

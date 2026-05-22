@@ -72,6 +72,7 @@
     const STORAGE_KEY = 'gaji_board_posts_v1';
     let selectedImage = '';
     let previewImage = '';
+    let editPost = null;
 
     function normalizePosts(posts){
       return (posts || []).map((post, idx) => ({
@@ -91,6 +92,30 @@
 
     function saveLocalPosts(posts){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizePosts(posts)));
+    }
+
+    async function loadEditPost(){
+      const editId = new URLSearchParams(location.search).get('editId');
+      if(!editId) return;
+      let post = readLocalPosts().find(v => String(v.id) === String(editId)) || null;
+      try{
+        const res = await fetch(`${BOARD_API}/${encodeURIComponent(editId)}`, { cache:'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          post = normalizePosts([data.item])[0];
+        }
+      }catch(_){ }
+      if(!post) return;
+      editPost = post;
+      document.querySelector('.title').textContent = '게시글 편집';
+      document.querySelector('.submit').textContent = '수정 완료';
+      document.getElementById('title').value = post.title || '';
+      document.getElementById('body').value = post.body || '';
+      if(post.img){
+        previewImage = post.img;
+        document.getElementById('photoPreview').src = post.img;
+        document.getElementById('photoButton').classList.add('has-image');
+      }
     }
 
     function readFileAsDataURL(file){
@@ -214,11 +239,22 @@
         img = selectedImage || previewImage;
       }
 
-      const post = { id:`local-${Date.now()}`, title, body, img, sourceLink:'', author:'익명', createdAt:new Date().toISOString() };
+      const post = {
+        ...(editPost || {}),
+        id: editPost?.id || `local-${Date.now()}`,
+        title,
+        body,
+        img,
+        sourceLink:'',
+        author: editPost?.author || '익명',
+        createdAt: editPost?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
 
       try{
-        const res = await fetch(BOARD_API, {
-          method:'POST',
+        const targetUrl = editPost ? `${BOARD_API}/${encodeURIComponent(editPost.id)}` : BOARD_API;
+        const res = await fetch(targetUrl, {
+          method: editPost ? 'PATCH' : 'POST',
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify(post)
         });
@@ -232,7 +268,7 @@
         const saved = normalizePosts([data.item || post])[0];
         const next = [saved, ...readLocalPosts().filter(v => String(v.id) !== String(saved.id))];
         saveLocalPosts(next);
-        location.href = `board.html?id=${encodeURIComponent(saved.id)}`;
+        location.href = `boarddetail.html?id=${encodeURIComponent(saved.id)}`;
       }catch(_){
         alert('서버 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
         btn.disabled = false;
@@ -242,6 +278,7 @@
     async function init(){
       const canWrite = await ensureLoggedIn();
       if(!canWrite) return;
+      await loadEditPost();
     }
 
     init();

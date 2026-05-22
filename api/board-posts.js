@@ -19,10 +19,12 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST') {
       const sessionUser = readSession(req);
-      if (!sessionUser) return json(res, 401, { error: 'login required' });
 
       const payload = mapBoardPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });
+      if (sessionUser?.name && !req.body?.author) {
+        payload.author = sessionUser.name;
+      }
       const now = new Date().toISOString();
       const rows = await supabaseRequest('board_posts', {
         method: 'POST',

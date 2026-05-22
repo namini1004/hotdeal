@@ -270,7 +270,7 @@
         return;
       }
       list.innerHTML = items.map(item => `
-        <a class="item" href="detail.html?id=${encodeURIComponent(item.id)}">
+        <a class="item" href="indexdetail.html?id=${encodeURIComponent(item.id)}">
           <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
           <div>
             <div class="item-title">${item.title}</div>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>핫딜 상세</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@500');
+    :root{--line:#eee9f8;--muted:#8b95a1;--brand:#7c3aed;--brand-rgb:124,58,237;--page:#f7f4ff}
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;color:#111827;font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:24px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:64px}
+    .hero{position:relative}
+    .hero img{width:100%;height:320px;object-fit:cover;display:block;background:#f3f4f6}
+    .topbtns{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+    .icon-link,.icon-btn{width:36px;height:36px;display:grid;place-items:center;border:none;border-radius:999px;background:rgba(17,24,39,.42);color:#fff;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer}
+    .top-actions{display:flex;gap:6px}
+
+    .content{padding:18px 16px;border-top:1px solid var(--line)}
+    h1{margin:0;font-size:22px;line-height:1.35;letter-spacing:-.03em}
+    .price{margin-top:10px;font-size:28px;font-weight:900;letter-spacing:-.03em}
+    .meta{font-size:13px;color:var(--muted);margin:10px 0 16px}
+    .desc{font-size:16px;line-height:1.65;letter-spacing:-.01em;white-space:pre-line}
+    .desc a{color:#2563eb;text-decoration:underline;word-break:break-all}
+    .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:30}
+    .sheet-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
+    .action-sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(calc(100% + 48px));padding:10px 14px calc(env(safe-area-inset-bottom) + 14px);background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease,visibility 0s linear .22s;z-index:31}
+    .action-sheet.show{visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);transition:transform .22s ease}
+    .sheet-btn{width:100%;height:52px;border:none;border-radius:12px;background:#f4f6f8;color:#111827;font-size:16px;font-weight:800;cursor:pointer}
+    .sheet-btn + .sheet-btn{margin-top:8px}
+    .sheet-btn.edit{background:var(--brand);color:#fff}
+    .sheet-btn.delete{background:#fff1f2;color:#dc2626}
+    .bottom-cta{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:0 16px calc(env(safe-area-inset-bottom) + 0px);background:#fff;border-top:none;z-index:10}
+    .cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .cta-btn{height:54px;display:flex;align-items:center;justify-content:center;border-radius:14px;text-decoration:none;font-size:16px;font-weight:900}
+    .source-bottom{background:#f3edff;color:#4c1d95;border:1px solid #d8c7ff}
+    .buy-bottom{background:var(--brand);color:#fff;box-shadow:0 10px 24px rgba(var(--brand-rgb),.32)}
+
+
+    a{text-decoration:none;color:inherit}
+
+    @media (min-width:768px){
+      body{background:var(--page)}
+      .app{max-width:1080px;display:grid;grid-template-columns:minmax(360px,520px) minmax(0,1fr);gap:0;min-height:auto;margin:32px auto;padding:0;background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(17,24,39,.08)}
+      .hero{min-height:100%}
+      .hero img{height:100%;min-height:560px}
+      .topbtns{top:16px;left:16px;right:16px}
+      .icon-link,.icon-btn{width:36px;height:36px}
+      .material-symbols-outlined{font-size:24px}
+      .content{border-top:none;border-left:1px solid var(--line);padding:42px 38px}
+      h1{font-size:28px;line-height:1.35}
+      .price{font-size:34px;margin-top:16px}
+      .meta{font-size:14px;margin:12px 0 22px}
+      .desc{font-size:17px;line-height:1.8}
+      .toast{bottom:96px}
+      .sheet-backdrop{display:grid;place-items:end center}
+      .action-sheet{max-width:420px;margin-bottom:24px;border-radius:18px;box-shadow:0 18px 50px rgba(17,24,39,.18)}
+      .buy-bottom{height:56px}
+      .cta-btn{font-size:17px}
+      .bottom-cta{max-width:1080px;padding:0 20px;background:rgba(255,255,255,.94);box-shadow:0 -12px 32px rgba(17,24,39,.08);bottom:0}
+    }
+
+    @media (min-width:1180px){
+      .app{grid-template-columns:560px minmax(0,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <img id="img" alt="상품 이미지">
+      <div class="topbtns">
+        <a class="icon-link" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
+        <div class="top-actions">
+          <a class="icon-link" href="index.html" aria-label="홈"><span class="material-symbols-outlined" aria-hidden="true">home</span></a>
+          <button class="icon-btn" id="shareBtn" type="button" aria-label="공유"><span class="material-symbols-outlined" aria-hidden="true">share</span></button>
+          <button class="icon-btn" id="moreBtn" type="button" aria-label="더보기"><span class="material-symbols-outlined" aria-hidden="true">more_vert</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+      <h1 id="title"></h1>
+      <div class="price" id="price"></div>
+      <div class="meta" id="meta"></div>
+      <div class="desc" id="desc"></div>
+    </section>
+  </div>
+
+  <div class="bottom-cta" id="buyBottomWrap" style="display:none">
+    <div class="cta-row">
+      <a id="sourceBottom" class="cta-btn source-bottom" href="#" target="_blank" rel="noopener">원본보기</a>
+      <a id="buyBottom" class="cta-btn buy-bottom" href="#" target="_blank" rel="noopener">가지고싶다</a>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-label="게시물 메뉴">
+    <button class="sheet-btn edit" id="editBtn" type="button">편집하기</button>
+    <button class="sheet-btn delete" id="deleteBtn" type="button">삭제하기</button>
+    <button class="sheet-btn" id="closeSheetBtn" type="button">닫기</button>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'hotdeal_items_v3';
+    const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
+    const DELETED_KEY = 'hotdeal_deleted_keys_v1';
+    const DEALS_API = '/api/deals';
+    let currentItem = null;
+
+    function normalizeItems(items){
+      return (items || []).map((item, idx) => ({
+        id: String(item.id ?? idx + 1),
+        title: item.title || '제목 없음',
+        area: item.area || '뽐뿌 핫딜',
+        time: item.time || item.date || '',
+        category: item.category || '핫딜',
+        price: item.price || '-',
+        desc: item.desc ?? '',
+        img: item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80',
+        buyLink: item.buyLink || '',
+        sourceLink: item.sourceLink || '',
+        date: item.date || '',
+        registeredAt: item.registeredAt || '',
+        source: item.source || '',
+        edited: Boolean(item.edited)
+      }));
+    }
+
+    function parseStoredItems(key){
+      try{
+        const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+        return normalizeItems(Array.isArray(parsed) ? parsed : parsed.items || parsed.today || parsed.grouped?.today || []);
+      }catch(_){
+        return [];
+      }
+    }
+
+    function dedupeItems(items){
+      const seen = new Set();
+      return (items || []).filter(item => {
+        const key = getDealKey(item);
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function saveItems(items){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
+
+    function getDealKey(item){
+      if(item?.sourceLink) return item.sourceLink;
+      if(item?.id) return `id:${item.id}:${item.date || ''}`;
+      return `title:${item?.title || ''}:${item?.date || ''}`;
+    }
+
+    function getDeletedKeys(){
+      try{
+        return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) || '[]'));
+      }catch(_){
+        return new Set();
+      }
+    }
+
+    function saveDeletedKey(key){
+      const keys = getDeletedKeys();
+      keys.add(key);
+      localStorage.setItem(DELETED_KEY, JSON.stringify([...keys]));
+    }
+
+    function removeDeletedFromCache(key){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      try{
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)){
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed.filter(item => getDealKey(item) !== key)));
+          return;
+        }
+        for(const tab of ['today', 'yesterday']){
+          parsed[tab] = (parsed[tab] || []).filter(item => getDealKey(item) !== key);
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }catch(_){ }
+    }
+
+    function isDeleted(item){
+      return getDeletedKeys().has(getDealKey(item));
+    }
+
+    const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80';
+
+    function optimizeImageUrl(src){
+      const raw = String(src || '').trim();
+      if(!raw) return FALLBACK_IMAGE;
+      return raw;
+    }
+
+    function makeJpegFallbackUrl(src){
+      const raw = String(src || '').trim();
+      if(!raw) return '';
+      try{
+        const resolved = new URL(raw, location.origin);
+        if(!/\.webp(?:$|\?)/i.test(resolved.pathname) && !/format=webp/i.test(resolved.search)) return '';
+        if(resolved.pathname === '/api/image-proxy'){
+          const original = resolved.searchParams.get('url');
+          if(!original) return '';
+          const originUrl = new URL(original);
+          return `https://wsrv.nl/?url=${encodeURIComponent(originUrl.host + originUrl.pathname + originUrl.search)}&output=jpg`;
+        }
+        return `https://wsrv.nl/?url=${encodeURIComponent(resolved.host + resolved.pathname + resolved.search)}&output=jpg`;
+      }catch(_){
+        return '';
+      }
+    }
+
+    function getCachedItems(){
+      return dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]);
+    }
+
+    function escapeHtml(text){
+      return String(text || '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function linkifyText(text){
+      const escaped = escapeHtml(text || '');
+      return escaped.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+      });
+    }
+
+    function renderItem(item){
+      document.getElementById('title').textContent = item.title;
+      document.getElementById('price').textContent = item.price;
+      document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.time || '날짜 없음'}`;
+      const imgEl = document.getElementById('img');
+      imgEl.src = optimizeImageUrl(item.img);
+      imgEl.alt = item.title;
+      imgEl.dataset.webpRetried = '0';
+      imgEl.onerror = () => {
+        const next = makeJpegFallbackUrl(imgEl.src);
+        if(imgEl.dataset.webpRetried !== '1' && next){
+          imgEl.dataset.webpRetried = '1';
+          imgEl.src = next;
+          return;
+        }
+        imgEl.onerror = null;
+        imgEl.src = FALLBACK_IMAGE;
+      };
+      document.getElementById('desc').innerHTML = linkifyText(item.desc);
+
+      if(item.sourceLink || item.buyLink){
+        const sourceBottom = document.getElementById('sourceBottom');
+        const buyBottom = document.getElementById('buyBottom');
+        sourceBottom.href = item.sourceLink || item.buyLink || '#';
+        buyBottom.href = item.buyLink || item.sourceLink || '#';
+
+        buyBottom.style.display = 'flex';
+        sourceBottom.style.gridColumn = '';
+        sourceBottom.textContent = '원본보기';
+
+        document.getElementById('buyBottomWrap').style.display = 'block';
+      }
+    }
+
+    async function fetchItemById(id){
+      const res = await fetch(`${DEALS_API}/${encodeURIComponent(id)}`, { cache: 'no-store' });
+      if(!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
+      return data.item;
+    }
+
+    function showToast(message){
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function openSheet(){
+      document.getElementById('sheetBackdrop').classList.add('show');
+      document.getElementById('actionSheet').classList.add('show');
+    }
+
+    function closeSheet(){
+      document.getElementById('sheetBackdrop').classList.remove('show');
+      document.getElementById('actionSheet').classList.remove('show');
+    }
+
+    async function deleteCurrentDeal(){
+      if(!currentItem) return;
+      const key = getDealKey(currentItem);
+      if(String(currentItem.id || '').startsWith('user-')){
+        try{
+          const res = await fetch(`${DEALS_API}/${encodeURIComponent(currentItem.id)}`, { method:'DELETE' });
+          if(!res.ok) throw new Error('delete failed');
+        }catch(_){
+          showToast('삭제에 실패했습니다.');
+          closeSheet();
+          return;
+        }
+      }else{
+        saveDeletedKey(key);
+      }
+      removeDeletedFromCache(key);
+      closeSheet();
+      showToast('삭제되었습니다.');
+      setTimeout(() => {
+        location.href = 'index.html';
+      }, 450);
+    }
+
+    function editCurrentDeal(){
+      if(!currentItem) return;
+      closeSheet();
+      location.href = `indexcreate.html?editId=${encodeURIComponent(currentItem.id)}`;
+    }
+
+    async function copyShareUrl(url){
+      if(navigator.clipboard?.writeText){
+        await navigator.clipboard.writeText(url);
+        return;
+      }
+      const input = document.createElement('input');
+      input.value = url;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+    }
+
+    async function shareCurrentDeal(){
+      const title = document.getElementById('title').textContent || document.title;
+      const url = location.href;
+      if(window.HotdealAndroid?.share){
+        window.HotdealAndroid.share(title, url);
+        return;
+      }
+      if(navigator.share){
+        try{
+          await navigator.share({ title, text: title, url });
+          return;
+        }catch(err){
+          if(err?.name === 'AbortError') return;
+        }
+      }
+
+      try{
+        await copyShareUrl(url);
+        showToast('링크가 복사되었습니다.');
+      }catch(_){
+        showToast('링크 복사에 실패했습니다.');
+      }
+    }
+
+    async function init(){
+      const id = new URLSearchParams(location.search).get('id');
+      const cachedItems = getCachedItems();
+      let item = cachedItems.find(v => String(v.id) === String(id)) || null;
+
+      if(item && isDeleted(item)){
+        location.replace('index.html');
+        return;
+      }
+
+      if(item){
+        currentItem = item;
+        renderItem(item);
+      }else{
+        const fallback = {title:'로딩 중...',price:'-',desc:'상품 정보를 불러오는 중입니다.',img:'',category:'핫딜',time:''};
+        renderItem(fallback);
+      }
+
+      if(!id){
+        if(!item){
+          const first = cachedItems[0] || {title:'상품 없음',price:'-',desc:'등록된 상품이 없습니다.',img:''};
+          currentItem = first;
+          renderItem(first);
+        }
+        return;
+      }
+
+      try{
+        const latest = await fetchItemById(id);
+        if(latest && !isDeleted(latest)){
+          currentItem = latest;
+          renderItem(latest);
+          const next = [latest, ...cachedItems.filter(v => String(v.id) !== String(latest.id))];
+          saveItems(dedupeItems(next));
+        }
+      }catch(_){
+      }
+    }
+
+    document.getElementById('shareBtn').addEventListener('click', shareCurrentDeal);
+    document.getElementById('moreBtn').addEventListener('click', openSheet);
+    document.getElementById('sheetBackdrop').addEventListener('click', closeSheet);
+    document.getElementById('closeSheetBtn').addEventListener('click', closeSheet);
+    document.getElementById('deleteBtn').addEventListener('click', deleteCurrentDeal);
+    document.getElementById('editBtn').addEventListener('click', editCurrentDeal);
+    init();
+  </script>
+</body>
+</html>

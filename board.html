@@ -226,7 +226,7 @@
         return;
       }
       list.innerHTML = posts.map(post => `
-        <a class="post" href="board.html?id=${encodeURIComponent(post.id)}">
+        <a class="post" href="boarddetail.html?id=${encodeURIComponent(post.id)}">
           ${post.img ? `<img class="thumb" src="${post.img}" alt="">` : `<div class="thumb empty"><span class="material-symbols-outlined">article</span></div>`}
           <div>
             <div class="post-title">${escapeHtml(post.title)}</div>
@@ -420,11 +420,11 @@
           const saved = normalizePosts([data.item || post])[0];
           const next = [saved, ...readLocalPosts().filter(v => String(v.id) !== String(saved.id))];
           saveLocalPosts(next);
-          location.href = `board.html?id=${encodeURIComponent(saved.id)}`;
+          location.href = `boarddetail.html?id=${encodeURIComponent(saved.id)}`;
         }catch(_){
           const next = [post, ...readLocalPosts()];
           saveLocalPosts(next);
-          location.href = `board.html?id=${encodeURIComponent(post.id)}`;
+          location.href = `boarddetail.html?id=${encodeURIComponent(post.id)}`;
         }
       });
     }
@@ -491,7 +491,7 @@
       const params = new URLSearchParams(location.search);
       const id = params.get('id');
       if(id){
-        await loadPost(id);
+        location.replace(`boarddetail.html?id=${encodeURIComponent(id)}`);
         return;
       }
       setView('list');
