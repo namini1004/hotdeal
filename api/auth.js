@@ -118,7 +118,7 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'callback' && req.method === 'GET') {
-      return finishLogin(req, res, url, provider);
+      return await finishLogin(req, res, url, provider);
     }
 
     res.setHeader('Allow', 'GET, POST');
