@@ -15,3 +15,5 @@
 - Do **not** run Vercel production deployment by default.
 - Run Vercel production deployment **only when the user explicitly requests it** (e.g., "배포해줘", "prod 배포해줘").
 - Default verification flow after web changes: run local test server first, verify the updated page locally, and share a first-view screenshot with the user before any production deployment.
+- Limit Vercel production deployments to 1~2 times per day by default; batch changes and deploy only on explicit user request.
+- Prefer local mock/fallback (dummy JSON/localStorage) during development, and connect Supabase/serverless only at final integration checkpoints.
