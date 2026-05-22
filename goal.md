@@ -46,7 +46,6 @@ PWA is still a website, but it adds installability, app-like launch behavior, ic
 - Keep `hotdeal-site` as the source of truth for screens and content flows.
 - Make My Gaji load as the fourth tab destination.
 - Add web-first Google login first.
-- Keep Kakao login as a later optional provider.
 - Add account status API and logout API.
 - Document which provider keys must be configured by the owner.
 - Do not put provider secrets in source code.
@@ -81,16 +80,6 @@ Google login needs:
 - Vercel environment variables:
   - `GOOGLE_CLIENT_ID`
   - `GOOGLE_CLIENT_SECRET`
-
-Kakao login needs:
-
-- This is intentionally deferred until after Google login is working.
-- Kakao Developers app.
-- Kakao Login enabled.
-- Redirect URI: `https://hotdeal-omega.vercel.app/api/auth`
-- Vercel environment variables:
-  - `KAKAO_REST_API_KEY`
-  - `KAKAO_CLIENT_SECRET` if client secret is enabled in Kakao settings.
 
 Shared auth needs:
 

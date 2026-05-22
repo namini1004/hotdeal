@@ -102,7 +102,6 @@ function readSession(req) {
 function providerStatus() {
   return {
     google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-    kakao: Boolean(process.env.KAKAO_REST_API_KEY),
     session: Boolean(process.env.AUTH_SESSION_SECRET),
   };
 }
@@ -111,7 +110,6 @@ function ensureProviderReady(provider) {
   const status = providerStatus();
   if (!status.session) throw new Error('Missing AUTH_SESSION_SECRET');
   if (provider === 'google' && !status.google) throw new Error('Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
-  if (provider === 'kakao' && !status.kakao) throw new Error('Missing KAKAO_REST_API_KEY');
 }
 
 function randomState(provider) {
