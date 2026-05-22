@@ -158,7 +158,7 @@
 
     async function loadMe(){
       try{
-        const res = await fetch('/api/auth?action=me');
+        const res = await fetch('/api/auth?action=me', { credentials:'include', cache:'no-store' });
         if(!res.ok) return false;
         const data = await res.json();
         if(data.user){
@@ -175,7 +175,7 @@
     }
 
     logoutBtn.addEventListener('click', async () => {
-      await fetch('/api/auth?action=logout', { method:'POST' });
+      await fetch('/api/auth?action=logout', { method:'POST', credentials:'include', cache:'no-store' });
       try{ localStorage.removeItem(USER_CACHE_KEY); }catch(_){ }
       location.href = 'my-gaji.html';
     });

@@ -111,6 +111,7 @@ module.exports = async (req, res) => {
 
   try {
     if (action === 'config' && req.method === 'GET') {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       const providers = providerStatus();
       return json(res, 200, {
         providers,
@@ -119,10 +120,12 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'me' && req.method === 'GET') {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       return json(res, 200, { user: readSession(req) });
     }
 
     if (action === 'logout' && req.method === 'POST') {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       clearCookie(req, res, SESSION_COOKIE);
       return json(res, 200, { ok: true });
     }
