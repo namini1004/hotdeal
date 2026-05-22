@@ -14,3 +14,4 @@
 - Keep pushing code changes to Git as usual after completed work.
 - Do **not** run Vercel production deployment by default.
 - Run Vercel production deployment **only when the user explicitly requests it** (e.g., "배포해줘", "prod 배포해줘").
+- Default verification flow after web changes: run local test server first, verify the updated page locally, and share a first-view screenshot with the user before any production deployment.
