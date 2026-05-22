@@ -11,7 +11,7 @@
     *{box-sizing:border-box}
     body{margin:0;background:#fff;color:#111827;font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:28px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
-    .back .material-symbols-outlined{font-size:18px}
+    .back .material-symbols-outlined{font-size:19px}
     .app{max-width:720px;margin:0 auto;min-height:100vh;padding-bottom:96px}
     .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
     .title{font-size:19px;font-weight:800;letter-spacing:-.02em}
@@ -45,12 +45,6 @@
     </header>
 
     <form class="wrap" id="form">
-      <div class="field">
-        <label for="dealUrl">핫딜주소</label>
-        <input id="dealUrl" inputmode="url" placeholder="https://..." />
-        <div class="hint">입력 후 1초 뒤 대표 이미지/제목/내용을 자동으로 가져옵니다.</div>
-      </div>
-
       <button class="photo" id="photoButton" type="button">
         <span class="photo-text"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span><span>사진 첨부</span></span>
         <img class="photo-preview" id="photoPreview" alt="첨부한 사진 미리보기">
@@ -75,18 +69,9 @@
 
   <script>
     const BOARD_API = '/api/board-posts';
-    const LINK_PREVIEW_API = '/api/link-preview';
     const STORAGE_KEY = 'gaji_board_posts_v1';
     let selectedImage = '';
     let previewImage = '';
-    let previewUrl = '';
-    let previewTimer = null;
-
-    function normalizeDealUrl(value){
-      const raw = String(value || '').trim();
-      if(!raw) return '';
-      return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-    }
 
     function normalizePosts(posts){
       return (posts || []).map((post, idx) => ({
@@ -106,26 +91,6 @@
 
     function saveLocalPosts(posts){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizePosts(posts)));
-    }
-
-    async function fetchLinkPreview(url){
-      if(!url || previewUrl === url) return;
-      previewUrl = url;
-      try{
-        const res = await fetch(`${LINK_PREVIEW_API}?url=${encodeURIComponent(url)}`);
-        if(!res.ok) return;
-        const data = await res.json();
-        if(!data?.ok) return;
-        const titleEl = document.getElementById('title');
-        const bodyEl = document.getElementById('body');
-        if(!titleEl.value.trim() && data.title) titleEl.value = data.title.trim();
-        if(!bodyEl.value.trim() && data.description) bodyEl.value = data.description.trim();
-        if(!selectedImage && !previewImage && data.image){
-          previewImage = data.image;
-          document.getElementById('photoPreview').src = data.image;
-          document.getElementById('photoButton').classList.add('has-image');
-        }
-      }catch(_){ }
     }
 
     function readFileAsDataURL(file){
@@ -195,22 +160,10 @@
       }
     });
 
-    const dealUrlInput = document.getElementById('dealUrl');
-    const schedulePreview = (delayMs = 1000) => {
-      const normalized = normalizeDealUrl(dealUrlInput.value);
-      if(!normalized){ previewUrl = ''; return; }
-      if(previewTimer) clearTimeout(previewTimer);
-      previewTimer = setTimeout(() => fetchLinkPreview(normalized), delayMs);
-    };
-    dealUrlInput.addEventListener('input', () => schedulePreview(1000));
-    dealUrlInput.addEventListener('blur', () => schedulePreview(0));
-    dealUrlInput.addEventListener('change', () => schedulePreview(0));
-
     document.getElementById('form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = document.getElementById('title').value.trim();
       const body = document.getElementById('body').value.trim();
-      const sourceLink = normalizeDealUrl(dealUrlInput.value);
       if(!title) return;
 
       const btn = document.querySelector('.submit');
@@ -227,7 +180,7 @@
         img = selectedImage || previewImage;
       }
 
-      const post = { id:`local-${Date.now()}`, title, body, img, sourceLink, author:'익명', createdAt:new Date().toISOString() };
+      const post = { id:`local-${Date.now()}`, title, body, img, sourceLink:'', author:'익명', createdAt:new Date().toISOString() };
 
       try{
         const res = await fetch(BOARD_API, {

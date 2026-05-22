@@ -11,7 +11,7 @@
     *{box-sizing:border-box}
     body{margin:0;background:#fff;color:#111827;font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:32px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
-    .back .material-symbols-outlined{font-size:10px}
+    .back .material-symbols-outlined{font-size:19px}
     .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:96px}
 
     .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
@@ -50,7 +50,7 @@
       .title{font-size:21px}
       .back{width:52px;height:52px}
       .top-spacer{width:52px;height:52px}
-      .back .material-symbols-outlined{font-size:12px}
+      .back .material-symbols-outlined{font-size:19px}
       .wrap{padding:22px 24px}
       .photo{width:112px;height:112px}
       .field{padding:18px 0}
@@ -70,6 +70,12 @@
     </header>
 
     <form class="wrap" id="form">
+      <div class="field">
+        <label for="dealUrl">핫딜주소</label>
+        <input id="dealUrl" inputmode="url" placeholder="https://..." />
+        <div class="hint">링크 입력 1초 뒤 자동 파싱하여 이미지/제목/설명/가격을 채웁니다.</div>
+      </div>
+
       <button class="photo" id="photoButton" type="button">
         <span class="photo-text"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span><span>사진 첨부</span></span>
         <img class="photo-preview" id="photoPreview" alt="첨부한 사진 미리보기">
@@ -102,11 +108,6 @@
         <input id="price" inputmode="numeric" placeholder="가격을 입력해주세요. (비워두면 0원)" />
       </div>
 
-      <div class="field">
-        <label for="dealUrl">핫딜주소</label>
-        <input id="dealUrl" inputmode="url" placeholder="https://..." />
-      </div>
-
     </form>
   </div>
 
@@ -118,10 +119,13 @@
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DEALS_API = '/api/deals';
+    const LINK_PREVIEW_API = '/api/link-preview';
     let selectedCategory = '디지털';
     let selectedImage = '';
     let sharedImage = '';
     let editItem = null;
+    let previewTimer = null;
+    let previewUrl = '';
 
     document.getElementById('catRow').addEventListener('click',(e)=>{
       const btn = e.target.closest('.chip');
@@ -177,6 +181,12 @@
       return /^https?:\/\/\S+/i.test(value || '');
     }
 
+    function normalizeDealUrl(value){
+      const raw = String(value || '').trim();
+      if(!raw) return '';
+      return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    }
+
     function getDealKey(item){
       if(item?.sourceLink) return item.sourceLink;
       if(item?.id) return `id:${item.id}:${item.date || ''}`;
@@ -196,6 +206,26 @@
     function extractPriceText(text){
       const match = String(text || '').match(/(\d{1,3}(?:,\d{3})+|\d+)\s*원/);
       return match ? match[1].replace(/,/g, '') : '';
+    }
+
+    async function fetchLinkPreview(url){
+      if(!url || previewUrl === url) return;
+      previewUrl = url;
+      try{
+        const res = await fetch(`${LINK_PREVIEW_API}?url=${encodeURIComponent(url)}`);
+        if(!res.ok) return;
+        const data = await res.json();
+        if(!data?.ok) return;
+
+        const title = document.getElementById('title');
+        const desc = document.getElementById('desc');
+        const price = document.getElementById('price');
+        if(!title.value.trim() && data.title) title.value = data.title.trim();
+        if(!desc.value.trim() && data.description) desc.value = data.description.trim();
+        const parsedPrice = extractPriceText(`${data.title || ''} ${data.description || ''}`);
+        if(!price.value.trim() && parsedPrice) price.value = parsedPrice;
+        if(!selectedImage && !sharedImage && data.image) setPhotoPreview(data.image);
+      }catch(_){ }
     }
 
     function setPhotoPreview(src){
@@ -301,6 +331,17 @@
       price: new URLSearchParams(location.search).get('sharedPrice') || ''
     });
 
+    const dealUrlInput = document.getElementById('dealUrl');
+    const schedulePreview = (delayMs = 1000) => {
+      const normalized = normalizeDealUrl(dealUrlInput.value);
+      if(!normalized){ previewUrl = ''; return; }
+      if(previewTimer) clearTimeout(previewTimer);
+      previewTimer = setTimeout(() => fetchLinkPreview(normalized), delayMs);
+    };
+    dealUrlInput.addEventListener('input', () => schedulePreview(1000));
+    dealUrlInput.addEventListener('blur', () => schedulePreview(0));
+    dealUrlInput.addEventListener('change', () => schedulePreview(0));
+
     function setActiveCategory(category){
       const target = [...document.querySelectorAll('.chip')].find(btn => btn.dataset.cat === category) || document.querySelector('.chip');
       if(!target) return;
@@ -345,7 +386,7 @@
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const price = formatPrice(document.getElementById('price').value);
-      const dealUrl = document.getElementById('dealUrl').value.trim();
+      const dealUrl = normalizeDealUrl(document.getElementById('dealUrl').value);
       if(!title) return;
       if(dealUrl && !isHttpUrl(dealUrl)){
         alert('핫딜주소는 http 또는 https로 시작해야 합니다.');
