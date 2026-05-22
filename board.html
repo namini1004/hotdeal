@@ -431,7 +431,7 @@
 
     async function ensureLoggedInForWrite(){
       try{
-        const res = await fetch('/api/auth?action=me', { credentials: 'include', cache: 'no-store' });
+        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
         if(res.ok){
           const data = await res.json();
           if(data?.user) return true;
