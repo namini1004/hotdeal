@@ -376,17 +376,18 @@
         }
       });
 
-      const previewHandler = () => {
+      const previewHandler = (delayMs = 1000) => {
         const normalized = normalizeDealUrl(dealUrlInput.value);
         if(!normalized){
           state.previewUrl = '';
           return;
         }
         if(previewTimer) clearTimeout(previewTimer);
-        previewTimer = setTimeout(() => fetchLinkPreview(normalized), 250);
+        previewTimer = setTimeout(() => fetchLinkPreview(normalized), delayMs);
       };
-      dealUrlInput.addEventListener('blur', previewHandler);
-      dealUrlInput.addEventListener('change', previewHandler);
+      dealUrlInput.addEventListener('input', () => previewHandler(1000));
+      dealUrlInput.addEventListener('blur', () => previewHandler(0));
+      dealUrlInput.addEventListener('change', () => previewHandler(0));
 
       document.getElementById('form').addEventListener('submit', async (e) => {
         e.preventDefault();
