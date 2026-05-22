@@ -2,3 +2,6 @@ codex_prompt.txt
 __pycache__/
 *.py[cod]
 .vercel
+oauth_clientid.txt
+oauth_clientsecret.txt
+oauth_*.txt
