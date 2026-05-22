@@ -175,8 +175,27 @@
     window.addEventListener('resize', syncKeyboardUI);
     syncKeyboardUI();
 
+    async function ensureLoggedIn(){
+      try{
+        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          if(data?.user) return true;
+        }
+      }catch(_){ }
+      if(window.HotdealAndroid?.requireLogin){
+        window.HotdealAndroid.requireLogin();
+      }else{
+        alert('로그인하세요.');
+        location.href = 'my-gaji.html';
+      }
+      return false;
+    }
+
     document.getElementById('form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const canWrite = await ensureLoggedIn();
+      if(!canWrite) return;
       const title = document.getElementById('title').value.trim();
       const body = document.getElementById('body').value.trim();
       if(!title) return;
@@ -203,6 +222,11 @@
           headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify(post)
         });
+        if(res.status === 401){
+          const canWrite = await ensureLoggedIn();
+          if(!canWrite) return;
+          throw new Error('login required');
+        }
         if(!res.ok) throw new Error('api failed');
         const data = await res.json();
         const saved = normalizePosts([data.item || post])[0];
@@ -210,11 +234,17 @@
         saveLocalPosts(next);
         location.href = `board.html?id=${encodeURIComponent(saved.id)}`;
       }catch(_){
-        const next = [post, ...readLocalPosts()];
-        saveLocalPosts(next);
-        location.href = `board.html?id=${encodeURIComponent(post.id)}`;
+        alert('서버 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        btn.disabled = false;
+        btn.textContent = '작성 완료';
       }
     });
+    async function init(){
+      const canWrite = await ensureLoggedIn();
+      if(!canWrite) return;
+    }
+
+    init();
   </script>
 </body>
 </html>

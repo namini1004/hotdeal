@@ -1,3 +1,4 @@
+const { readSession } = require('./_lib/auth');
 const { normalizeBoardRow, supabaseRequest, mapBoardPayload } = require('./_lib/board');
 
 function json(res, code, data) {
@@ -17,6 +18,9 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
+      const sessionUser = readSession(req);
+      if (!sessionUser) return json(res, 401, { error: 'login required' });
+
       const payload = mapBoardPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });
       const now = new Date().toISOString();

@@ -366,6 +366,23 @@
     window.addEventListener('resize', syncKeyboardUI);
     syncKeyboardUI();
 
+    async function ensureLoggedIn(){
+      try{
+        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          if(data?.user) return true;
+        }
+      }catch(_){ }
+      if(window.HotdealAndroid?.requireLogin){
+        window.HotdealAndroid.requireLogin();
+      }else{
+        alert('로그인하세요.');
+        location.href = 'my-gaji.html';
+      }
+      return false;
+    }
+
     function setActiveCategory(category){
       const target = [...document.querySelectorAll('.chip')].find(btn => btn.dataset.cat === category) || document.querySelector('.chip');
       if(!target) return;
@@ -407,6 +424,8 @@
 
     document.getElementById('form').addEventListener('submit', async (e)=>{
       e.preventDefault();
+      const canWrite = await ensureLoggedIn();
+      if(!canWrite) return;
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const price = formatPrice(document.getElementById('price').value);
@@ -496,7 +515,13 @@
       }
     });
 
-    loadEditItem();
+    async function init(){
+      const canWrite = await ensureLoggedIn();
+      if(!canWrite) return;
+      loadEditItem();
+    }
+
+    init();
   </script>
 </body>
 </html>

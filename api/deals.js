@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { readSession } = require('./_lib/auth');
 const { readFeedItems, normalizeUserRow, supabaseRequest, mapPayload } = require('./_lib/deals');
 
 function json(res, code, data) {
@@ -60,6 +61,9 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
+      const sessionUser = readSession(req);
+      if (!sessionUser) return json(res, 401, { error: 'login required' });
+
       const payload = mapPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });
       const now = new Date().toISOString();
