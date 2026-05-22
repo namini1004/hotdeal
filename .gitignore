@@ -5,3 +5,5 @@ __pycache__/
 oauth_clientid.txt
 oauth_clientsecret.txt
 oauth_*.txt
+autn_session.txt
+auth_session.txt
