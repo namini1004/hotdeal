@@ -160,6 +160,21 @@
       }
     });
 
+    function syncKeyboardUI(){
+      const vv = window.visualViewport;
+      const keyboardOpen = vv ? (window.innerHeight - vv.height > 120) : false;
+      document.body.classList.toggle('keyboard-open', keyboardOpen);
+      document.querySelectorAll('.bottom-nav,.bottom-tabs,.tabbar,.bottom-navigation,[data-bottom-tabs]').forEach((el) => {
+        el.style.display = keyboardOpen ? 'none' : '';
+      });
+    }
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', syncKeyboardUI);
+      window.visualViewport.addEventListener('scroll', syncKeyboardUI);
+    }
+    window.addEventListener('resize', syncKeyboardUI);
+    syncKeyboardUI();
+
     document.getElementById('form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = document.getElementById('title').value.trim();

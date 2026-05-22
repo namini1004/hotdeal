@@ -35,6 +35,9 @@
     input,textarea,select{width:100%;border:none;outline:none;font:inherit;font-size:16px;color:#111;background:#fff}
     textarea{min-height:120px;line-height:1.6;resize:none}
     .hint{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+    .url-row{display:flex;gap:8px;align-items:center}
+    .url-row input{flex:1}
+    .fill-btn{height:40px;padding:0 14px;border:1px solid #d8c7ff;border-radius:10px;background:#f3edff;color:#5b21b6;font-size:14px;font-weight:800;white-space:nowrap;cursor:pointer}
 
     .row{display:flex;gap:8px}
     .chip{padding:10px 14px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-size:14px;font-weight:600;color:#4b5563;cursor:pointer}
@@ -72,8 +75,10 @@
     <form class="wrap" id="form">
       <div class="field">
         <label for="dealUrl">핫딜주소</label>
-        <input id="dealUrl" inputmode="url" placeholder="https://..." />
-        <div class="hint">링크 입력 1초 뒤 자동 파싱하여 이미지/제목/설명/가격을 채웁니다.</div>
+        <div class="url-row">
+          <input id="dealUrl" inputmode="url" placeholder="https://..." />
+          <button type="button" class="fill-btn" id="fillByLinkBtn">채우기</button>
+        </div>
       </div>
 
       <button class="photo" id="photoButton" type="button">
@@ -124,7 +129,6 @@
     let selectedImage = '';
     let sharedImage = '';
     let editItem = null;
-    let previewTimer = null;
     let previewUrl = '';
 
     document.getElementById('catRow').addEventListener('click',(e)=>{
@@ -219,11 +223,8 @@
 
         const title = document.getElementById('title');
         const desc = document.getElementById('desc');
-        const price = document.getElementById('price');
         if(!title.value.trim() && data.title) title.value = data.title.trim();
         if(!desc.value.trim() && data.description) desc.value = data.description.trim();
-        const parsedPrice = extractPriceText(`${data.title || ''} ${data.description || ''}`);
-        if(!price.value.trim() && parsedPrice) price.value = parsedPrice;
         if(!selectedImage && !sharedImage && data.image) setPhotoPreview(data.image);
       }catch(_){ }
     }
@@ -332,15 +333,38 @@
     });
 
     const dealUrlInput = document.getElementById('dealUrl');
-    const schedulePreview = (delayMs = 1000) => {
+    const fillByLinkBtn = document.getElementById('fillByLinkBtn');
+    fillByLinkBtn.addEventListener('click', async () => {
       const normalized = normalizeDealUrl(dealUrlInput.value);
-      if(!normalized){ previewUrl = ''; return; }
-      if(previewTimer) clearTimeout(previewTimer);
-      previewTimer = setTimeout(() => fetchLinkPreview(normalized), delayMs);
-    };
-    dealUrlInput.addEventListener('input', () => schedulePreview(1000));
-    dealUrlInput.addEventListener('blur', () => schedulePreview(0));
-    dealUrlInput.addEventListener('change', () => schedulePreview(0));
+      if(!normalized){
+        alert('핫딜주소를 입력해주세요.');
+        return;
+      }
+      fillByLinkBtn.disabled = true;
+      const originalText = fillByLinkBtn.textContent;
+      fillByLinkBtn.textContent = '채우는 중...';
+      try{
+        await fetchLinkPreview(normalized);
+      }finally{
+        fillByLinkBtn.disabled = false;
+        fillByLinkBtn.textContent = originalText;
+      }
+    });
+
+    function syncKeyboardUI(){
+      const vv = window.visualViewport;
+      const keyboardOpen = vv ? (window.innerHeight - vv.height > 120) : false;
+      document.body.classList.toggle('keyboard-open', keyboardOpen);
+      document.querySelectorAll('.bottom-nav,.bottom-tabs,.tabbar,.bottom-navigation,[data-bottom-tabs]').forEach((el) => {
+        el.style.display = keyboardOpen ? 'none' : '';
+      });
+    }
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', syncKeyboardUI);
+      window.visualViewport.addEventListener('scroll', syncKeyboardUI);
+    }
+    window.addEventListener('resize', syncKeyboardUI);
+    syncKeyboardUI();
 
     function setActiveCategory(category){
       const target = [...document.querySelectorAll('.chip')].find(btn => btn.dataset.cat === category) || document.querySelector('.chip');
