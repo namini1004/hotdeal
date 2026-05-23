@@ -268,6 +268,27 @@
       }
     }
 
+    function sameRenderableItem(a, b){
+      if(!a || !b) return false;
+      return [
+        a.title || '',
+        a.price || '',
+        a.desc || '',
+        a.img || '',
+        a.views || 0,
+        a.comments || 0,
+        a.updatedAt || a.registeredAt || a.date || ''
+      ].join('|') === [
+        b.title || '',
+        b.price || '',
+        b.desc || '',
+        b.img || '',
+        b.views || 0,
+        b.comments || 0,
+        b.updatedAt || b.registeredAt || b.date || ''
+      ].join('|');
+    }
+
     async function fetchItemById(id){
       const res = await fetch(`${DEALS_API}/${encodeURIComponent(id)}`, { cache: 'no-store' });
       if(!res.ok) throw new Error('fetch failed');
@@ -397,7 +418,9 @@
         const latest = await fetchItemById(id);
         if(latest && !isDeleted(latest)){
           currentItem = latest;
-          renderItem(latest);
+          if(!sameRenderableItem(item, latest)){
+            renderItem(latest);
+          }
           const existingIdx = cachedItems.findIndex(v => String(v.id) === String(latest.id));
           const next = [...cachedItems];
           if(existingIdx >= 0){

@@ -26,6 +26,21 @@ function makeEtag(scope, items) {
   return `W/"${hash}"`;
 }
 
+function toMs(value) {
+  if (!value) return 0;
+  const ms = Date.parse(String(value));
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function filterBySince(items, since) {
+  const sinceMs = toMs(since);
+  if (!sinceMs) return items;
+  return (items || []).filter((item) => {
+    const candidate = item.updatedAt || item.registeredAt || item.date || '';
+    return toMs(candidate) > sinceMs;
+  });
+}
+
 module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
@@ -33,7 +48,8 @@ module.exports = async (req, res) => {
       const scope = url.searchParams.get('scope') || 'all';
       const since = url.searchParams.get('since') || '';
 
-      const feedItems = scope === 'user' ? [] : readFeedItems();
+      const fullFeedItems = scope === 'user' ? [] : readFeedItems();
+      const feedItems = since && scope !== 'user' ? filterBySince(fullFeedItems, since) : fullFeedItems;
       let userItems = [];
 
       if (scope !== 'feed') {

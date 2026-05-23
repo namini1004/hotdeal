@@ -355,6 +355,19 @@
       }, { passive:true });
     }
 
+    function makeFeedFingerprint(items){
+      return (items || [])
+        .map((item) => [
+          item.sourceLink || item.id || '',
+          item.views || 0,
+          item.comments || 0,
+          item.img || '',
+          item.registeredAt || item.date || ''
+        ].join('|'))
+        .sort()
+        .join('~');
+    }
+
     async function refreshFeed({ silent = false } = {}){
       if(isRefreshing) return;
       isRefreshing = true;
@@ -367,15 +380,29 @@
           label.textContent = '가지 로딩중...';
         }
         const headers = state.feedEtag ? { 'If-None-Match': state.feedEtag } : {};
-        const res = await fetch(`${DEALS_API}?scope=feed`, { cache: 'no-store', headers });
+        const sinceQuery = state.lastFeedSyncAt ? `&since=${encodeURIComponent(state.lastFeedSyncAt)}` : '';
+        const res = await fetch(`${DEALS_API}?scope=feed${sinceQuery}`, { cache: 'no-store', headers });
         if(res.status === 304) return;
         if(res.ok){
           state.feedEtag = res.headers.get('etag') || state.feedEtag;
           const data = await res.json();
+          const incoming = normalizeItems(data.items || []);
+          const prevFingerprint = makeFeedFingerprint(getCurrentTabItems());
+
+          if(data.delta && state.feedItems.length){
+            const byKey = new Map(state.feedItems.map((item) => [getDealKey(item), item]));
+            incoming.forEach((item) => byKey.set(getDealKey(item), item));
+            state.feedItems = [...byKey.values()];
+          }else{
+            state.feedItems = incoming;
+          }
+
+          applyItems([...state.userItems, ...state.feedItems]);
           state.lastFeedSyncAt = data.serverTime || new Date().toISOString();
-          const feedItems = normalizeItems(data.items || []);
-          applyItems([...state.userItems, ...feedItems]);
-          render();
+          const nextFingerprint = makeFeedFingerprint(getCurrentTabItems());
+          if(prevFingerprint !== nextFingerprint){
+            render();
+          }
         }
       }catch(_){
       }finally{
