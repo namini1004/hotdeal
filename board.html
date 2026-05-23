@@ -436,9 +436,9 @@
           saveLocalPosts(next);
           location.href = `boarddetail.html?id=${encodeURIComponent(saved.id)}`;
         }catch(_){
-          const next = [post, ...readLocalPosts()];
-          saveLocalPosts(next);
-          location.href = `boarddetail.html?id=${encodeURIComponent(post.id)}`;
+          alert('서버 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+          btn.disabled = false;
+          btn.textContent = '작성 완료';
         }
       });
     }

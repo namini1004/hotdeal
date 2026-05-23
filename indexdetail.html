@@ -398,7 +398,13 @@
         if(latest && !isDeleted(latest)){
           currentItem = latest;
           renderItem(latest);
-          const next = [latest, ...cachedItems.filter(v => String(v.id) !== String(latest.id))];
+          const existingIdx = cachedItems.findIndex(v => String(v.id) === String(latest.id));
+          const next = [...cachedItems];
+          if(existingIdx >= 0){
+            next[existingIdx] = { ...next[existingIdx], ...latest };
+          }else{
+            next.push(latest);
+          }
           saveItems(dedupeItems(next));
         }
       }catch(_){
