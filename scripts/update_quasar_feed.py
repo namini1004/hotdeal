@@ -51,13 +51,11 @@ def extract_buy_link_from_detail(detail_html: str) -> str:
     body_m = re.search(r'<textarea[^>]*id="org_contents"[^>]*>([\s\S]*?)</textarea>', detail_html, re.I)
     if body_m:
         body_html = html.unescape(body_m.group(1))
-        # a href 우선
         for hm in re.finditer(r'href=[\"\'](https?://[^\"\']+)', body_html, re.I):
             link = html.unescape(hm.group(1)).strip()
             if 'img2.quasarzone.com' in link:
                 continue
             return link
-        # 텍스트에 직접 노출된 http
         for tm in re.finditer(r'(https?://[^\s\"\'<>]+)', body_html, re.I):
             link = html.unescape(tm.group(1)).strip()
             if 'img2.quasarzone.com' in link:
@@ -75,6 +73,23 @@ def extract_buy_link_from_detail(detail_html: str) -> str:
                 return candidate
 
     return ''
+
+
+def extract_body_text_from_detail(detail_html: str) -> str:
+    body_m = re.search(r'<textarea[^>]*id="org_contents"[^>]*>([\s\S]*?)</textarea>', detail_html, re.I)
+    if body_m:
+        body_html = html.unescape(body_m.group(1))
+        text = re.sub(r'<br\s*/?>', '\n', body_html, flags=re.I)
+        text = re.sub(r'</p\s*>', '\n', text, flags=re.I)
+        text = re.sub(r'<[^>]+>', ' ', text)
+        text = html.unescape(text)
+        text = re.sub(r'\r\n?', '\n', text)
+        text = re.sub(r'\n\s*\n+', '\n\n', text)
+        text = re.sub(r'[ \t]+', ' ', text)
+        return text.strip()
+
+    og_desc_m = re.search(r'<meta property="og:description" content="([^"]*)"', detail_html)
+    return html.unescape(og_desc_m.group(1)).strip() if og_desc_m else ''
 
 
 def parse_list_items(page_html: str):
@@ -186,6 +201,7 @@ def main():
             detail_html = requests.get(row["sourceLink"], headers=HEADERS, timeout=25).text
             real_link = extract_buy_link_from_detail(detail_html)
             row["buyLink"] = real_link or row["sourceLink"]
+            row["desc"] = extract_body_text_from_detail(detail_html)
             if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:
                 row["buyLink"] = row["sourceLink"]
         except Exception:

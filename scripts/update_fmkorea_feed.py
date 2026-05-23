@@ -191,6 +191,21 @@ def extract_buy_link_in_page(page, url: str) -> str:
     }''')
 
 
+def extract_body_text_in_page(page, url: str) -> str:
+    page.goto(url, wait_until="domcontentloaded", timeout=90000)
+    page.wait_for_timeout(900)
+    return page.evaluate('''() => {
+      const scopes = ['.xe_content', '.rd_body', '.document-content', '.document-view', '.article-content', 'article', 'body'];
+      let root = null;
+      for (const sel of scopes) {
+        root = document.querySelector(sel);
+        if (root) break;
+      }
+      if (!root) return '';
+      return (root.innerText || '').trim();
+    }''')
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
@@ -232,6 +247,12 @@ def main():
                 buy = normalize_fmkorea_outbound(buy)
                 if buy:
                     r["buyLink"] = buy
+            except Exception:
+                pass
+            try:
+                body_text = extract_body_text_in_page(detail_page, r["href"])
+                if body_text:
+                    r["desc"] = body_text
             except Exception:
                 pass
         detail_page.close()
@@ -328,7 +349,7 @@ def main():
                 "views": views,
                 "comments": comments,
                 "category": category,
-                "desc": f"쇼핑몰: {shop} / 배송: {delivery}".strip(),
+                "desc": (r.get("desc") or f"쇼핑몰: {shop} / 배송: {delivery}".strip()),
                 "img": img,
                 "buyLink": normalize_fmkorea_outbound(r.get("buyLink") or r["href"]),
                 "sourceLink": r["href"],

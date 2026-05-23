@@ -196,6 +196,15 @@ def extract_price_from_detail(detail_html: str) -> str:
     return extract_best_price(text_only)
 
 
+def extract_body_text(detail_html: str) -> str:
+    chunk = get_content_chunk(detail_html)
+    text = re.sub(r'<br\s*/?>', '\n', chunk, flags=re.I)
+    text = re.sub(r'</p\s*>', '\n', text, flags=re.I)
+    text = re.sub(r'<[^>]+>', ' ', text)
+    text = clean(text)
+    return text
+
+
 def extract_primary_image(detail_html: str) -> str:
     # 루리웹은 상세 본문 첫 번째 이미지가 대표 이미지
     chunk = get_content_chunk(detail_html)
@@ -252,7 +261,8 @@ def main():
                 desc_m = re.search(r'<meta property="og:description" content="([^"]*)"', detail_html)
                 primary_img = extract_primary_image(detail_html)
                 row['img'] = to_proxy_image_url(primary_img or (clean(img_m.group(1)) if img_m else ''))
-                row['desc'] = clean(desc_m.group(1)) if desc_m else ''
+                body_text = extract_body_text(detail_html)
+                row['desc'] = body_text or (clean(desc_m.group(1)) if desc_m else '')
                 if row.get('price') in {'', '가격 정보 확인'}:
                     body_price = extract_price_from_detail(detail_html)
                     if body_price:

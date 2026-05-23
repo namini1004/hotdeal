@@ -65,6 +65,19 @@ def parse_post_stats(detail: str) -> tuple[int, int]:
     return views, comments
 
 
+def extract_body_text(detail: str) -> str:
+    body_m = re.search(r'<article[^>]*class="[^\"]*board-contents[^\"]*"[\s\S]*?</article>', detail, re.I)
+    chunk = body_m.group(0) if body_m else detail
+    text = re.sub(r'<br\s*/?>', '\n', chunk, flags=re.I)
+    text = re.sub(r'</p\s*>', '\n', text, flags=re.I)
+    text = re.sub(r'<[^>]+>', ' ', text)
+    text = html.unescape(text)
+    text = re.sub(r'\r\n?', '\n', text)
+    text = re.sub(r'\n\s*\n+', '\n\n', text)
+    text = re.sub(r'[ \t]+', ' ', text)
+    return text.strip()
+
+
 def load_hidden_hotdeals():
     if not HIDDEN_PATH.exists():
         return {"sourceLinks": set(), "bbsNos": set()}
@@ -138,6 +151,7 @@ def parse_items():
         detail = s.get(href, timeout=20).text
         og_title = pick(r'<meta property="og:title" content="([^"]*)"', detail) or raw_title
         og_desc = pick(r'<meta property="og:description" content="([^"]*)"', detail)
+        body_desc = extract_body_text(detail)
         og_img = pick(r'<meta property="og:image" content="([^"]*)"', detail) or img
 
         dt = parse_registered_at(detail)
@@ -179,7 +193,7 @@ def parse_items():
             "views": views,
             "comments": comments,
             "category": category,
-            "desc": og_desc or "",
+            "desc": body_desc or og_desc or "",
             "img": og_img,
             "buyLink": buy_link,
             "sourceLink": href,
