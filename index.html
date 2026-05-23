@@ -35,7 +35,7 @@
     .gaji-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#5b21b6;opacity:0;transform:translateY(-8px);transition:opacity .18s ease,transform .18s ease}
     .pull-refresh.show .gaji-loader{opacity:1;transform:translateY(0)}
     .gaji-spinner{width:48px;height:48px;border-radius:999px;background:#f3edff;display:grid;place-items:center;box-shadow:0 6px 14px rgba(var(--brand-rgb),.18)}
-    .gaji-spinner .emoji{font-size:26px;line-height:1;display:inline-block;animation:gaji-spin 1s linear infinite}
+    .gaji-spinner .gaji-icon{width:30px;height:30px;display:block;object-fit:contain;animation:gaji-spin 1s linear infinite}
     .gaji-label{font-size:12px;font-weight:800;letter-spacing:-.01em}
 
     @keyframes gaji-spin{
@@ -115,7 +115,7 @@
     </header>
     <div class="pull-refresh" id="pullRefresh" aria-live="polite">
       <div class="gaji-loader" id="gajiLoader">
-        <div class="gaji-spinner"><span class="emoji" aria-hidden="true">🍆</span></div>
+        <div class="gaji-spinner"><img class="gaji-icon" src="assets/gaji-eggplant-transparent.png" alt="" aria-hidden="true"></div>
         <div class="gaji-label" id="gajiLabel">당겨서 새로고침</div>
       </div>
     </div>
@@ -245,7 +245,7 @@
       return baseItems.filter(i => (i.title || '').toLowerCase().includes(kw));
     }
 
-    const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80';
+    const FALLBACK_IMAGE = 'assets/gaji-eggplant.jpg';
 
     function optimizeImageUrl(src){
       const raw = String(src || '').trim();
