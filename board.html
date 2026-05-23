@@ -133,6 +133,7 @@
         <div class="field">
           <label for="body">내용</label>
           <textarea id="body" placeholder="공유하고 싶은 이야기를 적어주세요."></textarea>
+          <div class="hint">줄바꿈/링크/마크다운 지원: **굵게**, *기울임*, [텍스트](https://...)</div>
         </div>
       </form>
       <div class="bottom">
@@ -152,6 +153,7 @@
     </section>
   </div>
 
+  <script src="assets/text-format.js"></script>
   <script>
     const BOARD_API = '/api/board-posts';
     const LINK_PREVIEW_API = '/api/link-preview';
@@ -192,9 +194,21 @@
     }
 
     function escapeHtml(text){
+      if(window.TextFormat?.escapeHtml) return window.TextFormat.escapeHtml(text || '');
       return String(text || '').replace(/[&<>"']/g, (ch) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[ch]));
+    }
+
+    function renderRichText(text){
+      if(window.TextFormat?.markdownToHtml){
+        return window.TextFormat.markdownToHtml(text || '');
+      }
+      return escapeHtml(text || '');
+    }
+
+    function renderExcerpt(text){
+      return escapeHtml(String(text || '').replace(/\r\n?/g, '\n').replace(/\n+/g, ' '));
     }
 
     function setView(name){
@@ -230,7 +244,7 @@
           ${post.img ? `<img class="thumb" src="${post.img}" alt="">` : `<div class="thumb empty"><span class="material-symbols-outlined">article</span></div>`}
           <div>
             <div class="post-title">${escapeHtml(post.title)}</div>
-            <div class="excerpt">${escapeHtml(post.body || '내용 없음')}</div>
+            <div class="excerpt">${renderExcerpt(post.body || '내용 없음')}</div>
             <div class="meta">${escapeHtml(post.author)} · ${formatTime(post.createdAt)}</div>
           </div>
         </a>
@@ -272,7 +286,7 @@
       document.getElementById('detailHero').innerHTML = post.img ? `<img src="${post.img}" alt="">` : `<img src="${FALLBACK_IMAGE}" alt="">`;
       document.getElementById('detailTitle').textContent = post.title || '제목 없음';
       document.getElementById('detailMeta').textContent = `${post.author || '익명'} · ${formatTime(post.createdAt)}`;
-      document.getElementById('detailBody').textContent = post.body || '';
+      document.getElementById('detailBody').innerHTML = renderRichText(post.body || '');
     }
 
     function readFileAsDataURL(file){

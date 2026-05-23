@@ -72,6 +72,7 @@
     <button class="sheet-btn" id="closeSheetBtn" type="button">닫기</button>
   </div>
 
+  <script src="assets/text-format.js"></script>
   <script>
     const BOARD_API = '/api/board-posts';
     const STORAGE_KEY = 'gaji_board_posts_v1';
@@ -114,11 +115,18 @@
       showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
     }
 
+    function renderRichText(text){
+      if(window.TextFormat?.markdownToHtml){
+        return window.TextFormat.markdownToHtml(text || '');
+      }
+      return String(text || '');
+    }
+
     function renderPost(post){
       currentPost = post;
       document.getElementById('title').textContent = post.title || '제목 없음';
       document.getElementById('meta').textContent = `${post.author || '익명'} · ${formatTime(post.createdAt)}`;
-      document.getElementById('body').textContent = post.body || '';
+      document.getElementById('body').innerHTML = renderRichText(post.body || '');
       document.getElementById('img').src = post.img || FALLBACK_IMAGE;
     }
 

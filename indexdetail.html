@@ -106,6 +106,7 @@
     <button class="sheet-btn" id="closeSheetBtn" type="button">닫기</button>
   </div>
 
+  <script src="assets/text-format.js"></script>
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
@@ -226,21 +227,11 @@
       return dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]);
     }
 
-    function escapeHtml(text){
-      return String(text || '').replace(/[&<>"']/g, (ch) => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[ch]));
-    }
-
-    function linkifyText(text){
-      const escaped = escapeHtml(text || '');
-      return escaped.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
-        return `<a href="${url}" target="_blank" rel="noopener">${url}</a>`;
-      });
+    function renderRichText(text){
+      if(window.TextFormat?.markdownToHtml){
+        return window.TextFormat.markdownToHtml(text || '');
+      }
+      return String(text || '');
     }
 
     function renderItem(item){
@@ -261,7 +252,7 @@
         imgEl.onerror = null;
         imgEl.src = FALLBACK_IMAGE;
       };
-      document.getElementById('desc').innerHTML = linkifyText(item.desc);
+      document.getElementById('desc').innerHTML = renderRichText(item.desc);
 
       if(item.sourceLink || item.buyLink){
         const sourceBottom = document.getElementById('sourceBottom');
