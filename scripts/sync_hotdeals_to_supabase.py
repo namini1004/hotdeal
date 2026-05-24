@@ -74,7 +74,8 @@ def main():
         print("NO_ROWS")
         return
 
-    endpoint = f"{supabase_url}/rest/v1/deals?on_conflict=source,source_link"
+    endpoint_upsert = f"{supabase_url}/rest/v1/deals?on_conflict=source,source_link"
+    endpoint_insert = f"{supabase_url}/rest/v1/deals"
     headers = {
         "apikey": service_key,
         "Authorization": f"Bearer {service_key}",
@@ -83,8 +84,15 @@ def main():
     }
 
     written = 0
+    use_insert_fallback = False
     for batch in chunked(rows, 400):
+        endpoint = endpoint_insert if use_insert_fallback else endpoint_upsert
         res = requests.post(endpoint, headers=headers, json=batch, timeout=60)
+        if not res.ok and (res.status_code == 400 and "42P10" in (res.text or "")):
+            use_insert_fallback = True
+            headers["Prefer"] = "return=minimal"
+            res = requests.post(endpoint_insert, headers=headers, json=batch, timeout=60)
+
         if not res.ok:
             raise SystemExit(f"Supabase upsert failed ({res.status_code}): {res.text}")
         written += len(batch)
