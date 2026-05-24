@@ -120,38 +120,34 @@ def extract_primary_image(detail_html: str) -> str:
     return ""
 
 
-def extract_primary_image_in_page(page, url: str) -> str:
+def extract_detail_bundle_in_page(page, url: str) -> dict:
     page.goto(url, wait_until="domcontentloaded", timeout=90000)
-    page.wait_for_timeout(1200)
+    page.wait_for_timeout(450)
     return page.evaluate('''() => {
-      const scopes = ['.xe_content', '.rd_body', '.document-content', '.document-view', '.article-content', 'article'];
-      let root = null;
-      for (const sel of scopes) {
-        root = document.querySelector(sel);
-        if (root) break;
+      const result = { img: '', buyLink: '', desc: '' };
+
+      const norm = (v) => (v || '').trim();
+      const abs = (href) => {
+        try { return new URL(href, location.href).href; } catch (_) { return ''; }
+      };
+
+      // 대표이미지 추출
+      const imgScopes = ['.xe_content', '.rd_body', '.document-content', '.document-view', '.article-content', 'article'];
+      let imgRoot = null;
+      for (const sel of imgScopes) {
+        imgRoot = document.querySelector(sel);
+        if (imgRoot) break;
       }
-      if (!root) root = document;
-      for (const img of root.querySelectorAll('img')) {
+      if (!imgRoot) imgRoot = document;
+      for (const img of imgRoot.querySelectorAll('img')) {
         const src = (img.getAttribute('data-src') || img.getAttribute('src') || '').trim();
         if (!src) continue;
         if (src.startsWith('data:')) continue;
         if (src.includes('/logos/mobile/fmkorea.png')) continue;
         if (src.includes('transparent.gif')) continue;
-        if (src.startsWith('//')) return `https:${src}`;
-        return src;
+        result.img = src.startsWith('//') ? `https:${src}` : src;
+        break;
       }
-      return '';
-    }''')
-
-
-def extract_buy_link_in_page(page, url: str) -> str:
-    page.goto(url, wait_until="domcontentloaded", timeout=90000)
-    page.wait_for_timeout(900)
-    return page.evaluate('''() => {
-      const norm = (v) => (v || '').trim();
-      const abs = (href) => {
-        try { return new URL(href, location.href).href; } catch (_) { return ''; }
-      };
 
       // 1) '링크' 라벨 옆 anchor 우선
       const cells = Array.from(document.querySelectorAll('th,td,dt,dd,li,span,div'));
@@ -161,48 +157,59 @@ def extract_buy_link_in_page(page, url: str) -> str:
         let next = el.nextElementSibling;
         if (next) {
           const a = next.querySelector('a[href^="http"]') || next.closest('tr,dl,li,div')?.querySelector('a[href^="http"]');
-          if (a) return abs(a.getAttribute('href'));
+          if (a) {
+            result.buyLink = abs(a.getAttribute('href'));
+            break;
+          }
           const txt = norm(next.textContent);
           const m = txt.match(/https?:\/\/\S+/);
-          if (m) return abs(m[0]);
+          if (m) {
+            result.buyLink = abs(m[0]);
+            break;
+          }
         }
         const wrap = el.closest('tr,dl,li,div');
         if (wrap) {
           const a2 = wrap.querySelector('a[href^="http"]');
-          if (a2) return abs(a2.getAttribute('href'));
+          if (a2) {
+            result.buyLink = abs(a2.getAttribute('href'));
+            break;
+          }
           const m2 = norm(wrap.textContent).match(/https?:\/\/\S+/);
-          if (m2) return abs(m2[0]);
+          if (m2) {
+            result.buyLink = abs(m2[0]);
+            break;
+          }
         }
       }
 
-      // 2) 상단 정보영역에서 첫 외부링크
-      const topScopes = ['.rd_body', '.xe_content', '.document-content', 'article', 'body'];
-      for (const sel of topScopes) {
-        const root = document.querySelector(sel);
-        if (!root) continue;
-        for (const a of root.querySelectorAll('a[href^="http"]')) {
-          const href = abs(a.getAttribute('href'));
-          if (!href) continue;
-          if (href.includes('fmkorea.com')) continue;
-          return href;
+      // 2) 상단 정보영역에서 첫 외부링크 fallback
+      if (!result.buyLink) {
+        const topScopes = ['.rd_body', '.xe_content', '.document-content', 'article', 'body'];
+        for (const sel of topScopes) {
+          const root = document.querySelector(sel);
+          if (!root) continue;
+          for (const a of root.querySelectorAll('a[href^="http"]')) {
+            const href = abs(a.getAttribute('href'));
+            if (!href) continue;
+            if (href.includes('fmkorea.com')) continue;
+            result.buyLink = href;
+            break;
+          }
+          if (result.buyLink) break;
         }
       }
-      return '';
-    }''')
 
-
-def extract_body_text_in_page(page, url: str) -> str:
-    page.goto(url, wait_until="domcontentloaded", timeout=90000)
-    page.wait_for_timeout(900)
-    return page.evaluate('''() => {
+      // 본문 텍스트
       const scopes = ['.xe_content', '.rd_body', '.document-content', '.document-view', '.article-content', 'article', 'body'];
       let root = null;
       for (const sel of scopes) {
         root = document.querySelector(sel);
         if (root) break;
       }
-      if (!root) return '';
-      return (root.innerText || '').trim();
+      if (root) result.desc = (root.innerText || '').trim();
+
+      return result;
     }''')
 
 
@@ -234,23 +241,20 @@ def main():
 
         detail_page = context.new_page()
         for r in all_rows:
-            current = (r.get("img") or "").strip()
-            if (not current) or ("/logos/mobile/fmkorea.png" in current) or ("transparent.gif" in current):
-                try:
-                    picked = extract_primary_image_in_page(detail_page, r["href"])
+            try:
+                bundle = extract_detail_bundle_in_page(detail_page, r["href"])
+
+                current = (r.get("img") or "").strip()
+                if (not current) or ("/logos/mobile/fmkorea.png" in current) or ("transparent.gif" in current):
+                    picked = (bundle.get("img") or "").strip()
                     if picked:
                         r["img"] = picked
-                except Exception:
-                    pass
-            try:
-                buy = extract_buy_link_in_page(detail_page, r["href"])
-                buy = normalize_fmkorea_outbound(buy)
+
+                buy = normalize_fmkorea_outbound(bundle.get("buyLink") or "")
                 if buy:
                     r["buyLink"] = buy
-            except Exception:
-                pass
-            try:
-                body_text = extract_body_text_in_page(detail_page, r["href"])
+
+                body_text = (bundle.get("desc") or "").strip()
                 if body_text:
                     r["desc"] = body_text
             except Exception:
