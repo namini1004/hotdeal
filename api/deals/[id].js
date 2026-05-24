@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
         return json(res, 200, { item: normalizeUserRow(rows[0]) });
       }
 
-      const item = readFeedItems().find((v) => String(v.id) === String(id));
+      const item = (await readFeedItems()).find((v) => String(v.id) === String(id));
       if (!item) return json(res, 404, { error: 'not found' });
       return json(res, 200, { item });
     }

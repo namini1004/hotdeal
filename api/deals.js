@@ -48,7 +48,7 @@ module.exports = async (req, res) => {
       const scope = url.searchParams.get('scope') || 'all';
       const since = url.searchParams.get('since') || '';
 
-      const fullFeedItems = scope === 'user' ? [] : readFeedItems();
+      const fullFeedItems = scope === 'user' ? [] : await readFeedItems();
       const feedItems = since && scope !== 'user' ? filterBySince(fullFeedItems, since) : fullFeedItems;
       let userItems = [];
 

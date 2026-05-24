@@ -207,7 +207,7 @@ function normalizeFeedItems(items = []) {
   });
 }
 
-function readFeedItems() {
+function readFeedItemsFromFiles() {
   const merged = [];
   for (const feedFile of FEED_FILES) {
     try {
@@ -219,6 +219,41 @@ function readFeedItems() {
     }
   }
   return applyTemperatureNormalization(merged);
+}
+
+function normalizeFeedDbRow(row = {}) {
+  return {
+    id: String(row.id || ''),
+    title: row.title || '제목 없음',
+    area: row.area || '뽐뿌 핫딜',
+    dist: row.dist || '기타',
+    time: row.time || row.date || '',
+    price: inferKeywordPrice(row.title || '', row.desc || '', row.price || '') || '가격 정보 확인',
+    category: row.category || '기타',
+    desc: row.desc || '',
+    img: row.img || '',
+    sourceLink: row.source_link || '',
+    buyLink: row.buy_link || '',
+    likes: Number(row.likes || 0),
+    views: Number(row.views || 0),
+    comments: Number(row.comments || 0),
+    date: row.date || '',
+    registeredAt: row.registered_at || '',
+    source: row.source || 'feed',
+    edited: Boolean(row.edited),
+    updatedAt: row.updated_at || '',
+  };
+}
+
+async function readFeedItems() {
+  try {
+    const rows = await supabaseRequest('deals?source=neq.user&deleted_at=is.null&order=registered_at.desc&limit=3000');
+    const normalized = (rows || []).map(normalizeFeedDbRow).filter((v) => v.sourceLink);
+    if (normalized.length) return applyTemperatureNormalization(normalized);
+  } catch (_) {
+    // fallback to file feeds
+  }
+  return readFeedItemsFromFiles();
 }
 
 function normalizeUserRow(row) {
@@ -304,6 +339,7 @@ function mapPayload(body = {}) {
 
 module.exports = {
   readFeedItems,
+  readFeedItemsFromFiles,
   normalizeUserRow,
   parseUserId,
   supabaseRequest,
