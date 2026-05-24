@@ -1,8 +1,8 @@
 {
   "source": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine",
-  "generatedAt": "2026-05-25T02:40:59.252395+09:00",
+  "generatedAt": "2026-05-25T02:58:13.171867+09:00",
   "rangeHours": 48,
-  "since": "2026-05-23T02:40:59.252395+09:00",
+  "since": "2026-05-23T02:58:13.171867+09:00",
   "today": "2026-05-25",
   "yesterday": "2026-05-24",
   "counts": {
@@ -19,8 +19,8 @@
       "time": "05.25",
       "price": "무료",
       "likes": 0,
-      "views": 26000,
-      "comments": 49,
+      "views": 27000,
+      "comments": 50,
       "category": "기타",
       "desc": "https://gift.kakao.com/page/35869",
       "img": "https://image.fmkorea.com/files/attach/new5/20260525/9867354186_1196365581_812ca3915f02bb49d331033b32d5c2f3.jpg?c=20260525000938",
@@ -38,7 +38,7 @@
       "time": "05.25",
       "price": "2,000원",
       "likes": 0,
-      "views": 11000,
+      "views": 12000,
       "comments": 22,
       "category": "기타",
       "desc": "https://campaign2.naver.com/npay/cafe/",
@@ -113,9 +113,9 @@
       "dist": "모바일/상품권",
       "time": "00:41",
       "price": "다앙",
-      "likes": 36,
+      "likes": 37,
       "views": 0,
-      "comments": 49,
+      "comments": 50,
       "category": "모바일/상품권",
       "desc": "https://gift.kakao.com/page/35869",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260525/9867354186_140x100.crop.webp?c=20260525000938",
@@ -132,7 +132,7 @@
       "dist": "세일정보",
       "time": "00:20",
       "price": "무료",
-      "likes": 31,
+      "likes": 32,
       "views": 0,
       "comments": 22,
       "category": "세일정보",
@@ -151,7 +151,7 @@
       "dist": "기타",
       "time": "23:58",
       "price": "16,900원",
-      "likes": 15,
+      "likes": 17,
       "views": 0,
       "comments": 56,
       "category": "기타",
@@ -339,7 +339,7 @@
       "title": "쟌슨빌 소시지 김치볶음밥 250g 4팩",
       "area": "펨딜",
       "dist": "먹거리",
-      "time": "13:31",
+      "time": "16:19",
       "price": "8,010원",
       "likes": 19,
       "views": 0,
@@ -351,7 +351,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9864834566",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T13:31:00+09:00"
+      "registeredAt": "2026-05-25T16:19:00+09:00"
     },
     {
       "id": "9864855929",
@@ -399,8 +399,8 @@
       "time": "05.25",
       "price": "무료",
       "likes": 0,
-      "views": 26000,
-      "comments": 49,
+      "views": 27000,
+      "comments": 50,
       "category": "기타",
       "desc": "https://gift.kakao.com/page/35869",
       "img": "https://image.fmkorea.com/files/attach/new5/20260525/9867354186_1196365581_812ca3915f02bb49d331033b32d5c2f3.jpg?c=20260525000938",
@@ -418,7 +418,7 @@
       "time": "05.25",
       "price": "2,000원",
       "likes": 0,
-      "views": 11000,
+      "views": 12000,
       "comments": 22,
       "category": "기타",
       "desc": "https://campaign2.naver.com/npay/cafe/",
@@ -579,7 +579,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9862190495",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9862864008",
@@ -598,7 +598,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9862864008",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9861229954",
@@ -617,7 +617,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861229954",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9862411462",
@@ -636,7 +636,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9862411462",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9861985556",
@@ -655,7 +655,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861985556",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9861402796",
@@ -674,7 +674,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861402796",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9861202985",
@@ -693,7 +693,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861202985",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9861339544",
@@ -712,7 +712,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861339544",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9861008383",
@@ -731,7 +731,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861008383",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9860758470",
@@ -750,7 +750,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9860758470",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9857244887",
@@ -769,7 +769,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9857244887",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9867354186",
@@ -779,8 +779,8 @@
       "time": "05.25",
       "price": "무료",
       "likes": 0,
-      "views": 26000,
-      "comments": 49,
+      "views": 27000,
+      "comments": 50,
       "category": "기타",
       "desc": "https://gift.kakao.com/page/35869",
       "img": "https://image.fmkorea.com/files/attach/new5/20260525/9867354186_1196365581_812ca3915f02bb49d331033b32d5c2f3.jpg?c=20260525000938",
@@ -798,7 +798,7 @@
       "time": "05.25",
       "price": "2,000원",
       "likes": 0,
-      "views": 11000,
+      "views": 12000,
       "comments": 22,
       "category": "기타",
       "desc": "https://campaign2.naver.com/npay/cafe/",
@@ -883,7 +883,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9857572132",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9859891705",
@@ -902,7 +902,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859891705",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9860060106",
@@ -921,7 +921,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9860060106",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9859730142",
@@ -940,7 +940,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859730142",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9858546777",
@@ -959,7 +959,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9858546777",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9859062551",
@@ -978,7 +978,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859062551",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9856727370",
@@ -997,7 +997,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9856727370",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9859268738",
@@ -1016,7 +1016,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859268738",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9856691265",
@@ -1035,7 +1035,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9856691265",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9857420733",
@@ -1054,7 +1054,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9857420733",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9856830098",
@@ -1073,7 +1073,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9856830098",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9859065086",
@@ -1092,7 +1092,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859065086",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9857674593",
@@ -1111,7 +1111,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9857674593",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9858152937",
@@ -1130,7 +1130,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9858152937",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     },
     {
       "id": "9858286436",
@@ -1149,7 +1149,7 @@
       "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9858286436",
       "source": "fmkorea",
       "date": "2026-05-25",
-      "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+      "registeredAt": "2026-05-25T02:58:13.171867+09:00"
     }
   ],
   "grouped": {
@@ -1162,8 +1162,8 @@
         "time": "05.25",
         "price": "무료",
         "likes": 0,
-        "views": 26000,
-        "comments": 49,
+        "views": 27000,
+        "comments": 50,
         "category": "기타",
         "desc": "https://gift.kakao.com/page/35869",
         "img": "https://image.fmkorea.com/files/attach/new5/20260525/9867354186_1196365581_812ca3915f02bb49d331033b32d5c2f3.jpg?c=20260525000938",
@@ -1181,7 +1181,7 @@
         "time": "05.25",
         "price": "2,000원",
         "likes": 0,
-        "views": 11000,
+        "views": 12000,
         "comments": 22,
         "category": "기타",
         "desc": "https://campaign2.naver.com/npay/cafe/",
@@ -1256,9 +1256,9 @@
         "dist": "모바일/상품권",
         "time": "00:41",
         "price": "다앙",
-        "likes": 36,
+        "likes": 37,
         "views": 0,
-        "comments": 49,
+        "comments": 50,
         "category": "모바일/상품권",
         "desc": "https://gift.kakao.com/page/35869",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260525/9867354186_140x100.crop.webp?c=20260525000938",
@@ -1275,7 +1275,7 @@
         "dist": "세일정보",
         "time": "00:20",
         "price": "무료",
-        "likes": 31,
+        "likes": 32,
         "views": 0,
         "comments": 22,
         "category": "세일정보",
@@ -1294,7 +1294,7 @@
         "dist": "기타",
         "time": "23:58",
         "price": "16,900원",
-        "likes": 15,
+        "likes": 17,
         "views": 0,
         "comments": 56,
         "category": "기타",
@@ -1482,7 +1482,7 @@
         "title": "쟌슨빌 소시지 김치볶음밥 250g 4팩",
         "area": "펨딜",
         "dist": "먹거리",
-        "time": "13:31",
+        "time": "16:19",
         "price": "8,010원",
         "likes": 19,
         "views": 0,
@@ -1494,7 +1494,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9864834566",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T13:31:00+09:00"
+        "registeredAt": "2026-05-25T16:19:00+09:00"
       },
       {
         "id": "9864855929",
@@ -1542,8 +1542,8 @@
         "time": "05.25",
         "price": "무료",
         "likes": 0,
-        "views": 26000,
-        "comments": 49,
+        "views": 27000,
+        "comments": 50,
         "category": "기타",
         "desc": "https://gift.kakao.com/page/35869",
         "img": "https://image.fmkorea.com/files/attach/new5/20260525/9867354186_1196365581_812ca3915f02bb49d331033b32d5c2f3.jpg?c=20260525000938",
@@ -1561,7 +1561,7 @@
         "time": "05.25",
         "price": "2,000원",
         "likes": 0,
-        "views": 11000,
+        "views": 12000,
         "comments": 22,
         "category": "기타",
         "desc": "https://campaign2.naver.com/npay/cafe/",
@@ -1722,7 +1722,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9862190495",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9862864008",
@@ -1741,7 +1741,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9862864008",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9861229954",
@@ -1760,7 +1760,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861229954",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9862411462",
@@ -1779,7 +1779,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9862411462",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9861985556",
@@ -1798,7 +1798,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861985556",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9861402796",
@@ -1817,7 +1817,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861402796",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9861202985",
@@ -1836,7 +1836,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861202985",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9861339544",
@@ -1855,7 +1855,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861339544",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9861008383",
@@ -1874,7 +1874,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9861008383",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9860758470",
@@ -1893,7 +1893,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9860758470",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9857244887",
@@ -1912,7 +1912,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9857244887",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9867354186",
@@ -1922,8 +1922,8 @@
         "time": "05.25",
         "price": "무료",
         "likes": 0,
-        "views": 26000,
-        "comments": 49,
+        "views": 27000,
+        "comments": 50,
         "category": "기타",
         "desc": "https://gift.kakao.com/page/35869",
         "img": "https://image.fmkorea.com/files/attach/new5/20260525/9867354186_1196365581_812ca3915f02bb49d331033b32d5c2f3.jpg?c=20260525000938",
@@ -1941,7 +1941,7 @@
         "time": "05.25",
         "price": "2,000원",
         "likes": 0,
-        "views": 11000,
+        "views": 12000,
         "comments": 22,
         "category": "기타",
         "desc": "https://campaign2.naver.com/npay/cafe/",
@@ -2026,7 +2026,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9857572132",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9859891705",
@@ -2045,7 +2045,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859891705",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9860060106",
@@ -2064,7 +2064,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9860060106",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9859730142",
@@ -2083,7 +2083,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859730142",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9858546777",
@@ -2102,7 +2102,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9858546777",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9859062551",
@@ -2121,7 +2121,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859062551",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9856727370",
@@ -2140,7 +2140,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9856727370",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9859268738",
@@ -2159,7 +2159,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859268738",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9856691265",
@@ -2178,7 +2178,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9856691265",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9857420733",
@@ -2197,7 +2197,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9857420733",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9856830098",
@@ -2216,7 +2216,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9856830098",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9859065086",
@@ -2235,7 +2235,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9859065086",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9857674593",
@@ -2254,7 +2254,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9857674593",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9858152937",
@@ -2273,7 +2273,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9858152937",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       },
       {
         "id": "9858286436",
@@ -2292,7 +2292,7 @@
         "sourceLink": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine&document_srl=9858286436",
         "source": "fmkorea",
         "date": "2026-05-25",
-        "registeredAt": "2026-05-25T02:40:59.252395+09:00"
+        "registeredAt": "2026-05-25T02:58:13.171867+09:00"
       }
     ],
     "yesterday": []
