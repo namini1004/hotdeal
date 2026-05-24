@@ -256,7 +256,14 @@ async function readFeedItems() {
   try {
     const rows = await supabaseRequest('deals?source=neq.user&deleted_at=is.null&order=registered_at.desc&limit=3000');
     const normalized = (rows || []).map(normalizeFeedDbRow).filter((v) => v.sourceLink);
-    if (normalized.length) return applyTemperatureNormalization(normalized);
+    if (normalized.length) {
+      const dedupMap = new Map();
+      for (const item of normalized) {
+        const key = `${item.source}::${item.sourceLink}`;
+        if (!dedupMap.has(key)) dedupMap.set(key, item);
+      }
+      return applyTemperatureNormalization([...dedupMap.values()]);
+    }
   } catch (_) {
     // fallback to file feeds
   }

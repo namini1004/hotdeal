@@ -79,8 +79,16 @@ def parse_post_stats(detail: str) -> tuple[int, int]:
 
 
 def extract_body_text(detail: str) -> str:
-    body_m = re.search(r'<article[^>]*class="[^\"]*board-contents[^\"]*"[\s\S]*?</article>', detail, re.I)
+    # 모바일 본문은 id=KH_Content 영역에 들어간다.
+    body_m = re.search(r'<div[^>]+id="KH_Content"[^>]*>[\s\S]*?</div>', detail, re.I)
+    if not body_m:
+        body_m = re.search(r'<div[^>]+class="[^\"]*cont[^\"]*"[^>]*>[\s\S]*?</div>', detail, re.I)
     chunk = body_m.group(0) if body_m else detail
+
+    # 본문에 섞여 들어오는 script/style 제거
+    chunk = re.sub(r'<script[\s\S]*?</script>', ' ', chunk, flags=re.I)
+    chunk = re.sub(r'<style[\s\S]*?</style>', ' ', chunk, flags=re.I)
+
     text = re.sub(r'<br\s*/?>', '\n', chunk, flags=re.I)
     text = re.sub(r'</p\s*>', '\n', text, flags=re.I)
     text = re.sub(r'<[^>]+>', ' ', text)
@@ -88,7 +96,17 @@ def extract_body_text(detail: str) -> str:
     text = re.sub(r'\r\n?', '\n', text)
     text = re.sub(r'\n\s*\n+', '\n\n', text)
     text = re.sub(r'[ \t]+', ' ', text)
-    return text.strip()
+    text = text.strip()
+
+    # 요청 케이스: '유효기간 1년입니다'부터 '변경하여 사용할 수 있습니다' 구간만 사용
+    start_token = '유효기간 1년입니다'
+    end_token = '변경하여 사용할 수 있습니다'
+    s_idx = text.find(start_token)
+    e_idx = text.find(end_token)
+    if s_idx != -1 and e_idx != -1 and e_idx >= s_idx:
+        text = text[s_idx:e_idx + len(end_token)].strip()
+
+    return text
 
 
 def load_hidden_hotdeals():
