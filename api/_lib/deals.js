@@ -10,7 +10,8 @@ const FEED_FILES = [
 
 const HOT_SCORE_CONFIG = {
   commentWeight: 1.8,
-  recencyWeight: 1.2,
+  // 최신성은 반영하되 조회/댓글 대비 과도하게 지배하지 않도록 완화
+  recencyWeight: 0.65,
   likeWeight: 0.35,
   recencyWindowHours: 48,
 };

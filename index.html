@@ -264,6 +264,28 @@
       return raw;
     }
 
+    function hexToRgb(hex){
+      const v = String(hex || '').replace('#','');
+      const n = parseInt(v, 16);
+      return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+    }
+
+    function mixColor(c1, c2, t){
+      const clamped = Math.max(0, Math.min(1, Number(t || 0)));
+      const a = hexToRgb(c1); const b = hexToRgb(c2);
+      const r = Math.round(a.r + (b.r - a.r) * clamped);
+      const g = Math.round(a.g + (b.g - a.g) * clamped);
+      const b2 = Math.round(a.b + (b.b - a.b) * clamped);
+      return `rgb(${r}, ${g}, ${b2})`;
+    }
+
+    function temperatureColor(value){
+      const t = Math.max(0, Math.min(100, Number(value || 0)));
+      if(t <= 33) return mixColor('#9ca3af', '#22c55e', t / 33);      // 회색 -> 초록
+      if(t <= 66) return mixColor('#22c55e', '#3b82f6', (t - 33) / 33); // 초록 -> 파랑
+      return mixColor('#3b82f6', '#7c3aed', (t - 66) / 34);             // 파랑 -> 보라
+    }
+
     function render(){
       const list = document.getElementById('list');
       const items = getFilteredItems();
@@ -288,7 +310,7 @@
             <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
             <div class="stats-row">
               <div class="stats">조회 ${formatCount(item.views)} · 댓글 ${formatCount(item.comments)}</div>
-              <div class="temperature">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</div>
+              <div class="temperature" style="color:${temperatureColor(item.temperature)}">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</div>
             </div>
             <div class="price">${item.price}</div>
           </div>
