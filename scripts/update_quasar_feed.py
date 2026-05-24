@@ -138,7 +138,21 @@ def parse_list_items(page_html: str):
         comments = int((comments_m.group(1).replace(',', '') if comments_m else '0') or '0')
 
         count_matches = re.findall(r'<span class="count">\s*([0-9.,kK]+)\s*</span>', row)
+        likes_text = count_matches[0] if len(count_matches) >= 2 else '0'
         views_text = count_matches[-1] if count_matches else '0'
+
+        l = likes_text.lower().replace(',', '').strip()
+        if l.endswith('k'):
+            try:
+                likes = int(float(l[:-1]) * 1000)
+            except Exception:
+                likes = 0
+        else:
+            try:
+                likes = int(float(l))
+            except Exception:
+                likes = 0
+
         v = views_text.lower().replace(',', '').strip()
         if v.endswith('k'):
             try:
@@ -165,7 +179,7 @@ def parse_list_items(page_html: str):
                 "dist": category,
                 "time": time_text,
                 "price": price,
-                "likes": 0,
+                "likes": likes,
                 "views": views,
                 "comments": comments,
                 "category": category,

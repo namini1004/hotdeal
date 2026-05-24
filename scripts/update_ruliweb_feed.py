@@ -127,6 +127,9 @@ def parse_rows(page_html: str, seen: set):
         comments_m = re.search(r'class="num_reply"[^>]*>\s*\(([0-9,]+)\)', row)
         comments = int((comments_m.group(1).replace(',', '') if comments_m else '0') or '0')
 
+        likes_m = re.search(r'<td class="recom">\s*([0-9,]+)\s*</td>', row, re.S)
+        likes = int((likes_m.group(1).replace(',', '') if likes_m else '0') or '0')
+
         views_m = re.search(r'<td class="hit">\s*([0-9,]+)\s*</td>', row, re.S)
         views = int((views_m.group(1).replace(',', '') if views_m else '0') or '0')
 
@@ -147,7 +150,7 @@ def parse_rows(page_html: str, seen: set):
                 "dist": category,
                 "time": time_text,
                 "price": price,
-                "likes": 0,
+                "likes": likes,
                 "views": views,
                 "comments": comments,
                 "category": category,

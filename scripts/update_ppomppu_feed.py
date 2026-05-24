@@ -54,14 +54,27 @@ def parse_registered_at(detail: str):
 
 def parse_post_stats(detail: str) -> tuple[int, int]:
     views = 0
-    views_m = re.search(r'조회\s*:\s*([0-9,]+)', detail)
-    if views_m:
-        views = parse_int(views_m.group(1))
+    for p in [
+        r'조회\s*:\s*([0-9,]+)',
+        r'조회수\s*[:：]\s*([0-9,]+)',
+        r'"view_count"\s*:\s*"?([0-9,]+)"?',
+    ]:
+        m = re.search(p, detail)
+        if m:
+            views = parse_int(m.group(1))
+            break
 
     comments = 0
-    comments_m = re.search(r'<span class="list_comment">\s*([0-9,]+)\s*</span>', detail)
-    if comments_m:
-        comments = parse_int(comments_m.group(1))
+    for p in [
+        r'<span class="list_comment">\s*([0-9,]+)\s*</span>',
+        r'댓글\s*[:：]\s*([0-9,]+)',
+        r'코멘트\s*[:：]\s*([0-9,]+)',
+        r'"comment_count"\s*:\s*"?([0-9,]+)"?',
+    ]:
+        m = re.search(p, detail)
+        if m:
+            comments = parse_int(m.group(1))
+            break
     return views, comments
 
 

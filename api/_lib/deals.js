@@ -8,6 +8,13 @@ const FEED_FILES = [
   path.join(process.cwd(), 'assets', 'ruliweb_hotdeals_1day.json'),
 ];
 
+const HOT_SCORE_CONFIG = {
+  commentWeight: 1.8,
+  recencyWeight: 1.2,
+  likeWeight: 0.35,
+  recencyWindowHours: 48,
+};
+
 function parseNumericPriceValue(priceText = '') {
   const s = String(priceText || '').replace(/\s+/g, '');
   const num = Number((s.match(/[0-9][0-9,]*/) || ['0'])[0].replace(/,/g, ''));
@@ -85,6 +92,60 @@ function inferKeywordPrice(title = '', desc = '', currentPrice = '') {
   return p;
 }
 
+function parseDateMs(value) {
+  if (!value) return 0;
+  const ms = Date.parse(String(value));
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function computeHotScore(item, nowMs) {
+  const views = Math.max(0, Number(item.views || 0));
+  const comments = Math.max(0, Number(item.comments || 0));
+  const likes = Math.max(0, Number(item.likes || 0));
+
+  const registeredMs = parseDateMs(item.registeredAt || item.date || '');
+  const hoursSincePost = registeredMs
+    ? Math.max(0, (nowMs - registeredMs) / (1000 * 60 * 60))
+    : HOT_SCORE_CONFIG.recencyWindowHours;
+  const freshness = Math.max(0, 1 - hoursSincePost / HOT_SCORE_CONFIG.recencyWindowHours);
+
+  const viewScore = Math.log10(views + 1);
+  const commentScore = Math.log10(comments + 1) * HOT_SCORE_CONFIG.commentWeight;
+  const likeScore = Math.log10(likes + 1) * HOT_SCORE_CONFIG.likeWeight;
+  const recencyScore = HOT_SCORE_CONFIG.recencyWeight * freshness;
+  return viewScore + commentScore + likeScore + recencyScore;
+}
+
+function applyTemperatureNormalization(items = []) {
+  const nowMs = Date.now();
+  const bySource = new Map();
+  const scored = items.map((item) => {
+    const hotScore = computeHotScore(item, nowMs);
+    const source = item.source || 'feed';
+    if (!bySource.has(source)) bySource.set(source, []);
+    bySource.get(source).push(hotScore);
+    return { ...item, hotScore };
+  });
+
+  const statsBySource = new Map();
+  for (const [source, scores] of bySource.entries()) {
+    const min = Math.min(...scores);
+    const max = Math.max(...scores);
+    const span = max - min;
+    statsBySource.set(source, { min, max, span });
+  }
+
+  return scored.map((item) => {
+    const stats = statsBySource.get(item.source || 'feed') || { min: 0, span: 0 };
+    let temperature = 50;
+    if (stats.span > 0) {
+      temperature = ((item.hotScore - stats.min) / stats.span) * 100;
+    }
+    const clamped = Math.max(0, Math.min(100, Math.round(temperature)));
+    return { ...item, hotScore: Number(item.hotScore.toFixed(4)), temperature: clamped };
+  });
+}
+
 function normalizeFeedItems(items = []) {
   return items.map((item, idx) => {
     const source = item.source || 'feed';
@@ -108,6 +169,7 @@ function normalizeFeedItems(items = []) {
       img: item.img || '',
       sourceLink: item.sourceLink || '',
       buyLink: item.buyLink || '',
+      likes: Number(item.likes || 0),
       views: Number(item.views || 0),
       comments: Number(item.comments || 0),
       date: item.date || '',
@@ -129,11 +191,11 @@ function readFeedItems() {
       // ignore missing/invalid feed file
     }
   }
-  return merged;
+  return applyTemperatureNormalization(merged);
 }
 
 function normalizeUserRow(row) {
-  return {
+  const base = {
     id: `user-${row.id}`,
     title: row.title || '제목 없음',
     area: row.area || '오늘의 핫딜',
@@ -145,6 +207,7 @@ function normalizeUserRow(row) {
     img: row.img || '',
     sourceLink: row.source_link || '',
     buyLink: row.buy_link || '',
+    likes: Number(row.likes || 0),
     views: Number(row.views || 0),
     comments: Number(row.comments || 0),
     date: row.date || '',
@@ -153,6 +216,7 @@ function normalizeUserRow(row) {
     edited: Boolean(row.edited),
     updatedAt: row.updated_at || '',
   };
+  return applyTemperatureNormalization([base])[0];
 }
 
 function parseUserId(rawId = '') {
