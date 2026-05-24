@@ -427,15 +427,8 @@
     }
 
     function renderSortIcon(){
-      const modeGlyph = state.sortMode === 'temperature'
-        ? '<path d="M13 8a3 3 0 1 0 6 0a3 3 0 0 0-6 0zm2 0a1 1 0 1 1 2 0a1 1 0 0 1-2 0zm1 3a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1z" fill="#111827"/>'
-        : '<circle cx="16" cy="9" r="3" stroke="#111827" stroke-width="2" fill="none"/><path d="M16 6v3l2 1" stroke="#111827" stroke-width="2" fill="none" stroke-linecap="round"/>';
-      document.getElementById('sortIconWrap').innerHTML = `
-      <svg width="26" height="26" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M3 4h26l-8 10v9l-10 5V14z" fill="none" stroke="#111827" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M16 27c2 0 4 2 4 4a4 4 0 1 1-8 0c0-2 2-4 4-4z" fill="none" stroke="#111827" stroke-width="2.2"/>
-        ${modeGlyph}
-      </svg>`;
+      const glyph = state.sortMode === 'temperature' ? 'device_thermostat' : 'schedule';
+      document.getElementById('sortIconWrap').innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${glyph}</span>`;
     }
 
     function openSortSheet(){
