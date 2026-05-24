@@ -10,10 +10,10 @@ const FEED_FILES = [
 
 const HOT_SCORE_CONFIG = {
   commentWeight: 1.8,
-  // 최신성은 반영하되 조회/댓글 대비 과도하게 지배하지 않도록 완화
   recencyWeight: 0.65,
   likeWeight: 0.35,
   recencyWindowHours: 48,
+  hotBoostHours: 3,
 };
 
 function parseNumericPriceValue(priceText = '') {
@@ -99,7 +99,7 @@ function parseDateMs(value) {
   return Number.isFinite(ms) ? ms : 0;
 }
 
-function computeHotScore(item, nowMs) {
+function computeHotScore(item, nowMs, sourceAvg = { views: 0, comments: 0 }) {
   const views = Math.max(0, Number(item.views || 0));
   const comments = Math.max(0, Number(item.comments || 0));
   const likes = Math.max(0, Number(item.likes || 0));
@@ -110,26 +110,52 @@ function computeHotScore(item, nowMs) {
     : HOT_SCORE_CONFIG.recencyWindowHours;
   const freshness = Math.max(0, 1 - hoursSincePost / HOT_SCORE_CONFIG.recencyWindowHours);
 
+  const avgViews = Math.max(1, Number(sourceAvg.views || 1));
+  const avgComments = Math.max(1, Number(sourceAvg.comments || 1));
+  const viewDeficit = Math.max(0, Math.min(1, (avgViews - views) / avgViews));
+  const commentDeficit = Math.max(0, Math.min(1, (avgComments - comments) / avgComments));
+  const scarcityBoost = 0.2 + 0.8 * ((viewDeficit + commentDeficit) / 2);
+  const ultraFreshBoost = hoursSincePost <= HOT_SCORE_CONFIG.hotBoostHours ? 2 : 1;
+
   const viewScore = Math.log10(views + 1);
   const commentScore = Math.log10(comments + 1) * HOT_SCORE_CONFIG.commentWeight;
   const likeScore = Math.log10(likes + 1) * HOT_SCORE_CONFIG.likeWeight;
-  const recencyScore = HOT_SCORE_CONFIG.recencyWeight * freshness;
+  const recencyScore = HOT_SCORE_CONFIG.recencyWeight * freshness * scarcityBoost * ultraFreshBoost;
   return viewScore + commentScore + likeScore + recencyScore;
 }
 
 function applyTemperatureNormalization(items = []) {
   const nowMs = Date.now();
   const bySource = new Map();
-  const scored = items.map((item) => {
-    const hotScore = computeHotScore(item, nowMs);
+
+  for (const item of items) {
     const source = item.source || 'feed';
     if (!bySource.has(source)) bySource.set(source, []);
-    bySource.get(source).push(hotScore);
+    bySource.get(source).push(item);
+  }
+
+  const avgBySource = new Map();
+  for (const [source, list] of bySource.entries()) {
+    const sumViews = list.reduce((acc, v) => acc + Math.max(0, Number(v.views || 0)), 0);
+    const sumComments = list.reduce((acc, v) => acc + Math.max(0, Number(v.comments || 0)), 0);
+    const n = Math.max(1, list.length);
+    avgBySource.set(source, { views: sumViews / n, comments: sumComments / n });
+  }
+
+  const scored = items.map((item) => {
+    const source = item.source || 'feed';
+    const hotScore = computeHotScore(item, nowMs, avgBySource.get(source));
     return { ...item, hotScore };
   });
 
   const statsBySource = new Map();
-  for (const [source, scores] of bySource.entries()) {
+  const scoreGroups = new Map();
+  for (const item of scored) {
+    const source = item.source || 'feed';
+    if (!scoreGroups.has(source)) scoreGroups.set(source, []);
+    scoreGroups.get(source).push(item.hotScore);
+  }
+  for (const [source, scores] of scoreGroups.entries()) {
     const min = Math.min(...scores);
     const max = Math.max(...scores);
     const span = max - min;

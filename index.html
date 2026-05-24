@@ -15,6 +15,7 @@
     .top{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5;transition:transform .24s ease,opacity .2s ease,box-shadow .2s ease}
     .top.is-hidden{transform:translateY(calc(-100% - 12px));opacity:0;pointer-events:none}
     .row{display:flex;align-items:center;justify-content:space-between}
+    .top-actions{display:flex;align-items:center;gap:4px}
     .title-app{display:flex;align-items:baseline;font-size:24px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}
     .brand-word{color:var(--brand);font-weight:950;letter-spacing:-.09em}
     .title-rest{color:var(--text);font-weight:800;letter-spacing:-.04em;margin-left:1px}
@@ -45,7 +46,10 @@
 
     .list{padding:0 16px}
     .item{display:grid;grid-template-columns:98px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
+    .item.viewed{background:#f8fafc}
+    .thumb-wrap{position:relative}
     .thumb{width:98px;height:98px;border-radius:12px;object-fit:cover;background:#f3f4f6}
+    .fav-badge{position:absolute;right:6px;bottom:6px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.92);display:grid;place-items:center;color:#ef4444;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .item-title{font-size:17px;font-weight:600;line-height:1.35;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .meta{margin-top:5px;color:var(--muted);font-size:13px}
     .stats-row{margin-top:6px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
@@ -61,6 +65,13 @@
     .fab.is-compact{width:56px;min-width:56px;height:56px;padding:0;border-radius:50%;box-shadow:0 10px 24px rgba(var(--brand-rgb),.38);display:flex;align-items:center;justify-content:center;gap:0}
     .fab.is-compact .fab-plus{font-size:30px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;margin:0;transform:none}
     .fab.is-compact .fab-text{display:none}
+    .sort-sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:40}
+    .sort-sheet-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
+    .sort-sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(calc(100% + 48px));padding:10px 14px calc(env(safe-area-inset-bottom) + 14px);background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease,visibility 0s linear .22s;z-index:41}
+    .sort-sheet.show{visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);transition:transform .22s ease}
+    .sheet-btn{width:100%;height:52px;border:none;border-radius:12px;background:#f4f6f8;color:#111827;font-size:16px;font-weight:800;cursor:pointer}
+    .sheet-btn + .sheet-btn{margin-top:8px}
+    .sheet-btn.active{background:#ede9fe;color:#5b21b6}
 
     @media (min-width:768px){
       body{background:var(--page)}
@@ -102,7 +113,12 @@
     <header class="top">
       <div class="row">
         <div class="title-app"><span class="brand-word">가지</span><span class="title-rest">고 싶다</span></div>
-        <button class="icon-btn" id="searchToggle" aria-label="검색"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
+        <div class="top-actions">
+          <button class="icon-btn" id="sortToggle" aria-label="정렬">
+            <span id="sortIconWrap" aria-hidden="true"></span>
+          </button>
+          <button class="icon-btn" id="searchToggle" aria-label="검색"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
+        </div>
       </div>
       <div class="search-wrap" id="searchWrap">
         <input class="search-input" id="searchInput" type="text" placeholder="최근 48시간 핫딜 검색" />
@@ -125,14 +141,22 @@
   </div>
 
   <button class="fab" id="writeBtn" aria-label="글쓰기"><span class="fab-plus" aria-hidden="true">+</span><span class="fab-text">글쓰기</span></button>
+  <div class="sort-sheet-backdrop" id="sortSheetBackdrop"></div>
+  <div class="sort-sheet" id="sortSheet" role="dialog" aria-modal="true" aria-label="정렬 선택">
+    <button class="sheet-btn" id="sortLatestBtn" type="button">최신순</button>
+    <button class="sheet-btn" id="sortTempBtn" type="button">가지온도순</button>
+    <button class="sheet-btn" id="sortCloseBtn" type="button">닫기</button>
+  </div>
 
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
+    const READ_KEY = 'hotdeal_read_keys_v1';
     const DEALS_API = '/api/deals';
     const LAST_TAB_KEY = 'hotdeal_last_tab_v1';
-    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'today', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '' };
+    const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
+    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'today', sortMode: 'latest', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '' };
     let isRefreshing = false;
 
     function normalizeItems(items){
@@ -203,6 +227,37 @@
       return (items || []).filter(item => !deleted.has(getDealKey(item)));
     }
 
+    function getReadKeys(){
+      try{ return new Set(JSON.parse(localStorage.getItem(READ_KEY) || '[]')); }catch(_){ return new Set(); }
+    }
+
+    function markAsRead(item){
+      const key = getDealKey(item);
+      if(!key) return;
+      const keys = getReadKeys();
+      keys.add(key);
+      localStorage.setItem(READ_KEY, JSON.stringify([...keys]));
+    }
+
+    function getCurrentUserId(){
+      try{
+        const user = JSON.parse(localStorage.getItem(USER_CACHE_KEY) || 'null');
+        return user?.id || user?.email || 'guest';
+      }catch(_){ return 'guest'; }
+    }
+
+    function getFavoriteStorageKey(){
+      return `hotdeal_favorites_${getCurrentUserId()}`;
+    }
+
+    function getFavoriteKeys(){
+      try{ return new Set(JSON.parse(localStorage.getItem(getFavoriteStorageKey()) || '[]')); }catch(_){ return new Set(); }
+    }
+
+    function isFavorited(item){
+      return getFavoriteKeys().has(getDealKey(item));
+    }
+
     function formatCount(value){
       const num = Number(value || 0);
       return num.toLocaleString('ko-KR');
@@ -247,12 +302,16 @@
       const kw = state.keyword.trim().toLowerCase();
       const filtered = !kw ? baseItems : baseItems.filter(i => (i.title || '').toLowerCase().includes(kw));
       return filtered.sort((a, b) => {
-        const ta = Number(a.temperature || 0);
-        const tb = Number(b.temperature || 0);
-        if(tb !== ta) return tb - ta;
         const da = Date.parse(a.registeredAt || a.date || '') || 0;
         const db = Date.parse(b.registeredAt || b.date || '') || 0;
-        return db - da;
+        const ta = Number(a.temperature || 0);
+        const tb = Number(b.temperature || 0);
+        if(state.sortMode === 'temperature'){
+          if(tb !== ta) return tb - ta;
+          return db - da;
+        }
+        if(db !== da) return db - da;
+        return tb - ta;
       });
     }
 
@@ -281,9 +340,8 @@
 
     function temperatureColor(value){
       const t = Math.max(0, Math.min(100, Number(value || 0)));
-      if(t <= 33) return mixColor('#9ca3af', '#22c55e', t / 33);      // 회색 -> 초록
-      if(t <= 66) return mixColor('#22c55e', '#3b82f6', (t - 33) / 33); // 초록 -> 파랑
-      return mixColor('#3b82f6', '#7c3aed', (t - 66) / 34);             // 파랑 -> 보라
+      if(t <= 50) return mixColor('#9ca3af', '#3b82f6', t / 50);       // 회색 -> 파랑
+      return mixColor('#3b82f6', '#4c1d95', (t - 50) / 50);            // 파랑 -> 진한보라
     }
 
     function render(){
@@ -302,9 +360,17 @@
         list.insertAdjacentHTML('beforeend', renderSyncStamp());
         return;
       }
-      list.innerHTML = items.map(item => `
-        <a class="item" href="indexdetail.html?id=${encodeURIComponent(item.id)}">
-          <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
+      const readKeys = getReadKeys();
+      list.innerHTML = items.map(item => {
+        const dealKey = getDealKey(item);
+        const viewedClass = readKeys.has(dealKey) ? 'viewed' : '';
+        const favBadge = isFavorited(item) ? '<span class="fav-badge" aria-label="찜됨">♥</span>' : '';
+        return `
+        <a class="item ${viewedClass}" data-key="${dealKey}" href="indexdetail.html?id=${encodeURIComponent(item.id)}">
+          <div class="thumb-wrap">
+            <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
+            ${favBadge}
+          </div>
           <div>
             <div class="item-title">${item.title}</div>
             <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
@@ -315,7 +381,8 @@
             <div class="price">${item.price}</div>
           </div>
         </a>
-      `).join('') + renderSyncStamp();
+      `;
+      }).join('') + renderSyncStamp();
     }
 
     function setActiveTabUI(){
@@ -356,6 +423,60 @@
       input.addEventListener('input', (e) => {
         state.keyword = e.target.value || '';
         render();
+      });
+    }
+
+    function renderSortIcon(){
+      const modeGlyph = state.sortMode === 'temperature'
+        ? '<path d="M13 8a3 3 0 1 0 6 0a3 3 0 0 0-6 0zm2 0a1 1 0 1 1 2 0a1 1 0 0 1-2 0zm1 3a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1z" fill="#111827"/>'
+        : '<circle cx="16" cy="9" r="3" stroke="#111827" stroke-width="2" fill="none"/><path d="M16 6v3l2 1" stroke="#111827" stroke-width="2" fill="none" stroke-linecap="round"/>';
+      document.getElementById('sortIconWrap').innerHTML = `
+      <svg width="26" height="26" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M3 4h26l-8 10v9l-10 5V14z" fill="none" stroke="#111827" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M16 27c2 0 4 2 4 4a4 4 0 1 1-8 0c0-2 2-4 4-4z" fill="none" stroke="#111827" stroke-width="2.2"/>
+        ${modeGlyph}
+      </svg>`;
+    }
+
+    function openSortSheet(){
+      document.getElementById('sortSheetBackdrop').classList.add('show');
+      document.getElementById('sortSheet').classList.add('show');
+      document.getElementById('sortLatestBtn').classList.toggle('active', state.sortMode === 'latest');
+      document.getElementById('sortTempBtn').classList.toggle('active', state.sortMode === 'temperature');
+    }
+
+    function closeSortSheet(){
+      document.getElementById('sortSheetBackdrop').classList.remove('show');
+      document.getElementById('sortSheet').classList.remove('show');
+    }
+
+    function bindSortSheet(){
+      document.getElementById('sortToggle').addEventListener('click', openSortSheet);
+      document.getElementById('sortSheetBackdrop').addEventListener('click', closeSortSheet);
+      document.getElementById('sortCloseBtn').addEventListener('click', closeSortSheet);
+      document.getElementById('sortLatestBtn').addEventListener('click', () => {
+        state.sortMode = 'latest';
+        renderSortIcon();
+        render();
+        closeSortSheet();
+      });
+      document.getElementById('sortTempBtn').addEventListener('click', () => {
+        state.sortMode = 'temperature';
+        renderSortIcon();
+        render();
+        closeSortSheet();
+      });
+      renderSortIcon();
+    }
+
+    function bindReadTracking(){
+      const list = document.getElementById('list');
+      list.addEventListener('click', (e) => {
+        const a = e.target.closest('a.item');
+        if(!a) return;
+        const idParam = new URL(a.href, location.href).searchParams.get('id');
+        const item = state.allItems.find(v => String(v.id) === String(idParam));
+        if(item) markAsRead(item);
       });
     }
 
@@ -563,6 +684,8 @@
 
       bindTabs();
       bindSearch();
+      bindSortSheet();
+      bindReadTracking();
       bindScrollChrome();
       bindPullToRefresh();
       bindAutoSync();

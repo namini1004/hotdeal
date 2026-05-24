@@ -14,6 +14,7 @@
     .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:64px}
     .hero{position:relative}
     .hero img{width:100%;height:320px;object-fit:cover;display:block;background:#f3f4f6}
+    .hero-fav-badge{position:absolute;right:14px;bottom:14px;width:30px;height:30px;border-radius:999px;background:rgba(255,255,255,.92);display:none;place-items:center;color:#ef4444;font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
     .topbtns{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:center;justify-content:space-between;color:#fff}
     .icon-link,.icon-btn{width:36px;height:36px;display:grid;place-items:center;border:none;border-radius:999px;background:rgba(17,24,39,.42);color:#fff;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer}
     .top-actions{display:flex;gap:6px}
@@ -35,8 +36,10 @@
     .sheet-btn.edit{background:var(--brand);color:#fff}
     .sheet-btn.delete{background:#fff1f2;color:#dc2626}
     .bottom-cta{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:0 16px calc(env(safe-area-inset-bottom) + 0px);background:#fff;border-top:none;z-index:10}
-    .cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .cta-row{display:grid;grid-template-columns:54px 1fr 1fr;gap:10px}
     .cta-btn{height:54px;display:flex;align-items:center;justify-content:center;border-radius:14px;text-decoration:none;font-size:16px;font-weight:900}
+    .heart-cta{border:1px solid #d1d5db;background:#fff;color:#9ca3af;font-size:24px;line-height:1;cursor:pointer}
+    .heart-cta.active{color:#ef4444;border-color:#fecaca;background:#fff5f5}
     .source-bottom{background:#f3edff;color:#4c1d95;border:1px solid #d8c7ff}
     .buy-bottom{background:var(--brand);color:#fff;box-shadow:0 10px 24px rgba(var(--brand-rgb),.32)}
 
@@ -73,6 +76,7 @@
   <div class="app">
     <section class="hero">
       <img id="img" alt="상품 이미지">
+      <div class="hero-fav-badge" id="heroFavBadge" aria-hidden="true">♥</div>
       <div class="topbtns">
         <a class="icon-link" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
         <div class="top-actions">
@@ -93,6 +97,7 @@
 
   <div class="bottom-cta" id="buyBottomWrap" style="display:none">
     <div class="cta-row">
+      <button id="favToggleBtn" class="heart-cta" type="button" aria-label="찜하기">♡</button>
       <a id="sourceBottom" class="cta-btn source-bottom" href="#" target="_blank" rel="noopener">원본보기</a>
       <a id="buyBottom" class="cta-btn buy-bottom" href="#" target="_blank" rel="noopener">가지고싶다</a>
     </div>
@@ -111,8 +116,11 @@
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
+    const READ_KEY = 'hotdeal_read_keys_v1';
+    const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const DEALS_API = '/api/deals';
     let currentItem = null;
+    let currentUser = null;
 
     function normalizeItems(items){
       return (items || []).map((item, idx) => ({
@@ -195,6 +203,51 @@
 
     function isDeleted(item){
       return getDeletedKeys().has(getDealKey(item));
+    }
+
+    function markAsRead(item){
+      const key = getDealKey(item);
+      if(!key) return;
+      try{
+        const set = new Set(JSON.parse(localStorage.getItem(READ_KEY) || '[]'));
+        set.add(key);
+        localStorage.setItem(READ_KEY, JSON.stringify([...set]));
+      }catch(_){ }
+    }
+
+    function getCurrentUserFromCache(){
+      try{ return JSON.parse(localStorage.getItem(USER_CACHE_KEY) || 'null'); }catch(_){ return null; }
+    }
+
+    function favoriteStorageKey(){
+      const user = currentUser || getCurrentUserFromCache();
+      return `hotdeal_favorites_${user?.id || user?.email || 'guest'}`;
+    }
+
+    function getFavoriteKeys(){
+      try{ return new Set(JSON.parse(localStorage.getItem(favoriteStorageKey()) || '[]')); }catch(_){ return new Set(); }
+    }
+
+    function isFavorited(item){
+      return getFavoriteKeys().has(getDealKey(item));
+    }
+
+    function setFavorited(item, on){
+      const key = getDealKey(item);
+      if(!key) return;
+      const set = getFavoriteKeys();
+      if(on) set.add(key); else set.delete(key);
+      localStorage.setItem(favoriteStorageKey(), JSON.stringify([...set]));
+    }
+
+    function refreshFavoriteUI(){
+      const btn = document.getElementById('favToggleBtn');
+      const badge = document.getElementById('heroFavBadge');
+      if(!btn || !badge || !currentItem) return;
+      const on = isFavorited(currentItem);
+      btn.classList.toggle('active', on);
+      btn.textContent = on ? '♥' : '♡';
+      badge.style.display = on ? 'grid' : 'none';
     }
 
     const FALLBACK_IMAGE = 'assets/gaji-eggplant.jpg';
@@ -296,6 +349,21 @@
       return data.item;
     }
 
+    async function loadMe(){
+      try{
+        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(!res.ok) return null;
+        const data = await res.json();
+        currentUser = data.user || null;
+        if(currentUser){
+          localStorage.setItem(USER_CACHE_KEY, JSON.stringify(currentUser));
+        }
+        return currentUser;
+      }catch(_){
+        return null;
+      }
+    }
+
     function showToast(message){
       const toast = document.getElementById('toast');
       toast.textContent = message;
@@ -388,6 +456,7 @@
     }
 
     async function init(){
+      await loadMe();
       const id = new URLSearchParams(location.search).get('id');
       const cachedItems = getCachedItems();
       let item = cachedItems.find(v => String(v.id) === String(id)) || null;
@@ -399,7 +468,9 @@
 
       if(item){
         currentItem = item;
+        markAsRead(item);
         renderItem(item);
+        refreshFavoriteUI();
       }else{
         const fallback = {title:'로딩 중...',price:'-',desc:'상품 정보를 불러오는 중입니다.',img:'',category:'핫딜',time:''};
         renderItem(fallback);
@@ -418,9 +489,11 @@
         const latest = await fetchItemById(id);
         if(latest && !isDeleted(latest)){
           currentItem = latest;
+          markAsRead(latest);
           if(!sameRenderableItem(item, latest)){
             renderItem(latest);
           }
+          refreshFavoriteUI();
           const existingIdx = cachedItems.findIndex(v => String(v.id) === String(latest.id));
           const next = [...cachedItems];
           if(existingIdx >= 0){
@@ -440,6 +513,20 @@
     document.getElementById('closeSheetBtn').addEventListener('click', closeSheet);
     document.getElementById('deleteBtn').addEventListener('click', deleteCurrentDeal);
     document.getElementById('editBtn').addEventListener('click', editCurrentDeal);
+    document.getElementById('favToggleBtn').addEventListener('click', async () => {
+      if(!currentItem) return;
+      if(!currentUser){
+        await loadMe();
+      }
+      if(!currentUser){
+        showToast('로그인한 사용자만 찜할 수 있어요.');
+        return;
+      }
+      const next = !isFavorited(currentItem);
+      setFavorited(currentItem, next);
+      refreshFavoriteUI();
+      showToast(next ? '찜했어요.' : '찜을 해제했어요.');
+    });
     init();
   </script>
 </body>
