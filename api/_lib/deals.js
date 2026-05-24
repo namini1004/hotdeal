@@ -168,7 +168,14 @@ function applyTemperatureNormalization(items = []) {
     if (stats.span > 0) {
       temperature = ((item.hotScore - stats.min) / stats.span) * 100;
     }
-    const clamped = Math.max(0, Math.min(100, Math.round(temperature)));
+
+    let clamped = Math.max(0, Math.min(100, Math.round(temperature)));
+    const isFree = String(item.price || '').trim() === '무료';
+    if (isFree) {
+      // 무료 딜은 0~100 정규화 결과를 80~100 구간으로 재매핑
+      clamped = Math.max(80, Math.min(100, Math.round(80 + clamped * 0.2)));
+    }
+
     return { ...item, hotScore: Number(item.hotScore.toFixed(4)), temperature: clamped };
   });
 }
