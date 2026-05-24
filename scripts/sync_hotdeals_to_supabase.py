@@ -43,7 +43,6 @@ def normalize(item: Dict) -> Dict:
         "time": str(item.get("time") or item.get("date") or "").strip(),
         "views": int(item.get("views") or 0),
         "comments": int(item.get("comments") or 0),
-        "likes": int(item.get("likes") or 0),
         "date": str(item.get("date") or "").strip(),
         "registered_at": item.get("registeredAt") or None,
         "updated_at": item.get("registeredAt") or None,
