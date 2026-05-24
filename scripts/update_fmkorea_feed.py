@@ -69,6 +69,21 @@ def normalize_fmkorea_outbound(link: str) -> str:
     return raw
 
 
+def canonical_fmkorea_source_link(link: str) -> str:
+    raw = (link or '').strip()
+    if not raw:
+        return ''
+    try:
+        u = urlparse(raw)
+        q = parse_qs(u.query)
+        doc = (q.get('document_srl', [''])[0] or '').strip()
+        if doc:
+            return f'https://m.fmkorea.com/?mid=hotdeal&document_srl={doc}'
+    except Exception:
+        pass
+    return raw
+
+
 def run_page_extract(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=90000)
     page.wait_for_timeout(1400)
@@ -332,6 +347,7 @@ def main():
         id_m = re.search(r"document_srl=(\d+)", r["href"])
         if not id_m:
             continue
+        doc_id = id_m.group(1)
 
         img = (r.get("img") or "").strip()
         if not img:
@@ -341,9 +357,11 @@ def main():
             except Exception:
                 img = ""
 
+        source_link = canonical_fmkorea_source_link(r["href"])
+
         items.append(
             {
-                "id": id_m.group(1),
+                "id": doc_id,
                 "title": title_clean or "제목 없음",
                 "area": "펨딜",
                 "dist": category,
@@ -356,12 +374,19 @@ def main():
                 "desc": (r.get("desc") or f"쇼핑몰: {shop} / 배송: {delivery}".strip()),
                 "img": img,
                 "buyLink": normalize_fmkorea_outbound(r.get("buyLink") or r["href"]),
-                "sourceLink": r["href"],
+                "sourceLink": source_link,
                 "source": "fmkorea",
                 "date": dt.strftime("%Y-%m-%d"),
                 "registeredAt": dt.isoformat(),
             }
         )
+
+    dedup = {}
+    for it in items:
+        key = it.get("sourceLink") or it.get("id")
+        if key and key not in dedup:
+            dedup[key] = it
+    items = list(dedup.values())
 
     out = {
         "source": LIST_URL,
