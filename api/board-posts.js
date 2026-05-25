@@ -1,5 +1,6 @@
 const { readSession } = require('./_lib/auth');
 const { normalizeBoardRow, supabaseRequest, mapBoardPayload } = require('./_lib/board');
+const { getNicknameProfile } = require('./_lib/nickname');
 
 function json(res, code, data) {
   res.statusCode = code;
@@ -22,8 +23,17 @@ module.exports = async (req, res) => {
 
       const payload = mapBoardPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });
-      if (sessionUser?.name && !req.body?.author) {
-        payload.author = sessionUser.name;
+      if (!req.body?.author) {
+        let nickname = '';
+        if (sessionUser) {
+          try {
+            const profile = await getNicknameProfile(sessionUser);
+            nickname = profile?.nickname || '';
+          } catch (_) {
+            nickname = '';
+          }
+        }
+        payload.author = nickname || sessionUser?.name || '익명';
       }
       const now = new Date().toISOString();
       const rows = await supabaseRequest('board_posts', {

@@ -154,6 +154,7 @@
   </div>
 
   <script src="assets/text-format.js"></script>
+  <script src="assets/time-format.js"></script>
   <script>
     const BOARD_API = '/api/board-posts';
     const LINK_PREVIEW_API = '/api/link-preview';
@@ -187,10 +188,7 @@
     }
 
     function formatTime(value){
-      if(!value) return '';
-      const d = new Date(value);
-      if(Number.isNaN(d.getTime())) return '';
-      return d.toLocaleString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      return window.TimeFormat?.toRelativeKorean(value) || '';
     }
 
     function escapeHtml(text){

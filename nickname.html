@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>닉네임 설정</title>
+  <style>
+    body{margin:0;font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111827}
+    .app{max-width:430px;margin:0 auto;padding:20px 16px 28px}
+    .back{display:inline-flex;align-items:center;gap:6px;color:#6b7280;text-decoration:none;font-size:14px}
+    h1{margin:12px 0 8px;font-size:24px}
+    .desc{color:#6b7280;font-size:14px;line-height:1.5;margin-bottom:16px}
+    .card{border:1px solid #e5e7eb;border-radius:14px;padding:14px}
+    .current{font-size:14px;color:#374151;margin-bottom:10px}
+    input{width:100%;height:46px;border:1px solid #d1d5db;border-radius:10px;padding:0 12px;font-size:15px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    button{height:46px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
+    .primary{background:#7c3aed;color:#fff}
+    .ghost{background:#f3f4f6;color:#111827}
+    .msg{margin-top:12px;font-size:13px;color:#4b5563;min-height:18px}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <a class="back" href="my-gaji.html">← 내 가지</a>
+    <h1>닉네임 설정</h1>
+    <p class="desc">형용사+색상+명사 자동 생성 또는 직접 입력으로 설정할 수 있어요.</p>
+    <section class="card">
+      <div class="current" id="current">현재 닉네임: -</div>
+      <input id="nicknameInput" maxlength="24" placeholder="예) 반짝이는 보라 가지" />
+      <div class="row">
+        <button class="ghost" id="autoBtn" type="button">자동 생성</button>
+        <button class="primary" id="saveBtn" type="button">저장</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </section>
+  </main>
+
+  <script>
+    const input = document.getElementById('nicknameInput');
+    const current = document.getElementById('current');
+    const msg = document.getElementById('msg');
+
+    function setMsg(text){ msg.textContent = text || ''; }
+
+    async function callApi(body, method='POST'){
+      const res = await fetch('/api/profile-nickname', {
+        method,
+        credentials:'include',
+        headers:{ 'Content-Type':'application/json' },
+        body: method === 'POST' ? JSON.stringify(body || {}) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok) throw new Error(data.error || '요청 실패');
+      return data;
+    }
+
+    async function loadCurrent(){
+      try{
+        const data = await callApi(null, 'GET');
+        current.textContent = `현재 닉네임: ${data.nickname || '-'}`;
+        if(data.nickname) input.value = data.nickname;
+      }catch(err){
+        setMsg(err.message.includes('login') ? '로그인 후 설정할 수 있어요.' : err.message);
+      }
+    }
+
+    document.getElementById('autoBtn').addEventListener('click', async () => {
+      setMsg('자동 생성 중...');
+      try{
+        const data = await callApi({ mode:'auto' });
+        input.value = data.nickname || '';
+        current.textContent = `현재 닉네임: ${data.nickname || '-'}`;
+        setMsg('자동 생성 닉네임을 적용했어요.');
+      }catch(err){ setMsg(err.message); }
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const nickname = input.value.trim();
+      if(!nickname){ setMsg('닉네임을 입력해 주세요.'); return; }
+      setMsg('저장 중...');
+      try{
+        const data = await callApi({ mode:'manual', nickname });
+        current.textContent = `현재 닉네임: ${data.nickname || nickname}`;
+        setMsg('저장되었습니다.');
+      }catch(err){ setMsg(err.message); }
+    });
+
+    loadCurrent();
+  </script>
+</body>
+</html>

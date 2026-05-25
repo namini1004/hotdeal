@@ -128,7 +128,7 @@
         <button class="chip" type="button" data-tab="quasar">퀘딜</button>
         <button class="chip" type="button" data-tab="fmkorea">펨딜</button>
         <button class="chip" type="button" data-tab="ruliweb">루딜</button>
-        <button class="chip" type="button" data-tab="namin">남딜</button>
+        <button class="chip" type="button" data-tab="namin">가지딜</button>
       </div>
     </header>
     <div class="pull-refresh" id="pullRefresh" aria-live="polite">
@@ -148,6 +148,7 @@
     <button class="sheet-btn" id="sortCloseBtn" type="button">닫기</button>
   </div>
 
+  <script src="assets/time-format.js"></script>
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
@@ -167,6 +168,7 @@
         area: item.area || '뽐뿌 핫딜',
         dist: item.dist || '기타',
         time: item.time || item.date || '',
+        relativeTime: window.TimeFormat?.toRelativeKorean(item.registeredAt || item.date || '') || item.time || item.date || '',
         price: item.price || '가격 정보 확인',
         category: item.category || '기타',
         desc: item.desc || '',
@@ -350,7 +352,7 @@
       const items = getFilteredItems();
       if(!items.length){
         list.innerHTML = state.activeTab === 'namin'
-          ? '<div class="empty">남딜이 아직 없습니다.</div>'
+          ? '<div class="empty">가지딜이 아직 없습니다.</div>'
           : state.activeTab === 'quasar'
             ? '<div class="empty">퀘딜이 아직 없습니다.</div>'
             : state.activeTab === 'fmkorea'
@@ -374,7 +376,7 @@
           </div>
           <div>
             <div class="item-title">${item.title}</div>
-            <div class="meta">${item.area} · ${item.dist} · ${item.time}</div>
+            <div class="meta">${item.area} · ${item.dist} · ${(item.relativeTime || item.time || '')}</div>
             <div class="stats-row">
               <div class="stats">조회 ${formatCount(item.views)} · 댓글 ${formatCount(item.comments)}</div>
               <div class="temperature" style="color:${temperatureColor(item.temperature)}">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</div>

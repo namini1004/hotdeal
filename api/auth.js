@@ -14,6 +14,7 @@ const {
   setCookie,
   readSession,
 } = require('./_lib/auth');
+const { getNicknameProfile } = require('./_lib/nickname');
 
 function actionFrom(req) {
   const url = new URL(req.url, getBaseUrl(req));
@@ -121,7 +122,16 @@ module.exports = async (req, res) => {
 
     if (action === 'me' && req.method === 'GET') {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-      return json(res, 200, { user: readSession(req) });
+      const user = readSession(req);
+      if (!user) return json(res, 200, { user: null });
+      let nickname = '';
+      try {
+        const profile = await getNicknameProfile(user);
+        nickname = profile?.nickname || '';
+      } catch (_) {
+        nickname = '';
+      }
+      return json(res, 200, { user: { ...user, nickname } });
     }
 
     if (action === 'logout' && req.method === 'POST') {

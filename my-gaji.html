@@ -70,6 +70,14 @@
       <div class="status" id="statusBox"></div>
     </section>
 
+    <a class="fav-card" id="nicknameCard" href="nickname.html" aria-label="닉네임 설정">
+      <div>
+        <div class="fav-card-title">닉네임 설정</div>
+        <div class="fav-card-desc" id="nicknameCardDesc">자동 생성 또는 직접 입력으로 닉네임을 설정해요.</div>
+      </div>
+      <span class="fav-card-arrow">›</span>
+    </a>
+
     <a class="fav-card" id="favoritesCard" href="favorites.html" aria-label="내가 찜한 가지 보기">
       <div>
         <div class="fav-card-title">내가 찜한 가지</div>
@@ -128,7 +136,7 @@
       loggedOut.style.display = 'none';
       loggedIn.style.display = 'flex';
       accountActions.style.display = 'grid';
-      document.getElementById('userName').textContent = user.name || '사용자';
+      document.getElementById('userName').textContent = user.nickname || user.name || '사용자';
       document.getElementById('userEmail').textContent = user.email || '';
       document.getElementById('userProvider').textContent = user.provider === 'google' ? 'Google 로그인' : '로그인됨';
       const fallbackText = (user.name || user.email || '가').trim().charAt(0) || '가';
@@ -141,6 +149,8 @@
       }else{
         clearAvatar();
       }
+      const desc = document.getElementById('nicknameCardDesc');
+      if(desc) desc.textContent = user.nickname ? `현재 닉네임: ${user.nickname}` : '아직 닉네임이 없어요. 먼저 설정해 주세요.';
       try{ localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)); }catch(_){ }
     }
 
