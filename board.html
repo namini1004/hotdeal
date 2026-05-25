@@ -61,7 +61,14 @@
     .detail{padding:18px 16px 28px}
     h1{margin:0;font-size:23px;line-height:1.35;letter-spacing:-.03em}
     .detail-meta{margin:10px 0 18px;color:var(--muted);font-size:13px;font-weight:700}
-    .body{font-size:16px;line-height:1.75;white-space:pre-line;word-break:break-word}
+    .body{font-size:16px;line-height:1.75;white-space:normal;word-break:break-word}
+    .body h1{margin:.76em 0 .36em;font-size:1.16em;line-height:1.36;font-weight:900}
+    .body h2{margin:.7em 0 .34em;font-size:1.08em;line-height:1.36;font-weight:900}
+    .body h3{margin:.62em 0 .3em;font-size:1em;line-height:1.35;font-weight:800}
+    .body .md-table-wrap{overflow-x:auto;margin:.5em 0}
+    .body .md-table{width:100%;border-collapse:collapse;font-size:13px}
+    .body .md-table th,.body .md-table td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:top}
+    .body .md-table th{background:#f8fafc;font-weight:800}
 
     @media (min-width:768px){
       body{background:var(--page)}
@@ -133,7 +140,7 @@
         <div class="field">
           <label for="body">내용</label>
           <textarea id="body" placeholder="공유하고 싶은 이야기를 적어주세요."></textarea>
-          <div class="hint">줄바꿈/링크/마크다운 지원: ## 소제목, **굵게**, *기울임*, [텍스트](https://...)<br>/n 은 줄바꿈으로 처리되지 않으며 Enter(또는 \n)만 줄바꿈으로 적용됩니다.</div>
+          <div class="hint">줄바꿈/링크/마크다운 지원: #/##/### 제목, **굵게**, *기울임*, [텍스트](https://...), 표(|---|)<br>/n 은 줄바꿈으로 처리되지 않으며 Enter(또는 \n)만 줄바꿈으로 적용됩니다.</div>
         </div>
       </form>
       <div class="bottom">

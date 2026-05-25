@@ -14,7 +14,7 @@ const {
   setCookie,
   readSession,
 } = require('./_lib/auth');
-const { getNicknameProfile } = require('./_lib/nickname');
+const { getNicknameProfile, assignUniqueAutoNickname } = require('./_lib/nickname');
 
 function actionFrom(req) {
   const url = new URL(req.url, getBaseUrl(req));
@@ -128,6 +128,9 @@ module.exports = async (req, res) => {
       try {
         const profile = await getNicknameProfile(user);
         nickname = profile?.nickname || '';
+        if (!nickname) {
+          nickname = await assignUniqueAutoNickname(user);
+        }
       } catch (_) {
         nickname = '';
       }

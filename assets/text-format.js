@@ -61,12 +61,27 @@
     return text;
   }
 
+  function isTableSeparator(line){
+    var s = String(line || '').trim();
+    if(!s) return false;
+    var cols = s.replace(/^\||\|$/g, '').split('|').map(function(v){ return v.trim(); });
+    if(!cols.length) return false;
+    return cols.every(function(c){ return /^:?-{3,}:?$/.test(c); });
+  }
+
+  function splitTableCols(line){
+    return String(line || '').trim().replace(/^\||\|$/g, '').split('|').map(function(v){ return v.trim(); });
+  }
+
+  function isTableLike(line){
+    var s = String(line || '').trim();
+    return s.indexOf('|') >= 0 && /^\|?.+\|.+\|?$/.test(s);
+  }
+
   function markdownToHtml(markdown){
     var input = String(markdown || '')
       .replace(/\r\n?/g, '\n')
-      // JSON escape 문자열(\\n)은 줄바꿈으로 인식하되, '/n'은 줄바꿈으로 취급하지 않음
       .replace(/\\n/g, '\n')
-      // 과도한 공백 문단 방지: 연속 3줄 이상은 최대 2줄로 축약
       .replace(/\n{3,}/g, '\n\n');
 
     if(!input.trim()) return '';
@@ -82,7 +97,24 @@
       }
     }
 
-    lines.forEach(function(line){
+    for(var i = 0; i < lines.length; i += 1){
+      var line = lines[i];
+
+      if(isTableLike(line) && i + 1 < lines.length && isTableSeparator(lines[i + 1])){
+        closeUl();
+        var headCols = splitTableCols(line);
+        html.push('<div class="md-table-wrap"><table class="md-table"><thead><tr>' + headCols.map(function(col){ return '<th>' + parseInline(col) + '</th>'; }).join('') + '</tr></thead><tbody>');
+        i += 2;
+        while(i < lines.length && isTableLike(lines[i]) && !isTableSeparator(lines[i])){
+          var rowCols = splitTableCols(lines[i]);
+          html.push('<tr>' + rowCols.map(function(col){ return '<td>' + parseInline(col) + '</td>'; }).join('') + '</tr>');
+          i += 1;
+        }
+        html.push('</tbody></table></div>');
+        i -= 1;
+        continue;
+      }
+
       var ulMatch = line.match(/^\s*[-*]\s+(.+)$/);
       if(ulMatch){
         if(!inUl){
@@ -90,25 +122,26 @@
           inUl = true;
         }
         html.push('<li>' + parseInline(ulMatch[1]) + '</li>');
-        return;
+        continue;
       }
 
-      var h2Match = line.match(/^\s*##\s+(.+)$/);
-      if(h2Match){
+      var hMatch = line.match(/^\s*(#{1,3})\s+(.+)$/);
+      if(hMatch){
         closeUl();
-        html.push('<h2>' + parseInline(h2Match[1]) + '</h2>');
-        return;
+        var level = Math.max(1, Math.min(3, hMatch[1].length));
+        html.push('<h' + level + '>' + parseInline(hMatch[2]) + '</h' + level + '>');
+        continue;
       }
 
       closeUl();
 
       if(!line.trim()){
         html.push('');
-        return;
+        continue;
       }
 
       html.push('<p>' + parseInline(line) + '</p>');
-    });
+    }
 
     closeUl();
 
