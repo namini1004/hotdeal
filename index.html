@@ -61,9 +61,9 @@
     .empty{padding:40px 8px;color:#6b7280;font-size:14px}
     .sync-stamp{grid-column:1/-1;padding:8px 0 0;margin:0;color:#9ca3af;font-size:10px;line-height:1.35;text-align:left;letter-spacing:-.01em}
 
-    .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:16px;min-width:108px;height:52px;display:flex;align-items:center;justify-content:center;gap:6px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:0 18px;font-size:16px;font-weight:700;box-shadow:0 10px 24px rgba(var(--brand-rgb),.34);cursor:pointer;transition:width .2s ease,min-width .2s ease,height .2s ease,padding .2s ease,border-radius .2s ease,box-shadow .2s ease,transform .2s ease}
-    .fab-plus{font-size:22px;line-height:1;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
-    .fab-text{white-space:nowrap;transition:opacity .15s ease;font-size:16px;font-weight:700;letter-spacing:-.01em}
+    .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:16px;min-width:86px;height:47px;display:flex;align-items:center;justify-content:center;gap:5px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:0 14px;font-size:13px;font-weight:700;box-shadow:0 10px 24px rgba(var(--brand-rgb),.34);cursor:pointer;transition:width .2s ease,min-width .2s ease,height .2s ease,padding .2s ease,border-radius .2s ease,box-shadow .2s ease,transform .2s ease}
+    .fab-plus{font-size:19px;line-height:1;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+    .fab-text{white-space:nowrap;transition:opacity .15s ease;font-size:13px;font-weight:700;letter-spacing:-.01em}
     .fab.is-compact{width:56px;min-width:56px;height:56px;padding:0;border-radius:50%;box-shadow:0 10px 24px rgba(var(--brand-rgb),.38);display:flex;align-items:center;justify-content:center;gap:0}
     .fab.is-compact .fab-plus{font-size:30px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;margin:0;transform:none}
     .fab.is-compact .fab-text{display:none}
@@ -95,7 +95,7 @@
       .price{font-size:17px}
       .empty{grid-column:1/-1;padding:72px 16px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:16px}
       .top.is-hidden{transform:translateY(calc(-100% - 28px))}
-      .fab{right:max(28px,calc((100vw - 1120px) / 2 + 28px));bottom:16px;min-width:116px;height:56px;padding:0 20px}
+      .fab{right:max(28px,calc((100vw - 1120px) / 2 + 28px));bottom:16px;min-width:93px;height:50px;padding:0 16px}
     }
 
     @media (min-width:1180px){
@@ -156,6 +156,7 @@
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const READ_KEY = 'hotdeal_read_keys_v1';
+    const READ_HIGHLIGHT_TOGGLE_KEY = 'hotdeal_read_highlight_enabled_v1';
     const DEALS_API = '/api/deals';
     const LAST_TAB_KEY = 'hotdeal_last_tab_v1';
     const LAST_SORT_KEY = 'hotdeal_sort_mode_v1';
@@ -244,6 +245,11 @@
       const keys = getReadKeys();
       keys.add(key);
       localStorage.setItem(READ_KEY, JSON.stringify([...keys]));
+    }
+
+    function isReadHighlightEnabled(){
+      const raw = localStorage.getItem(READ_HIGHLIGHT_TOGGLE_KEY);
+      return raw === '1';
     }
 
     function getCurrentUserId(){
@@ -368,9 +374,10 @@
         return;
       }
       const readKeys = getReadKeys();
+      const showReadHighlight = isReadHighlightEnabled();
       list.innerHTML = items.map(item => {
         const dealKey = getDealKey(item);
-        const viewedClass = readKeys.has(dealKey) ? 'viewed' : '';
+        const viewedClass = (showReadHighlight && readKeys.has(dealKey)) ? 'viewed' : '';
         const favBadge = isFavorited(item) ? '<span class="fav-badge" aria-label="찜됨">♥</span>' : '';
         return `
         <a class="item ${viewedClass}" data-key="${dealKey}" href="indexdetail.html?id=${encodeURIComponent(item.id)}">

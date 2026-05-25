@@ -33,6 +33,14 @@
     .google-icon{width:20px;height:20px;display:block}
     .logout-btn{border:none;background:var(--brand-soft);color:var(--brand)}
     .hint{margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.55;letter-spacing:-.01em;text-align:center}
+    .read-toggle{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:18px;padding:14px 16px;background:#fff;box-shadow:0 10px 26px rgba(17,24,39,.05)}
+    .read-toggle-label{font-size:14px;font-weight:700;color:#374151;letter-spacing:-.01em}
+    .switch{position:relative;width:46px;height:28px;display:inline-block}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:999px;transition:.2s}
+    .slider:before{content:"";position:absolute;height:22px;width:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+    .switch input:checked + .slider{background:var(--brand)}
+    .switch input:checked + .slider:before{transform:translateX(18px)}
     .status{margin-top:14px;padding:12px;border-radius:12px;background:var(--brand-soft);color:#4c1d95;font-size:13px;font-weight:700;line-height:1.45;display:none}
     .panel.loading #loggedOut,.panel.loading #loggedIn,.panel.loading #accountActions{display:none!important}
     @media (min-width: 760px){
@@ -89,10 +97,19 @@
       </div>
       <span class="fav-card-arrow">›</span>
     </a>
+
+    <div class="read-toggle" aria-label="읽은 글 흐리게 표시">
+      <div class="read-toggle-label">읽은글 흐리게표시</div>
+      <label class="switch" for="readHighlightToggle">
+        <input id="readHighlightToggle" type="checkbox" />
+        <span class="slider"></span>
+      </label>
+    </div>
   </main>
 
   <script>
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
+    const READ_HIGHLIGHT_TOGGLE_KEY = 'hotdeal_read_highlight_enabled_v1';
     const statusBox = document.getElementById('statusBox');
     const accountPanel = document.getElementById('accountPanel');
     const googleLogin = document.getElementById('googleLogin');
@@ -210,6 +227,15 @@
     if(params.get('login_error')) showStatus(`로그인 실패: ${params.get('login_error')}`);
     if(params.get('login') === 'success') showStatus('로그인되었습니다.');
 
+    function initReadHighlightToggle(){
+      const toggle = document.getElementById('readHighlightToggle');
+      if(!toggle) return;
+      toggle.checked = localStorage.getItem(READ_HIGHLIGHT_TOGGLE_KEY) === '1';
+      toggle.addEventListener('change', () => {
+        localStorage.setItem(READ_HIGHLIGHT_TOGGLE_KEY, toggle.checked ? '1' : '0');
+      });
+    }
+
     const cachedUser = loadCachedUser();
     if(cachedUser){
       renderLoggedIn(cachedUser);
@@ -217,6 +243,7 @@
     }
 
     loadConfig();
+    initReadHighlightToggle();
     loadMe();
   </script>
 </body>
