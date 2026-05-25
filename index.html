@@ -46,7 +46,7 @@
 
     .list{padding:0}
     .item{display:grid;grid-template-columns:98px 1fr;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
-    .item.viewed{background:#e8edf3}
+    .item.viewed{background:#dfe5ec}
     .item.viewed .item-title{color:#4b5563}
     .item.viewed .meta,.item.viewed .stats{color:#6b7280}
     .thumb-wrap{position:relative}
@@ -347,8 +347,8 @@
 
     function temperatureColor(value){
       const t = Math.max(0, Math.min(100, Number(value || 0)));
-      if(t <= 50) return mixColor('#9ca3af', '#3b82f6', t / 50);       // 회색 -> 파랑
-      return mixColor('#3b82f6', '#4c1d95', (t - 50) / 50);            // 파랑 -> 진한보라
+      if(t <= 50) return mixColor('#9ca3af', '#7dd3fc', t / 50);       // 0도 회색 -> 50도 하늘색
+      return mixColor('#7dd3fc', '#7c3aed', (t - 50) / 50);            // 50도 하늘색 -> 100도 보라
     }
 
     function render(){
