@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict
 
@@ -12,6 +13,22 @@ FEED_FILES = [
     ROOT / "assets" / "quasar_hotdeals_2days.json",
     ROOT / "assets" / "fmkorea_hotdeals_2days.json",
     ROOT / "assets" / "ruliweb_hotdeals_1day.json",
+]
+
+TRACKED_FIELDS = [
+    "buy_link",
+    "title",
+    "desc",
+    "price",
+    "category",
+    "img",
+    "area",
+    "dist",
+    "time",
+    "views",
+    "comments",
+    "date",
+    "registered_at",
 ]
 
 
@@ -45,7 +62,7 @@ def normalize(item: Dict) -> Dict:
         "comments": int(item.get("comments") or 0),
         "date": str(item.get("date") or "").strip(),
         "registered_at": item.get("registeredAt") or None,
-        "updated_at": item.get("registeredAt") or None,
+        "updated_at": None,
         "deleted_at": None,
     }
 
@@ -53,6 +70,52 @@ def normalize(item: Dict) -> Dict:
 def chunked(rows: List[Dict], size: int):
     for i in range(0, len(rows), size):
         yield rows[i : i + size]
+
+
+def row_changed(new_row: Dict, old_row: Dict) -> bool:
+    for f in TRACKED_FIELDS:
+        if (new_row.get(f) or "") != (old_row.get(f) or ""):
+            return True
+    return False
+
+
+def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": "application/json",
+    }
+    endpoint = (
+        f"{supabase_url}/rest/v1/deals"
+        "?select=source,source_link,buy_link,title,desc,price,category,img,area,dist,time,views,comments,date,registered_at,updated_at"
+        "&source=neq.user"
+    )
+
+    existing: Dict[str, Dict] = {}
+    start = 0
+    page_size = 1000
+
+    while True:
+        end = start + page_size - 1
+        page_headers = {**headers, "Range": f"{start}-{end}"}
+        res = requests.get(endpoint, headers=page_headers, timeout=60)
+        if not res.ok:
+            raise SystemExit(f"Supabase read failed ({res.status_code}): {res.text}")
+
+        rows = res.json() or []
+        if not rows:
+            break
+
+        for row in rows:
+            key = f"{row.get('source', '')}::{row.get('source_link', '')}"
+            if row.get("source") and row.get("source_link"):
+                existing[key] = row
+
+        if len(rows) < page_size:
+            break
+        start += page_size
+
+    return existing
 
 
 def main():
@@ -74,6 +137,26 @@ def main():
         print("NO_ROWS")
         return
 
+    existing_map = fetch_existing_map(supabase_url, service_key)
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    changed_rows: List[Dict] = []
+    for row in rows:
+        key = f"{row['source']}::{row['source_link']}"
+        prev = existing_map.get(key)
+        if not prev:
+            row["updated_at"] = now_iso
+            changed_rows.append(row)
+            continue
+
+        if row_changed(row, prev):
+            row["updated_at"] = now_iso
+            changed_rows.append(row)
+
+    if not changed_rows:
+        print("NO_CHANGE")
+        return
+
     endpoint_upsert = f"{supabase_url}/rest/v1/deals?on_conflict=source,source_link"
     endpoint_insert = f"{supabase_url}/rest/v1/deals"
     headers = {
@@ -85,7 +168,7 @@ def main():
 
     written = 0
     use_insert_fallback = False
-    for batch in chunked(rows, 400):
+    for batch in chunked(changed_rows, 400):
         endpoint = endpoint_insert if use_insert_fallback else endpoint_upsert
         res = requests.post(endpoint, headers=headers, json=batch, timeout=60)
         if not res.ok and (res.status_code == 400 and "42P10" in (res.text or "")):
