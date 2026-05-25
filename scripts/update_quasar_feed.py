@@ -92,6 +92,24 @@ def extract_body_text_from_detail(detail_html: str) -> str:
     return html.unescape(og_desc_m.group(1)).strip() if og_desc_m else ''
 
 
+def extract_registered_at_from_detail(detail_html: str, fallback_date_label: str) -> str:
+    patterns = [
+        r'(20\d{2})[./-](\d{2})[./-](\d{2})\s+(\d{2}):(\d{2})',
+        r'(20\d{2})\.(\d{2})\.(\d{2})\s+(\d{2}):(\d{2})(?::\d{2})?',
+    ]
+    for p in patterns:
+        m = re.search(p, detail_html)
+        if not m:
+            continue
+        try:
+            y, mm, dd, hh, mi = map(int, m.groups()[:5])
+            return datetime(y, mm, dd, hh, mi, tzinfo=KST).isoformat()
+        except Exception:
+            pass
+
+    return f"{fallback_date_label}T00:00:00+09:00"
+
+
 def parse_list_items(page_html: str):
     rows = re.findall(r"<tr>[\s\S]*?<\/tr>", page_html)
     items = []
@@ -211,6 +229,7 @@ def main():
             continue
 
         # 사이트별 룰: 상세에서 실제 구매처 링크 추출
+        detail_html = ""
         try:
             detail_html = requests.get(row["sourceLink"], headers=HEADERS, timeout=25).text
             real_link = extract_buy_link_from_detail(detail_html)
@@ -222,7 +241,10 @@ def main():
             row["buyLink"] = row["sourceLink"]
 
         row["date"] = date_label
-        row["registeredAt"] = f"{date_label}T00:00:00+09:00"
+        try:
+            row["registeredAt"] = extract_registered_at_from_detail(detail_html, date_label)
+        except Exception:
+            row["registeredAt"] = f"{date_label}T00:00:00+09:00"
         filtered.append(row)
 
     out = {
