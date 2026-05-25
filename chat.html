@@ -13,6 +13,7 @@
     .bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(4,1fr)}
     .nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:600}
     .nav-tab .material-symbols-outlined{font-size:24px}
+    .nav-tab .nav-eggplant{width:24px;height:24px;display:block}
     .nav-tab.active{color:#111827;font-weight:700}
   </style>
 </head>
@@ -21,7 +22,7 @@
   <nav class="bottom-nav" aria-label="하단 네비게이션">
     <div class="bottom-nav-row">
       <a class="nav-tab" href="index.html"><span class="material-symbols-outlined">home</span><span>홈</span></a>
-      <a class="nav-tab" href="gajigaji.html"><span class="material-symbols-outlined">deployed_code</span><span>가지가지</span></a>
+      <a class="nav-tab" href="gajigaji.html"><img class="nav-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
       <a class="nav-tab active" href="chat.html" aria-current="page"><span class="material-symbols-outlined">chat_bubble</span><span>채팅</span></a>
       <a class="nav-tab" href="my-gaji.html"><span class="material-symbols-outlined">person</span><span>내 가지</span></a>
     </div>
