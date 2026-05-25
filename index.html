@@ -46,7 +46,9 @@
 
     .list{padding:0 16px}
     .item{display:grid;grid-template-columns:98px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
-    .item.viewed{background:#f8fafc}
+    .item.viewed{background:#e8edf3}
+    .item.viewed .item-title{color:#4b5563}
+    .item.viewed .meta,.item.viewed .stats{color:#6b7280}
     .thumb-wrap{position:relative}
     .thumb{width:98px;height:98px;border-radius:12px;object-fit:cover;background:#f3f4f6}
     .fav-badge{position:absolute;right:6px;bottom:6px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.92);display:grid;place-items:center;color:#ef4444;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
@@ -157,6 +159,8 @@
     const DEALS_API = '/api/deals';
     const LAST_TAB_KEY = 'hotdeal_last_tab_v1';
     const LAST_SORT_KEY = 'hotdeal_sort_mode_v1';
+    const SCROLL_Y_KEY = 'hotdeal_list_scroll_y_v1';
+    const SCROLL_RESTORE_PENDING_KEY = 'hotdeal_list_scroll_restore_pending_v1';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'today', sortMode: 'latest', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '' };
     let isRefreshing = false;
@@ -478,11 +482,29 @@
       renderSortIcon();
     }
 
+    function saveListScrollState(){
+      sessionStorage.setItem(SCROLL_Y_KEY, String(window.scrollY || 0));
+    }
+
+    function restoreListScrollState(){
+      const pending = sessionStorage.getItem(SCROLL_RESTORE_PENDING_KEY) === '1';
+      if(!pending) return;
+      const saved = Number(sessionStorage.getItem(SCROLL_Y_KEY) || '0');
+      if(!Number.isFinite(saved)) return;
+      requestAnimationFrame(() => {
+        window.scrollTo(0, Math.max(0, saved));
+        setTimeout(() => window.scrollTo(0, Math.max(0, saved)), 80);
+      });
+      sessionStorage.removeItem(SCROLL_RESTORE_PENDING_KEY);
+    }
+
     function bindReadTracking(){
       const list = document.getElementById('list');
       list.addEventListener('click', (e) => {
         const a = e.target.closest('a.item');
         if(!a) return;
+        saveListScrollState();
+        sessionStorage.setItem(SCROLL_RESTORE_PENDING_KEY, '1');
         const idParam = new URL(a.href, location.href).searchParams.get('id');
         const item = state.allItems.find(v => String(v.id) === String(idParam));
         if(item) markAsRead(item);
@@ -688,6 +710,7 @@
       const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
       applyItems(cached);
       render();
+      restoreListScrollState();
 
       await refreshFeed({ silent: true });
       refreshNaminDealsBackground();
@@ -700,6 +723,7 @@
       bindPullToRefresh();
       bindAutoSync();
       render();
+      restoreListScrollState();
     }
 
     async function ensureLoggedInForWrite(){
@@ -746,6 +770,10 @@
       if(!ok) return;
       location.href='indexcreate.html';
     });
+
+    window.addEventListener('pagehide', saveListScrollState);
+    window.addEventListener('beforeunload', saveListScrollState);
+
     init();
   </script>
 </body>
