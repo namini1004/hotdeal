@@ -62,7 +62,13 @@
   }
 
   function markdownToHtml(markdown){
-    var input = String(markdown || '').replace(/\r\n?/g, '\n');
+    var input = String(markdown || '')
+      .replace(/\r\n?/g, '\n')
+      // JSON escape 문자열(\\n)은 줄바꿈으로 인식하되, '/n'은 줄바꿈으로 취급하지 않음
+      .replace(/\\n/g, '\n')
+      // 과도한 공백 문단 방지: 연속 3줄 이상은 최대 2줄로 축약
+      .replace(/\n{3,}/g, '\n\n');
+
     if(!input.trim()) return '';
 
     var lines = input.split('\n');
@@ -84,6 +90,13 @@
           inUl = true;
         }
         html.push('<li>' + parseInline(ulMatch[1]) + '</li>');
+        return;
+      }
+
+      var h2Match = line.match(/^\s*##\s+(.+)$/);
+      if(h2Match){
+        closeUl();
+        html.push('<h2>' + parseInline(h2Match[1]) + '</h2>');
         return;
       }
 
