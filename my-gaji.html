@@ -23,6 +23,7 @@
     .fav-card{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:18px;padding:16px 16px;background:#fff;box-shadow:0 10px 26px rgba(17,24,39,.05);text-decoration:none;color:inherit}
     .fav-card-title{font-size:16px;font-weight:900;letter-spacing:-.02em}
     .fav-card-desc{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.4}
+    .fav-card-desc.nickname-current{font-size:16px;font-weight:900;color:#111827;letter-spacing:-.01em}
     .fav-card-arrow{font-size:18px;color:#9ca3af;font-weight:900}
     .google-btn{border:1px solid #dadce0;background:#fff;color:#3c4043;box-shadow:0 1px 2px rgba(60,64,67,.08)}
     .google-btn:active{background:#f8fafd}
@@ -73,7 +74,7 @@
     <a class="fav-card" id="nicknameCard" href="nickname.html" aria-label="닉네임 설정">
       <div>
         <div class="fav-card-title">닉네임 설정</div>
-        <div class="fav-card-desc" id="nicknameCardDesc">자동 생성 또는 직접 입력으로 닉네임을 설정해요.</div>
+        <div class="fav-card-desc nickname-current" id="nicknameCardDesc">현재 닉네임: -</div>
       </div>
       <span class="fav-card-arrow">›</span>
     </a>
@@ -136,7 +137,7 @@
       loggedOut.style.display = 'none';
       loggedIn.style.display = 'flex';
       accountActions.style.display = 'grid';
-      document.getElementById('userName').textContent = user.nickname || user.name || '사용자';
+      document.getElementById('userName').textContent = user.name || '사용자';
       document.getElementById('userEmail').textContent = user.email || '';
       document.getElementById('userProvider').textContent = user.provider === 'google' ? 'Google 로그인' : '로그인됨';
       const fallbackText = (user.name || user.email || '가').trim().charAt(0) || '가';
@@ -150,7 +151,7 @@
         clearAvatar();
       }
       const desc = document.getElementById('nicknameCardDesc');
-      if(desc) desc.textContent = user.nickname ? `현재 닉네임: ${user.nickname}` : '아직 닉네임이 없어요. 먼저 설정해 주세요.';
+      if(desc) desc.textContent = user.nickname ? `현재 닉네임: ${user.nickname}` : '현재 닉네임: -';
       try{ localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)); }catch(_){ }
     }
 

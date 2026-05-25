@@ -58,11 +58,12 @@ async function saveNicknameProfile(user, nickname) {
 
 async function assignUniqueAutoNickname(user) {
   const existing = await getNicknameProfile(user);
-  if (existing?.nickname) return existing.nickname;
+  const existingNickname = existing?.nickname || '';
 
   for (let i = 0; i < 60; i += 1) {
     const candidate = generateCandidate();
-    // 중복 방지
+    // 중복 방지 + 현재 닉네임과 동일 후보 제외
+    if (candidate === existingNickname) continue;
     if (await isNicknameTaken(candidate)) continue;
     await saveNicknameProfile(user, candidate);
     return candidate;
