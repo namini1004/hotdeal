@@ -23,7 +23,9 @@
     .fav-card{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:18px;padding:16px 16px;background:#fff;box-shadow:0 10px 26px rgba(17,24,39,.05);text-decoration:none;color:inherit}
     .fav-card-title{font-size:16px;font-weight:900;letter-spacing:-.02em}
     .fav-card-desc{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.4}
-    .fav-card-desc.nickname-current{font-size:16px;font-weight:900;color:#111827;letter-spacing:-.01em}
+    .nickname-card-label{font-size:11px;color:#9ca3af;font-weight:700;letter-spacing:-.01em}
+    .nickname-card-name{margin-top:3px;font-size:17px;font-weight:900;color:#111827;letter-spacing:-.01em;line-height:1.25}
+    .nickname-card-help{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.35}
     .fav-card-arrow{font-size:18px;color:#9ca3af;font-weight:900}
     .google-btn{border:1px solid #dadce0;background:#fff;color:#3c4043;box-shadow:0 1px 2px rgba(60,64,67,.08)}
     .google-btn:active{background:#f8fafd}
@@ -73,8 +75,9 @@
 
     <a class="fav-card" id="nicknameCard" href="nickname.html" aria-label="닉네임 설정">
       <div>
-        <div class="fav-card-title">닉네임 설정</div>
-        <div class="fav-card-desc nickname-current" id="nicknameCardDesc">현재 닉네임: -</div>
+        <div class="nickname-card-label">닉네임 설정</div>
+        <div class="nickname-card-name" id="nicknameCardDesc">현재 닉네임</div>
+        <div class="nickname-card-help">눌러서 닉네임을 변경할 수 있어요</div>
       </div>
       <span class="fav-card-arrow">›</span>
     </a>
@@ -151,7 +154,7 @@
         clearAvatar();
       }
       const desc = document.getElementById('nicknameCardDesc');
-      if(desc) desc.textContent = user.nickname ? `현재 닉네임: ${user.nickname}` : '현재 닉네임: -';
+      if(desc) desc.textContent = user.nickname || '현재 닉네임';
       try{ localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)); }catch(_){ }
     }
 
