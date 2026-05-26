@@ -87,7 +87,7 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
     }
     endpoint = (
         f"{supabase_url}/rest/v1/deals"
-        "?select=source,source_link,buy_link,title,desc,price,category,img,area,dist,time,views,comments,date,registered_at,updated_at"
+        "?select=source,source_link,buy_link,title,desc,price,category,img,area,dist,time,views,comments,date,registered_at,updated_at,deleted_at"
         "&source=neq.user"
     )
 
@@ -141,11 +141,20 @@ def main():
     now_iso = datetime.now(timezone.utc).isoformat()
 
     changed_rows: List[Dict] = []
+    current_keys = set()
     for row in rows:
         key = f"{row['source']}::{row['source_link']}"
+        current_keys.add(key)
         prev = existing_map.get(key)
         if not prev:
             row["updated_at"] = now_iso
+            changed_rows.append(row)
+            continue
+
+        # soft-deleted 되었던 글이 다시 수집되면 즉시 복구
+        if prev.get("deleted_at"):
+            row["updated_at"] = now_iso
+            row["deleted_at"] = None
             changed_rows.append(row)
             continue
 
@@ -153,7 +162,29 @@ def main():
             row["updated_at"] = now_iso
             changed_rows.append(row)
 
-    if not changed_rows:
+    # 이번 수집 결과에 없는 기존 feed 글은 soft delete 처리
+    deleted_rows: List[Dict] = []
+    for key, prev in existing_map.items():
+        if key in current_keys:
+            continue
+        if prev.get("deleted_at"):
+            continue
+        source = str(prev.get("source") or "").strip()
+        source_link = str(prev.get("source_link") or "").strip()
+        if not source or not source_link:
+            continue
+        deleted_rows.append(
+            {
+                "source": source,
+                "source_link": source_link,
+                "deleted_at": now_iso,
+                "updated_at": now_iso,
+            }
+        )
+
+    rows_to_write = changed_rows + deleted_rows
+
+    if not rows_to_write:
         print("NO_CHANGE")
         return
 
@@ -168,7 +199,7 @@ def main():
 
     written = 0
     use_insert_fallback = False
-    for batch in chunked(changed_rows, 400):
+    for batch in chunked(rows_to_write, 400):
         endpoint = endpoint_insert if use_insert_fallback else endpoint_upsert
         res = requests.post(endpoint, headers=headers, json=batch, timeout=60)
         if not res.ok and (res.status_code == 400 and "42P10" in (res.text or "")):
@@ -180,7 +211,7 @@ def main():
             raise SystemExit(f"Supabase upsert failed ({res.status_code}): {res.text}")
         written += len(batch)
 
-    print(f"UPSERT_OK total={written}")
+    print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)}")
 
 
 if __name__ == "__main__":

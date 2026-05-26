@@ -260,7 +260,14 @@ async function readFeedItems() {
       const dedupMap = new Map();
       for (const item of normalized) {
         const key = `${item.source}::${item.sourceLink}`;
-        if (!dedupMap.has(key)) dedupMap.set(key, item);
+        const prev = dedupMap.get(key);
+        if (!prev) {
+          dedupMap.set(key, item);
+          continue;
+        }
+        const prevMs = parseDateMs(prev.updatedAt || prev.registeredAt || prev.date || '');
+        const curMs = parseDateMs(item.updatedAt || item.registeredAt || item.date || '');
+        if (curMs >= prevMs) dedupMap.set(key, item);
       }
       return applyTemperatureNormalization([...dedupMap.values()]);
     }
