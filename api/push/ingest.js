@@ -135,14 +135,12 @@ async function processRows(rows = []) {
         : (buyLink || sourceLink || 'https://gaji.run');
       const response = await msg.sendEachForMulticast({
         tokens,
-        notification: {
-          title: `🔔 관심 딜: ${matchedTerms[0]}`,
-          body: title || '새 딜이 등록되었습니다.',
-        },
         data: {
           url: clickUrl,
           dealId,
           source,
+          title: `🔔 관심 딜: ${matchedTerms[0]}`,
+          body: title || '새 딜이 등록되었습니다.',
         },
         android: { priority: 'high' },
       });
