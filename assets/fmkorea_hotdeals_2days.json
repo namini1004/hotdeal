@@ -1,8 +1,8 @@
 {
   "source": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine",
-  "generatedAt": "2026-05-26T16:42:54.287036+09:00",
+  "generatedAt": "2026-05-26T16:59:17.761860+09:00",
   "rangeHours": 48,
-  "since": "2026-05-24T16:42:54.287036+09:00",
+  "since": "2026-05-24T16:59:17.761860+09:00",
   "today": "2026-05-26",
   "yesterday": "2026-05-25",
   "counts": {
@@ -11,25 +11,6 @@
     "total": 45
   },
   "items": [
-    {
-      "id": "9871716720",
-      "title": "[네이버] 허닭 한입 닭다리구이 30팩, 고단백 닭가슴살 1kg 3팩, 닭가슴살 곤약볶음밥 30개 등 (옵션별상이) (네멤무료)",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "05.26",
-      "price": "무료",
-      "likes": 0,
-      "views": 18000,
-      "comments": 50,
-      "category": "기타",
-      "desc": "https://brand.naver.com/heodak/products/10248346044",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260526/9871716720_1196365581_80a6bc38a528063145f775420d891228.png?c=20260526164134",
-      "buyLink": "https://brand.naver.com/heodak/products/10248346044",
-      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871716720",
-      "source": "fmkorea",
-      "date": "2026-05-26",
-      "registeredAt": "2026-05-26T00:00:00+09:00"
-    },
     {
       "id": "9871738575",
       "title": "[무안맛뜰] (자연나라) 26년산 햇 무안통양파 3kg (2,600원) (무료)",
@@ -57,7 +38,7 @@
       "time": "05.26",
       "price": "11,950원",
       "likes": 0,
-      "views": 24000,
+      "views": 25000,
       "comments": 55,
       "category": "기타",
       "desc": "https://brand.naver.com/nongshim/products/12218841028",
@@ -107,15 +88,53 @@
       "registeredAt": "2026-05-26T00:00:00+09:00"
     },
     {
+      "id": "9872624042",
+      "title": "[네이버] 컬리N마트 5월 멤버십데이 30%쿠폰 (30%쿠폰) (무료)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.26",
+      "price": "무료",
+      "likes": 0,
+      "views": 27000,
+      "comments": 18,
+      "category": "기타",
+      "desc": "https://shopping.naver.com/festa/onsale/6a0d180b21eb71525c883371",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260526/9872624042_1196365581_9c6048730297d03f91360c51099be4b0.png?c=20260526092535",
+      "buyLink": "https://shopping.naver.com/festa/onsale/6a0d180b21eb71525c883371",
+      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872624042",
+      "source": "fmkorea",
+      "date": "2026-05-26",
+      "registeredAt": "2026-05-26T00:00:00+09:00"
+    },
+    {
+      "id": "9873460001",
+      "title": "삼성라이온즈 유니폼 세일",
+      "area": "펨딜",
+      "dist": "의류",
+      "time": "16:55",
+      "price": "29,000~",
+      "likes": 13,
+      "views": 0,
+      "comments": 36,
+      "category": "의류",
+      "desc": "https://samsunglionsmall.com/",
+      "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873460001_140x100.crop.webp?c=20260526134600",
+      "buyLink": "https://samsunglionsmall.com/",
+      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873460001",
+      "source": "fmkorea",
+      "date": "2026-05-26",
+      "registeredAt": "2026-05-26T16:55:00+09:00"
+    },
+    {
       "id": "9873740657",
       "title": "동원샘물 2L x 6병 무라벨",
       "area": "펨딜",
       "dist": "먹거리",
       "time": "15:18",
       "price": "900원",
-      "likes": 150,
+      "likes": 161,
       "views": 0,
-      "comments": 101,
+      "comments": 114,
       "category": "먹거리",
       "desc": "https://www.gsshop.com/deal/deal.gs?dealNo=1110202105",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873740657_140x100.crop.webp?c=20260526151309",
@@ -149,11 +168,11 @@
       "title": "동원 그릴리 직화 델리햄, 450g, 2개",
       "area": "펨딜",
       "dist": "먹거리",
-      "time": "14:04",
+      "time": "14:32",
       "price": "7,770원",
-      "likes": 19,
+      "likes": 21,
       "views": 0,
-      "comments": 44,
+      "comments": 47,
       "category": "먹거리",
       "desc": "https://link.coupang.com/a/d3Nx0sqfFk",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873537280_140x100.crop.webp?c=20260526140405",
@@ -161,7 +180,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873537280",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T14:04:00+09:00"
+      "registeredAt": "2026-05-26T14:32:00+09:00"
     },
     {
       "id": "9873378828",
@@ -172,7 +191,7 @@
       "price": "3,760원",
       "likes": 20,
       "views": 0,
-      "comments": 44,
+      "comments": 46,
       "category": "SW/게임",
       "desc": "https://store.steampowered.com/app/229480/Dungeons__Dragons_Chronicles_of_Mystara/",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873378828_140x100.crop.webp?c=20260526131927",
@@ -181,6 +200,25 @@
       "source": "fmkorea",
       "date": "2026-05-26",
       "registeredAt": "2026-05-26T13:56:00+09:00"
+    },
+    {
+      "id": "9871716720",
+      "title": "허닭 한입 닭다리구이 30팩, ...",
+      "area": "펨딜",
+      "dist": "먹거리",
+      "time": "12:47",
+      "price": "옵션별상이",
+      "likes": 52,
+      "views": 0,
+      "comments": 69,
+      "category": "먹거리",
+      "desc": "https://brand.naver.com/heodak/products/10248346044",
+      "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9871716720_140x100.crop.webp?c=20260526164134",
+      "buyLink": "https://brand.naver.com/heodak/products/10248346044",
+      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871716720",
+      "source": "fmkorea",
+      "date": "2026-05-26",
+      "registeredAt": "2026-05-26T12:47:00+09:00"
     },
     {
       "id": "9870841533",
@@ -219,25 +257,6 @@
       "source": "fmkorea",
       "date": "2026-05-26",
       "registeredAt": "2026-05-26T12:14:00+09:00"
-    },
-    {
-      "id": "9872624042",
-      "title": "컬리N마트 5월 멤버십데이 30%쿠...",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "10:04",
-      "price": "30%쿠폰",
-      "likes": 19,
-      "views": 0,
-      "comments": 18,
-      "category": "기타",
-      "desc": "https://shopping.naver.com/festa/onsale/6a0d180b21eb71525c883371",
-      "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9872624042_140x100.crop.webp?c=20260526092535",
-      "buyLink": "https://shopping.naver.com/festa/onsale/6a0d180b21eb71525c883371",
-      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872624042",
-      "source": "fmkorea",
-      "date": "2026-05-26",
-      "registeredAt": "2026-05-26T10:04:00+09:00"
     },
     {
       "id": "9872097951",
@@ -389,7 +408,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868600443",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9866611605",
@@ -408,7 +427,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866611605",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9869297462",
@@ -427,7 +446,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869297462",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9868701021",
@@ -446,7 +465,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868701021",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9868842131",
@@ -465,7 +484,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868842131",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9866405709",
@@ -484,7 +503,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866405709",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9866089292",
@@ -503,7 +522,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866089292",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9867308809",
@@ -518,11 +537,11 @@
       "category": "기타",
       "desc": "토스",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260525/9867308809_140x100.crop.webp?c=20260525000125",
-      "buyLink": "https://ader.naver.com/v1/eqr-3yuCs7GxxUJZkt8XL5XAODH52PmmZkiWJqHJURg_PQBqJRrOFFGD-pTdErNb0CLIQC3GUx1TdLIM0cIPcaYBcSXl0Ut5wz-3UJzwNE7Yi6oJ5XuaaLSQNJOkmWCcIhwS8WtUGGSAHNbTDD4s5o441N652B40fsjX7TtcFsBNy_6NkHoBWllixiH-1gBywgaeNvcrw67bNhWYNFkPGneq8LRsAVP-EW-9U8Yvz6-btoJDk2U-KqK36kalYaSuimivPB4lONZTUeZ1tn760HINAa0iCQ0YQglRM412N7Nbzb9v52sipUXXQsvvqH1ZJ9bBcAlt75AEE8ybVCxkAtbAZk7xWKjNHgeDewKl4IPrLpQqPIfPylZ7GVx7a1VAWhIoJ2__wvZ_EcKluCwCTan6HDYqNi_zrJSjPXxfoPIdKzTGax5SYlVBCSky9wSPaZpR2QHK0mBqzOLPTyIivX_fSGcBR0yXm2lTBK51kLh5HIzW6wCKw9C7Fh23JynBLQhn-FqMq_kk9F32lzgqtSJrvDQhAf6F7r0-8i9hSsZS97hQchIT-ACtUGAqa2aNlrdMyejtSyrOfCp18xoJZ6k9y7XzbYTQWhYwTfJ9RkYaJCxtru78QaPHI3VEvaAcXnKqHXomb7PBHE932H5FHEGWbM3WI3k6ZIoF2MmabIhk5nRGQKolBAywjEEiVuu6c-gIWatDN_VfEliuOEUEng==?c=m_fmkorea.ch6&t=0",
+      "buyLink": "https://ader.naver.com/v1/yMwPzuM7YTruzajLscKyppCt6x9SocD3gKPwG34pN-f_KCSNn01JPNX8plnBAWwJMVQUTzvdPl-Kx1JQSArUnPi_6-UL_XyYNCiCyQeIUAVY-MwGoL87PnqjVE5KqiY7nGLEe7I_NM3GbBxPdguq49BEFlM09pPWhVEdhWIYyASjlNOqJcqjiIXoC6ehisrPDm1X6pvPqzL6yeEngqCRBCt4lNVZSsD5_5a06fom9o3vOibZ9jIhNK4p7U6GfLv0BXtwrYB_xtePN3OyyKaBTpWCr_CT3ScPpzPuqJa_TgAk_q2WZl4SLVr8fEGq8KT2PNxdTLiLFha5h-77Pyh5TgF-r8SjEg6rQneaPLkOVQSzCbXyGK6IYqdJ1QR0yjQRJX32LZy5KNGr8Px61U4WNg==?c=m_fmkorea.ch6&t=1",
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9867308809",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9866953066",
@@ -541,7 +560,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866953066",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9867354186",
@@ -560,7 +579,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9867354186",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9867303820",
@@ -579,7 +598,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9867303820",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9866870258",
@@ -598,7 +617,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866870258",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9864312265",
@@ -617,7 +636,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9864312265",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9865055446",
@@ -636,7 +655,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9865055446",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9865343666",
@@ -655,7 +674,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9865343666",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9864964597",
@@ -674,7 +693,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9864964597",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9865336757",
@@ -693,7 +712,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9865336757",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9864834566",
@@ -712,7 +731,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9864834566",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9864855929",
@@ -731,7 +750,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9864855929",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9862725319",
@@ -750,7 +769,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9862725319",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9863319784",
@@ -769,7 +788,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9863319784",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9863659919",
@@ -788,7 +807,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9863659919",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9863477944",
@@ -807,7 +826,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9863477944",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9863596172",
@@ -826,7 +845,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9863596172",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     },
     {
       "id": "9862190495",
@@ -845,49 +864,11 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9862190495",
       "source": "fmkorea",
       "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
-    },
-    {
-      "id": "9862864008",
-      "title": "신상 원플러스 패드4 8엘젠5 12/2...",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "26.05",
-      "price": "851,790원",
-      "likes": 13,
-      "views": 0,
-      "comments": 87,
-      "category": "기타",
-      "desc": "https://link.gmarket.co.kr/n3kRwCYCu",
-      "img": "//image.fmkorea.com/filesn/cache/thumb/20260523/9862864008_140x100.crop.webp?c=20260523214119",
-      "buyLink": "https://link.gmarket.co.kr/n3kRwCYCu",
-      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9862864008",
-      "source": "fmkorea",
-      "date": "2026-05-26",
-      "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+      "registeredAt": "2026-05-26T16:59:17.761860+09:00"
     }
   ],
   "grouped": {
     "today": [
-      {
-        "id": "9871716720",
-        "title": "[네이버] 허닭 한입 닭다리구이 30팩, 고단백 닭가슴살 1kg 3팩, 닭가슴살 곤약볶음밥 30개 등 (옵션별상이) (네멤무료)",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "05.26",
-        "price": "무료",
-        "likes": 0,
-        "views": 18000,
-        "comments": 50,
-        "category": "기타",
-        "desc": "https://brand.naver.com/heodak/products/10248346044",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260526/9871716720_1196365581_80a6bc38a528063145f775420d891228.png?c=20260526164134",
-        "buyLink": "https://brand.naver.com/heodak/products/10248346044",
-        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871716720",
-        "source": "fmkorea",
-        "date": "2026-05-26",
-        "registeredAt": "2026-05-26T00:00:00+09:00"
-      },
       {
         "id": "9871738575",
         "title": "[무안맛뜰] (자연나라) 26년산 햇 무안통양파 3kg (2,600원) (무료)",
@@ -915,7 +896,7 @@
         "time": "05.26",
         "price": "11,950원",
         "likes": 0,
-        "views": 24000,
+        "views": 25000,
         "comments": 55,
         "category": "기타",
         "desc": "https://brand.naver.com/nongshim/products/12218841028",
@@ -965,15 +946,53 @@
         "registeredAt": "2026-05-26T00:00:00+09:00"
       },
       {
+        "id": "9872624042",
+        "title": "[네이버] 컬리N마트 5월 멤버십데이 30%쿠폰 (30%쿠폰) (무료)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.26",
+        "price": "무료",
+        "likes": 0,
+        "views": 27000,
+        "comments": 18,
+        "category": "기타",
+        "desc": "https://shopping.naver.com/festa/onsale/6a0d180b21eb71525c883371",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260526/9872624042_1196365581_9c6048730297d03f91360c51099be4b0.png?c=20260526092535",
+        "buyLink": "https://shopping.naver.com/festa/onsale/6a0d180b21eb71525c883371",
+        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872624042",
+        "source": "fmkorea",
+        "date": "2026-05-26",
+        "registeredAt": "2026-05-26T00:00:00+09:00"
+      },
+      {
+        "id": "9873460001",
+        "title": "삼성라이온즈 유니폼 세일",
+        "area": "펨딜",
+        "dist": "의류",
+        "time": "16:55",
+        "price": "29,000~",
+        "likes": 13,
+        "views": 0,
+        "comments": 36,
+        "category": "의류",
+        "desc": "https://samsunglionsmall.com/",
+        "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873460001_140x100.crop.webp?c=20260526134600",
+        "buyLink": "https://samsunglionsmall.com/",
+        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873460001",
+        "source": "fmkorea",
+        "date": "2026-05-26",
+        "registeredAt": "2026-05-26T16:55:00+09:00"
+      },
+      {
         "id": "9873740657",
         "title": "동원샘물 2L x 6병 무라벨",
         "area": "펨딜",
         "dist": "먹거리",
         "time": "15:18",
         "price": "900원",
-        "likes": 150,
+        "likes": 161,
         "views": 0,
-        "comments": 101,
+        "comments": 114,
         "category": "먹거리",
         "desc": "https://www.gsshop.com/deal/deal.gs?dealNo=1110202105",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873740657_140x100.crop.webp?c=20260526151309",
@@ -1007,11 +1026,11 @@
         "title": "동원 그릴리 직화 델리햄, 450g, 2개",
         "area": "펨딜",
         "dist": "먹거리",
-        "time": "14:04",
+        "time": "14:32",
         "price": "7,770원",
-        "likes": 19,
+        "likes": 21,
         "views": 0,
-        "comments": 44,
+        "comments": 47,
         "category": "먹거리",
         "desc": "https://link.coupang.com/a/d3Nx0sqfFk",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873537280_140x100.crop.webp?c=20260526140405",
@@ -1019,7 +1038,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873537280",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T14:04:00+09:00"
+        "registeredAt": "2026-05-26T14:32:00+09:00"
       },
       {
         "id": "9873378828",
@@ -1030,7 +1049,7 @@
         "price": "3,760원",
         "likes": 20,
         "views": 0,
-        "comments": 44,
+        "comments": 46,
         "category": "SW/게임",
         "desc": "https://store.steampowered.com/app/229480/Dungeons__Dragons_Chronicles_of_Mystara/",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873378828_140x100.crop.webp?c=20260526131927",
@@ -1039,6 +1058,25 @@
         "source": "fmkorea",
         "date": "2026-05-26",
         "registeredAt": "2026-05-26T13:56:00+09:00"
+      },
+      {
+        "id": "9871716720",
+        "title": "허닭 한입 닭다리구이 30팩, ...",
+        "area": "펨딜",
+        "dist": "먹거리",
+        "time": "12:47",
+        "price": "옵션별상이",
+        "likes": 52,
+        "views": 0,
+        "comments": 69,
+        "category": "먹거리",
+        "desc": "https://brand.naver.com/heodak/products/10248346044",
+        "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9871716720_140x100.crop.webp?c=20260526164134",
+        "buyLink": "https://brand.naver.com/heodak/products/10248346044",
+        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871716720",
+        "source": "fmkorea",
+        "date": "2026-05-26",
+        "registeredAt": "2026-05-26T12:47:00+09:00"
       },
       {
         "id": "9870841533",
@@ -1077,25 +1115,6 @@
         "source": "fmkorea",
         "date": "2026-05-26",
         "registeredAt": "2026-05-26T12:14:00+09:00"
-      },
-      {
-        "id": "9872624042",
-        "title": "컬리N마트 5월 멤버십데이 30%쿠...",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "10:04",
-        "price": "30%쿠폰",
-        "likes": 19,
-        "views": 0,
-        "comments": 18,
-        "category": "기타",
-        "desc": "https://shopping.naver.com/festa/onsale/6a0d180b21eb71525c883371",
-        "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9872624042_140x100.crop.webp?c=20260526092535",
-        "buyLink": "https://shopping.naver.com/festa/onsale/6a0d180b21eb71525c883371",
-        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872624042",
-        "source": "fmkorea",
-        "date": "2026-05-26",
-        "registeredAt": "2026-05-26T10:04:00+09:00"
       },
       {
         "id": "9872097951",
@@ -1247,7 +1266,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868600443",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9866611605",
@@ -1266,7 +1285,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866611605",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9869297462",
@@ -1285,7 +1304,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869297462",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9868701021",
@@ -1304,7 +1323,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868701021",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9868842131",
@@ -1323,7 +1342,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868842131",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9866405709",
@@ -1342,7 +1361,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866405709",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9866089292",
@@ -1361,7 +1380,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866089292",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9867308809",
@@ -1376,11 +1395,11 @@
         "category": "기타",
         "desc": "토스",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260525/9867308809_140x100.crop.webp?c=20260525000125",
-        "buyLink": "https://ader.naver.com/v1/eqr-3yuCs7GxxUJZkt8XL5XAODH52PmmZkiWJqHJURg_PQBqJRrOFFGD-pTdErNb0CLIQC3GUx1TdLIM0cIPcaYBcSXl0Ut5wz-3UJzwNE7Yi6oJ5XuaaLSQNJOkmWCcIhwS8WtUGGSAHNbTDD4s5o441N652B40fsjX7TtcFsBNy_6NkHoBWllixiH-1gBywgaeNvcrw67bNhWYNFkPGneq8LRsAVP-EW-9U8Yvz6-btoJDk2U-KqK36kalYaSuimivPB4lONZTUeZ1tn760HINAa0iCQ0YQglRM412N7Nbzb9v52sipUXXQsvvqH1ZJ9bBcAlt75AEE8ybVCxkAtbAZk7xWKjNHgeDewKl4IPrLpQqPIfPylZ7GVx7a1VAWhIoJ2__wvZ_EcKluCwCTan6HDYqNi_zrJSjPXxfoPIdKzTGax5SYlVBCSky9wSPaZpR2QHK0mBqzOLPTyIivX_fSGcBR0yXm2lTBK51kLh5HIzW6wCKw9C7Fh23JynBLQhn-FqMq_kk9F32lzgqtSJrvDQhAf6F7r0-8i9hSsZS97hQchIT-ACtUGAqa2aNlrdMyejtSyrOfCp18xoJZ6k9y7XzbYTQWhYwTfJ9RkYaJCxtru78QaPHI3VEvaAcXnKqHXomb7PBHE932H5FHEGWbM3WI3k6ZIoF2MmabIhk5nRGQKolBAywjEEiVuu6c-gIWatDN_VfEliuOEUEng==?c=m_fmkorea.ch6&t=0",
+        "buyLink": "https://ader.naver.com/v1/yMwPzuM7YTruzajLscKyppCt6x9SocD3gKPwG34pN-f_KCSNn01JPNX8plnBAWwJMVQUTzvdPl-Kx1JQSArUnPi_6-UL_XyYNCiCyQeIUAVY-MwGoL87PnqjVE5KqiY7nGLEe7I_NM3GbBxPdguq49BEFlM09pPWhVEdhWIYyASjlNOqJcqjiIXoC6ehisrPDm1X6pvPqzL6yeEngqCRBCt4lNVZSsD5_5a06fom9o3vOibZ9jIhNK4p7U6GfLv0BXtwrYB_xtePN3OyyKaBTpWCr_CT3ScPpzPuqJa_TgAk_q2WZl4SLVr8fEGq8KT2PNxdTLiLFha5h-77Pyh5TgF-r8SjEg6rQneaPLkOVQSzCbXyGK6IYqdJ1QR0yjQRJX32LZy5KNGr8Px61U4WNg==?c=m_fmkorea.ch6&t=1",
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9867308809",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9866953066",
@@ -1399,7 +1418,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866953066",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9867354186",
@@ -1418,7 +1437,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9867354186",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9867303820",
@@ -1437,7 +1456,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9867303820",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9866870258",
@@ -1456,7 +1475,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866870258",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9864312265",
@@ -1475,7 +1494,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9864312265",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9865055446",
@@ -1494,7 +1513,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9865055446",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9865343666",
@@ -1513,7 +1532,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9865343666",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9864964597",
@@ -1532,7 +1551,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9864964597",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9865336757",
@@ -1551,7 +1570,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9865336757",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9864834566",
@@ -1570,7 +1589,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9864834566",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9864855929",
@@ -1589,7 +1608,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9864855929",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9862725319",
@@ -1608,7 +1627,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9862725319",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9863319784",
@@ -1627,7 +1646,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9863319784",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9863659919",
@@ -1646,7 +1665,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9863659919",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9863477944",
@@ -1665,7 +1684,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9863477944",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9863596172",
@@ -1684,7 +1703,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9863596172",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       },
       {
         "id": "9862190495",
@@ -1703,26 +1722,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9862190495",
         "source": "fmkorea",
         "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
-      },
-      {
-        "id": "9862864008",
-        "title": "신상 원플러스 패드4 8엘젠5 12/2...",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "26.05",
-        "price": "851,790원",
-        "likes": 13,
-        "views": 0,
-        "comments": 87,
-        "category": "기타",
-        "desc": "https://link.gmarket.co.kr/n3kRwCYCu",
-        "img": "//image.fmkorea.com/filesn/cache/thumb/20260523/9862864008_140x100.crop.webp?c=20260523214119",
-        "buyLink": "https://link.gmarket.co.kr/n3kRwCYCu",
-        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9862864008",
-        "source": "fmkorea",
-        "date": "2026-05-26",
-        "registeredAt": "2026-05-26T16:42:54.287036+09:00"
+        "registeredAt": "2026-05-26T16:59:17.761860+09:00"
       }
     ],
     "yesterday": []
