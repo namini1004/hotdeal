@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
 
       if (scope !== 'feed') {
         try {
-          const query = [`deleted_at=is.null`, 'order=created_at.desc'];
+          const query = [`source=eq.user`, `deleted_at=is.null`, 'order=created_at.desc'];
           if (since) query.push(`updated_at=gt.${encodeURIComponent(since)}`);
           const rows = await supabaseRequest(`deals?${query.join('&')}`);
           userItems = (rows || []).map(normalizeUserRow);
