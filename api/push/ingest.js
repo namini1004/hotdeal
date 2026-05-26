@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { json } = require('../_lib/auth');
-const { firestore, messaging } = require('../_lib/firebase-admin');
+const { firestore, messaging, firebaseDebugInfo } = require('../_lib/firebase-admin');
 
 function normalizeText(...values) {
   return values
@@ -188,6 +188,13 @@ module.exports = async (req, res) => {
 
     return json(res, 200, { ok: true, processed, pushed, skipped });
   } catch (error) {
-    return json(res, 500, { error: error.message || 'ingest failed' });
+    const msg = String(error?.message || 'ingest failed');
+    if (msg.includes('5 NOT_FOUND')) {
+      return json(res, 500, {
+        error: 'Firestore DB not found. Check default DB creation or set FIREBASE_DATABASE_ID.',
+        debug: firebaseDebugInfo(),
+      });
+    }
+    return json(res, 500, { error: msg });
   }
 };

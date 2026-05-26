@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { json, readSession } = require('../_lib/auth');
-const { firestore } = require('../_lib/firebase-admin');
+const { firestore, firebaseDebugInfo } = require('../_lib/firebase-admin');
 
 function normalizeTerm(term) {
   return String(term || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -82,6 +82,13 @@ module.exports = async (req, res) => {
     res.setHeader('Allow', 'GET, POST, DELETE');
     return json(res, 405, { error: 'Method not allowed' });
   } catch (error) {
-    return json(res, 500, { error: error.message || 'keywords failed' });
+    const msg = String(error?.message || 'keywords failed');
+    if (msg.includes('5 NOT_FOUND')) {
+      return json(res, 500, {
+        error: 'Firestore DB not found. Check default DB creation or set FIREBASE_DATABASE_ID.',
+        debug: firebaseDebugInfo(),
+      });
+    }
+    return json(res, 500, { error: msg });
   }
 };
