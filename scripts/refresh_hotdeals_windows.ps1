@@ -2,7 +2,11 @@ Param(
     [string]$RepoPath = "C:\Users\namin\hotdeal-site",
     [string]$PythonCmd = "python",
     [string]$Branch = "main",
-    [string]$PatFile = "C:\codex\pat.txt"
+    [string]$PatFile = "C:\codex\pat.txt",
+    [string]$PushIngestUrl = "https://gaji.run/api/push/ingest",
+    [string]$PushIngestSecret = "rkwlrkwlskantrkwl",
+    [string]$SupabaseUrlFile = "C:\codex\supabase_url.txt",
+    [string]$SupabaseServiceRoleKeyFile = "C:\codex\supabase_service_role_key.txt"
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,17 +25,45 @@ try {
     Set-Location $RepoPath
     Write-Log "repo: $RepoPath"
 
-    # 1) 데이터 갱신
+    # 1) Feed update
     $updateOut = & $PythonCmd "scripts/update_ppomppu_feed.py" 2>&1
     $updateText = ($updateOut | Out-String).Trim()
     Write-Log "update: $updateText"
 
+    # 1-1) Supabase sync + push ingest
+    $serviceAccountPath = Join-Path $RepoPath "secrets\firebase-service-account.json"
+    if (Test-Path $serviceAccountPath) {
+        $env:FIREBASE_SERVICE_ACCOUNT_JSON = Get-Content $serviceAccountPath -Raw
+    }
+    $env:FIREBASE_PROJECT_ID = "gajigaji-bf2e8"
+    $env:PUSH_INGEST_URL = $PushIngestUrl
+    $env:PUSH_INGEST_SECRET = $PushIngestSecret
+
+    if (Test-Path $SupabaseUrlFile) {
+        $env:SUPABASE_URL = (Get-Content $SupabaseUrlFile -Raw).Trim()
+    }
+    if (Test-Path $SupabaseServiceRoleKeyFile) {
+        $env:SUPABASE_SERVICE_ROLE_KEY = (Get-Content $SupabaseServiceRoleKeyFile -Raw).Trim()
+    }
+
+    if ([string]::IsNullOrWhiteSpace($env:SUPABASE_URL) -or [string]::IsNullOrWhiteSpace($env:SUPABASE_SERVICE_ROLE_KEY)) {
+        Write-Log "sync skipped: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing"
+    }
+    else {
+        if ([string]::IsNullOrWhiteSpace($env:PUSH_INGEST_SECRET)) {
+            Write-Log "warning: PUSH_INGEST_SECRET missing (ingest may be skipped)"
+        }
+        $syncOut = & $PythonCmd "scripts/sync_hotdeals_to_supabase.py" 2>&1
+        $syncText = ($syncOut | Out-String).Trim()
+        Write-Log "sync: $syncText"
+    }
+
     if ($updateText -like "NO_CHANGE*") {
-        Write-Log "변경 없음, 종료"
+        Write-Log "no update changes"
         exit 0
     }
 
-    # 2) 변경 감지 (데이터 파일/썸네일)
+    # 2) Stage changed files
     $targetA = "assets/ppomppu_hotdeals_2days.json"
     $targetB = "assets/ppomppu_thumbs"
 
@@ -39,7 +71,7 @@ try {
     $staged = (& git diff --cached --name-only -- $targetA $targetB | Out-String).Trim()
 
     if ([string]::IsNullOrWhiteSpace($staged)) {
-        Write-Log "스테이징된 변경 없음, 종료"
+        Write-Log "nothing staged"
         exit 0
     }
 
@@ -59,15 +91,14 @@ try {
 
     & git commit -m $title -m $body | Out-Null
 
-    # 3) 푸시
-    # 기본: 저장된 자격증명 사용
+    # 3) Push
     $pushOk = $true
     try {
         & git push origin $Branch | Out-Null
     }
     catch {
         $pushOk = $false
-        Write-Log "origin push 실패, PAT 파일 방식 재시도"
+        Write-Log "origin push failed, retry with PAT"
     }
 
     if (-not $pushOk) {
@@ -82,7 +113,7 @@ try {
         & git push $url $Branch | Out-Null
     }
 
-    Write-Log "완료: 변경 커밋/푸시"
+    Write-Log "done: committed and pushed"
     exit 0
 }
 catch {
