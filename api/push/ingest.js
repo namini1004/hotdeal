@@ -14,7 +14,9 @@ function normalizeText(...values) {
 function buildDealId(row) {
   const source = String(row.source || '').trim();
   const sourceLink = String(row.source_link || row.sourceLink || '').trim();
-  if (source && sourceLink) return `${source}::${sourceLink}`;
+  if (source && sourceLink) {
+    return crypto.createHash('sha1').update(`${source}::${sourceLink}`).digest('hex');
+  }
   return crypto.createHash('sha1').update(JSON.stringify(row)).digest('hex');
 }
 
@@ -63,6 +65,119 @@ async function findMatchedUsers(db, normalizedText) {
   return matched;
 }
 
+async function processRows(rows = []) {
+  if (!rows.length) return { ok: true, processed: 0, pushed: 0, skipped: 0 };
+
+  const db = firestore();
+  const msg = messaging();
+  const now = new Date();
+  const deviceCache = new Map();
+  let processed = 0;
+  let pushed = 0;
+  let skipped = 0;
+
+  for (const row of rows) {
+    if (row.deleted_at) continue;
+
+    const sourceLink = String(row.source_link || row.sourceLink || '').trim();
+    const buyLink = String(row.buy_link || row.buyLink || sourceLink).trim();
+    const title = String(row.title || '').trim();
+    const desc = String(row.desc || '').trim();
+    const source = String(row.source || '').trim();
+    const price = String(row.price || '').trim();
+    const dealId = buildDealId(row);
+    const normalized = normalizeText(title, desc, source, price);
+    const matchedByUser = await findMatchedUsers(db, normalized);
+
+    processed += 1;
+    if (matchedByUser.size === 0) {
+      skipped += 1;
+      continue;
+    }
+
+    for (const [uid, termSet] of matchedByUser.entries()) {
+      const dedupeId = `${dealId}_${uid}`;
+      const matchRef = db.collection('deal_matches').doc(dedupeId);
+      const matchSnap = await matchRef.get();
+      if (matchSnap.exists) continue;
+
+      let devicesSnap = deviceCache.get(uid);
+      if (!devicesSnap) {
+        devicesSnap = await db
+          .collection('users')
+          .doc(uid)
+          .collection('devices')
+          .where('enabled', '==', true)
+          .get();
+        deviceCache.set(uid, devicesSnap);
+      }
+
+      const tokens = devicesSnap.docs
+        .map((d) => String(d.get('fcmToken') || '').trim())
+        .filter(Boolean);
+
+      const matchedTerms = [...termSet];
+      if (tokens.length === 0) {
+        await matchRef.set({
+          dealId,
+          uid,
+          matchedTerms,
+          status: 'skipped',
+          reason: 'no_tokens',
+          sentAt: now,
+        });
+        continue;
+      }
+
+      const clickUrl = buyLink || sourceLink || 'https://gaji.run';
+      const response = await msg.sendEachForMulticast({
+        tokens,
+        notification: {
+          title: `🔔 관심 딜: ${matchedTerms[0]}`,
+          body: title || '새 딜이 등록되었습니다.',
+        },
+        data: {
+          url: clickUrl,
+          dealId,
+          source,
+        },
+        android: { priority: 'high' },
+      });
+
+      const invalidTokens = [];
+      response.responses.forEach((r, idx) => {
+        const code = r.error?.code || '';
+        if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) {
+          invalidTokens.push(tokens[idx]);
+        }
+      });
+
+      const batch = db.batch();
+      invalidTokens.forEach((token) => {
+        const target = devicesSnap.docs.find((d) => d.get('fcmToken') === token);
+        if (target) batch.delete(target.ref);
+      });
+
+      batch.set(matchRef, {
+        dealId,
+        uid,
+        matchedTerms,
+        status: 'sent',
+        sentAt: now,
+        tokenCount: tokens.length,
+        successCount: response.successCount,
+        failureCount: response.failureCount,
+        clickUrl,
+      });
+
+      await batch.commit();
+      pushed += response.successCount;
+    }
+  }
+
+  return { ok: true, processed, pushed, skipped };
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -76,117 +191,10 @@ module.exports = async (req, res) => {
   }
 
   const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
-  if (!rows.length) return json(res, 200, { ok: true, processed: 0, pushed: 0, skipped: 0 });
 
   try {
-    const db = firestore();
-    const msg = messaging();
-    const now = new Date();
-    const deviceCache = new Map();
-    let processed = 0;
-    let pushed = 0;
-    let skipped = 0;
-
-    for (const row of rows) {
-      if (row.deleted_at) continue;
-
-      const sourceLink = String(row.source_link || row.sourceLink || '').trim();
-      const buyLink = String(row.buy_link || row.buyLink || sourceLink).trim();
-      const title = String(row.title || '').trim();
-      const desc = String(row.desc || '').trim();
-      const source = String(row.source || '').trim();
-      const price = String(row.price || '').trim();
-      const dealId = buildDealId(row);
-      const normalized = normalizeText(title, desc, source, price);
-      const matchedByUser = await findMatchedUsers(db, normalized);
-
-      processed += 1;
-      if (matchedByUser.size === 0) {
-        skipped += 1;
-        continue;
-      }
-
-      for (const [uid, termSet] of matchedByUser.entries()) {
-        const dedupeId = `${dealId}_${uid}`;
-        const matchRef = db.collection('deal_matches').doc(dedupeId);
-        const matchSnap = await matchRef.get();
-        if (matchSnap.exists) continue;
-
-        let devicesSnap = deviceCache.get(uid);
-        if (!devicesSnap) {
-          devicesSnap = await db
-            .collection('users')
-            .doc(uid)
-            .collection('devices')
-            .where('enabled', '==', true)
-            .get();
-          deviceCache.set(uid, devicesSnap);
-        }
-
-        const tokens = devicesSnap.docs
-          .map((d) => String(d.get('fcmToken') || '').trim())
-          .filter(Boolean);
-
-        const matchedTerms = [...termSet];
-        if (tokens.length === 0) {
-          await matchRef.set({
-            dealId,
-            uid,
-            matchedTerms,
-            status: 'skipped',
-            reason: 'no_tokens',
-            sentAt: now,
-          });
-          continue;
-        }
-
-        const clickUrl = buyLink || sourceLink || 'https://gaji.run';
-        const response = await msg.sendEachForMulticast({
-          tokens,
-          notification: {
-            title: `🔔 관심 딜: ${matchedTerms[0]}`,
-            body: title || '새 딜이 등록되었습니다.',
-          },
-          data: {
-            url: clickUrl,
-            dealId,
-            source,
-          },
-          android: { priority: 'high' },
-        });
-
-        const invalidTokens = [];
-        response.responses.forEach((r, idx) => {
-          const code = r.error?.code || '';
-          if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) {
-            invalidTokens.push(tokens[idx]);
-          }
-        });
-
-        const batch = db.batch();
-        invalidTokens.forEach((token) => {
-          const target = devicesSnap.docs.find((d) => d.get('fcmToken') === token);
-          if (target) batch.delete(target.ref);
-        });
-
-        batch.set(matchRef, {
-          dealId,
-          uid,
-          matchedTerms,
-          status: 'sent',
-          sentAt: now,
-          tokenCount: tokens.length,
-          successCount: response.successCount,
-          failureCount: response.failureCount,
-          clickUrl,
-        });
-
-        await batch.commit();
-        pushed += response.successCount;
-      }
-    }
-
-    return json(res, 200, { ok: true, processed, pushed, skipped });
+    const result = await processRows(rows);
+    return json(res, 200, result);
   } catch (error) {
     const msg = String(error?.message || 'ingest failed');
     if (msg.includes('5 NOT_FOUND')) {
@@ -198,3 +206,5 @@ module.exports = async (req, res) => {
     return json(res, 500, { error: msg });
   }
 };
+
+module.exports.processRows = processRows;

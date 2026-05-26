@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { readSession } = require('./_lib/auth');
 const { readFeedItems, normalizeUserRow, supabaseRequest, mapPayload } = require('./_lib/deals');
+const ingestHandler = require('./push/ingest');
 
 function json(res, code, data) {
   res.statusCode = code;
@@ -83,10 +84,19 @@ module.exports = async (req, res) => {
       const payload = mapPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });
       const now = new Date().toISOString();
+      const insertRow = { ...payload, source: 'user', registered_at: now, created_at: now, updated_at: now };
       const rows = await supabaseRequest('deals', {
         method: 'POST',
-        body: JSON.stringify([{ ...payload, source: 'user', registered_at: now, created_at: now, updated_at: now }]),
+        body: JSON.stringify([insertRow]),
       });
+
+      try {
+        await ingestHandler.processRows([insertRow]);
+      } catch (pushError) {
+        // 작성 자체는 성공 처리하고, 푸시 실패 원인은 응답에 포함
+        return json(res, 201, { item: normalizeUserRow(rows[0]), pushWarning: String(pushError?.message || 'push failed') });
+      }
+
       return json(res, 201, { item: normalizeUserRow(rows[0]) });
     }
 

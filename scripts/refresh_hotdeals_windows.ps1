@@ -6,7 +6,8 @@ Param(
     [string]$PushIngestUrl = "https://gaji.run/api/push/ingest",
     [string]$PushIngestSecret = "rkwlrkwlskantrkwl",
     [string]$SupabaseUrlFile = "C:\codex\supabase_url.txt",
-    [string]$SupabaseServiceRoleKeyFile = "C:\codex\supabase_service_role_key.txt"
+    [string]$SupabaseServiceRoleKeyFile = "C:\codex\supabase_service_role_key.txt",
+    [string]$SupabaseJwtFile = "C:\codex\supabase_jwt.txt"
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,6 +45,10 @@ try {
     }
     if (Test-Path $SupabaseServiceRoleKeyFile) {
         $env:SUPABASE_SERVICE_ROLE_KEY = (Get-Content $SupabaseServiceRoleKeyFile -Raw).Trim()
+    }
+    elseif (Test-Path $SupabaseJwtFile) {
+        $env:SUPABASE_SERVICE_ROLE_KEY = (Get-Content $SupabaseJwtFile -Raw).Trim()
+        Write-Log "SUPABASE_SERVICE_ROLE_KEY loaded from SupabaseJwtFile"
     }
 
     if ([string]::IsNullOrWhiteSpace($env:SUPABASE_URL) -or [string]::IsNullOrWhiteSpace($env:SUPABASE_SERVICE_ROLE_KEY)) {
