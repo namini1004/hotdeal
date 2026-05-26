@@ -139,8 +139,8 @@ async function processRows(rows = []) {
           url: clickUrl,
           dealId,
           source,
-          title: `🔔 관심 딜: ${matchedTerms[0]}`,
-          body: title || '새 딜이 등록되었습니다.',
+          title: `🍆 키워드알림: ${matchedTerms[0]}`,
+          body: `${matchedTerms[0]} 관련 새 딜이 등록됐어요.`,
         },
         android: { priority: 'high' },
       });
