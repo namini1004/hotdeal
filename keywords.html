@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>관심 키워드</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    :root{--bg:#fff;--page:#f7f4ff;--text:#171325;--muted:#7c8594;--line:#eee9f8;--brand:#7c3aed;--brand-soft:#f3edff;--danger:#ef4444}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding:22px 18px;background:#fff}
+    .top{display:flex;align-items:center;gap:10px;margin:10px 0 14px}
+    .back{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;border:1px solid var(--line);text-decoration:none;color:#374151}
+    .title{font-size:22px;font-weight:800;letter-spacing:-.03em;margin:0}
+    .sub{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.45}
+    .panel{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+    .row{display:flex;gap:8px}
+    input[type=text]{flex:1;height:44px;border:1px solid #ddd6fe;border-radius:12px;padding:0 12px;font-size:15px}
+    button{height:44px;border:none;background:var(--brand);color:#fff;padding:0 14px;border-radius:12px;font-weight:800;cursor:pointer}
+    .hint{margin-top:8px;color:var(--muted);font-size:12px}
+    .status{display:none;margin-top:10px;padding:10px;border-radius:10px;background:var(--brand-soft);color:#4c1d95;font-size:13px;font-weight:700}
+    .list{margin-top:14px;display:grid;gap:8px}
+    .item{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+    .term{font-size:15px;font-weight:700}
+    .meta{font-size:12px;color:var(--muted)}
+    .del{height:32px;background:#fff;border:1px solid #fecaca;color:var(--danger);padding:0 10px;border-radius:999px;font-weight:700}
+    .empty{color:var(--muted);font-size:14px;text-align:center;padding:20px 0}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="top">
+      <a class="back" href="my-gaji.html" aria-label="뒤로가기">‹</a>
+      <h1 class="title">관심 키워드</h1>
+    </div>
+    <p class="sub">등록한 키워드가 포함된 딜이 올라오면 푸시로 알려드려요.</p>
+
+    <section class="panel">
+      <div class="row">
+        <input id="termInput" type="text" placeholder="예) 아이패드, 나이키" maxlength="20" />
+        <button id="addBtn" type="button">추가</button>
+      </div>
+      <div class="hint">2~20자, 최대 20개까지 권장</div>
+      <div class="status" id="statusBox"></div>
+    </section>
+
+    <section class="list" id="keywordList"></section>
+  </main>
+
+  <script>
+    const listEl = document.getElementById('keywordList');
+    const inputEl = document.getElementById('termInput');
+    const addBtn = document.getElementById('addBtn');
+    const statusBox = document.getElementById('statusBox');
+
+    function showStatus(msg){
+      if(!msg){ statusBox.style.display='none'; return; }
+      statusBox.textContent = msg;
+      statusBox.style.display = 'block';
+    }
+
+    function escapeHtml(v){
+      return String(v||'').replace(/[&<>'"]/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[m]));
+    }
+
+    function render(items){
+      if(!Array.isArray(items) || items.length===0){
+        listEl.innerHTML = '<div class="empty">등록된 키워드가 없어요.</div>';
+        return;
+      }
+      listEl.innerHTML = items.map(item => `
+        <article class="item">
+          <div>
+            <div class="term">${escapeHtml(item.term || item.termNormalized || '')}</div>
+            <div class="meta">알림 사용중</div>
+          </div>
+          <button class="del" type="button" data-id="${item.id}">삭제</button>
+        </article>
+      `).join('');
+
+      document.querySelectorAll('.del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          if(!id) return;
+          try{
+            const res = await fetch(`/api/push/keywords?id=${encodeURIComponent(id)}`, { method:'DELETE', credentials:'include' });
+            if(!res.ok) throw new Error('delete');
+            showStatus('키워드를 삭제했어요.');
+            await loadKeywords();
+          }catch(_){
+            showStatus('삭제에 실패했어요. 다시 시도해주세요.');
+          }
+        });
+      });
+    }
+
+    async function loadKeywords(){
+      const res = await fetch('/api/push/keywords', { credentials:'include', cache:'no-store' });
+      if(res.status===401){
+        showStatus('로그인이 필요합니다. 내 가지에서 로그인해주세요.');
+        render([]);
+        return;
+      }
+      if(!res.ok){
+        showStatus('키워드를 불러오지 못했습니다.');
+        return;
+      }
+      const data = await res.json();
+      render(data.items || []);
+    }
+
+    addBtn.addEventListener('click', async () => {
+      const term = (inputEl.value || '').trim();
+      if(term.length < 2 || term.length > 20){
+        showStatus('키워드는 2~20자로 입력해주세요.');
+        return;
+      }
+      try{
+        const res = await fetch('/api/push/keywords', {
+          method:'POST',
+          credentials:'include',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ term, enabled:true })
+        });
+        if(res.status===401){
+          showStatus('로그인이 필요합니다. 내 가지에서 로그인해주세요.');
+          return;
+        }
+        if(!res.ok){
+          const data = await res.json().catch(()=>({}));
+          showStatus(data.error || '등록에 실패했어요.');
+          return;
+        }
+        inputEl.value = '';
+        showStatus('키워드를 등록했어요.');
+        await loadKeywords();
+      }catch(_){
+        showStatus('네트워크 오류가 발생했어요.');
+      }
+    });
+
+    loadKeywords();
+  </script>
+</body>
+</html>

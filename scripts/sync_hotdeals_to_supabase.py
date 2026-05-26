@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict
+from urllib.parse import quote
 
 import requests
 
@@ -118,6 +119,31 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
     return existing
 
 
+def send_push_ingest(changed_rows: List[Dict]):
+    ingest_url = os.environ.get("PUSH_INGEST_URL", "").strip()
+    ingest_secret = os.environ.get("PUSH_INGEST_SECRET", "").strip()
+    if not ingest_url or not ingest_secret or not changed_rows:
+        return "SKIP"
+
+    rows = [row for row in changed_rows if not row.get("deleted_at")]
+    if not rows:
+        return "SKIP"
+
+    headers = {
+        "Content-Type": "application/json",
+        "x-ingest-secret": ingest_secret,
+    }
+    res = requests.post(
+        ingest_url,
+        headers=headers,
+        json={"rows": rows},
+        timeout=60,
+    )
+    if not res.ok:
+        raise SystemExit(f"Push ingest failed ({res.status_code}): {res.text}")
+    return "OK"
+
+
 def main():
     supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -182,9 +208,7 @@ def main():
             }
         )
 
-    rows_to_write = changed_rows + deleted_rows
-
-    if not rows_to_write:
+    if not changed_rows and not deleted_rows:
         print("NO_CHANGE")
         return
 
@@ -198,20 +222,44 @@ def main():
     }
 
     written = 0
-    use_insert_fallback = False
-    for batch in chunked(rows_to_write, 400):
-        endpoint = endpoint_insert if use_insert_fallback else endpoint_upsert
-        res = requests.post(endpoint, headers=headers, json=batch, timeout=60)
-        if not res.ok and (res.status_code == 400 and "42P10" in (res.text or "")):
-            use_insert_fallback = True
-            headers["Prefer"] = "return=minimal"
-            res = requests.post(endpoint_insert, headers=headers, json=batch, timeout=60)
 
-        if not res.ok:
-            raise SystemExit(f"Supabase upsert failed ({res.status_code}): {res.text}")
-        written += len(batch)
+    # 1) 신규/변경 행은 upsert
+    if changed_rows:
+        use_insert_fallback = False
+        for batch in chunked(changed_rows, 400):
+            endpoint = endpoint_insert if use_insert_fallback else endpoint_upsert
+            res = requests.post(endpoint, headers=headers, json=batch, timeout=60)
+            if not res.ok and (res.status_code == 400 and "42P10" in (res.text or "")):
+                use_insert_fallback = True
+                headers["Prefer"] = "return=minimal"
+                res = requests.post(endpoint_insert, headers=headers, json=batch, timeout=60)
 
-    print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)}")
+            if not res.ok:
+                raise SystemExit(f"Supabase upsert failed ({res.status_code}): {res.text}")
+            written += len(batch)
+
+    # 2) 수집에서 사라진 행은 PATCH로 soft delete
+    if deleted_rows:
+        for row in deleted_rows:
+            source = row["source"]
+            source_link = row["source_link"]
+            patch_endpoint = (
+                f"{supabase_url}/rest/v1/deals"
+                f"?source=eq.{quote(source, safe='')}"
+                f"&source_link=eq.{quote(source_link, safe='')}"
+            )
+            res = requests.patch(
+                patch_endpoint,
+                headers={**headers, "Prefer": "return=minimal"},
+                json={"deleted_at": row["deleted_at"], "updated_at": row["updated_at"]},
+                timeout=60,
+            )
+            if not res.ok:
+                raise SystemExit(f"Supabase soft delete failed ({res.status_code}): {res.text}")
+            written += 1
+
+    ingest_status = send_push_ingest(changed_rows)
+    print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} ingest={ingest_status}")
 
 
 if __name__ == "__main__":
