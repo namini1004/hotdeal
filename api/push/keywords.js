@@ -27,7 +27,14 @@ module.exports = async (req, res) => {
     if (req.method === 'GET') {
       const snap = await baseRef.where('enabled', '==', true).get();
       const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      return json(res, 200, { items });
+      const deviceSnap = await db
+        .collection('users')
+        .doc(uid)
+        .collection('devices')
+        .where('enabled', '==', true)
+        .limit(1)
+        .get();
+      return json(res, 200, { items, hasEnabledToken: !deviceSnap.empty });
     }
 
     if (req.method === 'POST') {

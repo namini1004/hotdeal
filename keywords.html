@@ -95,11 +95,8 @@
       });
     }
 
-    async function ensurePushTokenIfMissing(){
+    async function ensurePushTokenIfMissingFromKeywordsResponse(data){
       try {
-        const res = await fetch('/api/push/device-status', { credentials:'include', cache:'no-store' });
-        if (!res.ok) return;
-        const data = await res.json().catch(() => ({}));
         if (data && data.hasEnabledToken === false) {
           showStatus('푸시 토큰이 없어 앱에서 재등록을 시도합니다.');
           window.location.href = 'gaji://push/sync';
@@ -121,6 +118,7 @@
         return;
       }
       const data = await res.json();
+      await ensurePushTokenIfMissingFromKeywordsResponse(data);
       render(data.items || []);
     }
 
@@ -155,7 +153,6 @@
     });
 
     (async () => {
-      await ensurePushTokenIfMissing();
       loadKeywords();
     })();
   </script>
