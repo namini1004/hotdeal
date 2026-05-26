@@ -89,15 +89,16 @@ module.exports = async (req, res) => {
         method: 'POST',
         body: JSON.stringify([insertRow]),
       });
+      const createdRow = rows?.[0] || insertRow;
 
       try {
-        await ingestHandler.processRows([insertRow]);
+        await ingestHandler.processRows([createdRow]);
       } catch (pushError) {
         // 작성 자체는 성공 처리하고, 푸시 실패 원인은 응답에 포함
-        return json(res, 201, { item: normalizeUserRow(rows[0]), pushWarning: String(pushError?.message || 'push failed') });
+        return json(res, 201, { item: normalizeUserRow(createdRow), pushWarning: String(pushError?.message || 'push failed') });
       }
 
-      return json(res, 201, { item: normalizeUserRow(rows[0]) });
+      return json(res, 201, { item: normalizeUserRow(createdRow) });
     }
 
     res.setHeader('Allow', 'GET, POST');

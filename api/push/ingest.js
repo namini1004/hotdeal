@@ -81,6 +81,7 @@ async function processRows(rows = []) {
 
     const sourceLink = String(row.source_link || row.sourceLink || '').trim();
     const buyLink = String(row.buy_link || row.buyLink || sourceLink).trim();
+    const rowId = String(row.id || '').trim();
     const title = String(row.title || '').trim();
     const desc = String(row.desc || '').trim();
     const source = String(row.source || '').trim();
@@ -129,7 +130,9 @@ async function processRows(rows = []) {
         continue;
       }
 
-      const clickUrl = buyLink || sourceLink || 'https://gaji.run';
+      const clickUrl = rowId
+        ? `https://gaji.run/detail.html?id=${encodeURIComponent(rowId)}`
+        : (buyLink || sourceLink || 'https://gaji.run');
       const response = await msg.sendEachForMulticast({
         tokens,
         notification: {
