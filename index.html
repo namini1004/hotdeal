@@ -6,20 +6,19 @@
   <title>오늘의 핫딜</title>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
-    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@500');
     :root{--bg:#fff;--page:#f7f4ff;--text:#171325;--muted:#8b95a1;--line:#eee9f8;--chip:#f3edff;--chip-active:#5b21b6;--brand:#7c3aed;--brand-rgb:124,58,237}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-    .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:32px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
     .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:24px}
     .top{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5;transition:transform .24s ease,opacity .2s ease,box-shadow .2s ease}
     .top.is-hidden{transform:translateY(calc(-100% - 12px));opacity:0;pointer-events:none}
     .row{display:flex;align-items:center;justify-content:space-between}
-    .top-actions{display:flex;align-items:center;gap:4px}
+    .top-actions{display:flex;align-items:center;gap:1px}
     .title-app{display:flex;align-items:baseline;font-size:24px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}
     .brand-word{color:var(--brand);font-weight:950;letter-spacing:-.09em}
     .title-rest{color:var(--text);font-weight:800;letter-spacing:-.04em;margin-left:1px}
-    .icon-btn{width:48px;height:48px;display:grid;place-items:center;border:none;border-radius:999px;background:transparent;color:#374151;line-height:1;cursor:pointer;text-decoration:none}
+    .icon-btn{width:34px;height:34px;display:grid;place-items:center;border:none;border-radius:999px;background:transparent;color:#374151;line-height:1;cursor:pointer;text-decoration:none}
+    .top-icon{width:22px;height:22px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     .icon-btn:active{background:#f4f6f8}
 
     .search-wrap{display:none;margin-top:10px}
@@ -80,8 +79,9 @@
       .app{max-width:1120px;padding:0 28px 48px}
       .top{top:16px;margin:16px 0 18px;padding:18px 20px 14px;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 32px rgba(17,24,39,.06)}
       .title-app{font-size:28px}
-      .icon-btn{width:52px;height:52px;background:#f4f6f8}
-      .icon-btn .material-symbols-outlined{font-size:34px}
+      .top-actions{gap:2px}
+      .icon-btn{width:36px;height:36px;background:#f4f6f8}
+      .top-icon{width:23px;height:23px}
       .search-wrap{display:block;max-width:520px}
       .search-input{height:46px;background:#fafafa}
       .chips{padding-top:14px}
@@ -117,12 +117,14 @@
         <div class="title-app"><span class="brand-word">가지</span><span class="title-rest">고 싶다</span></div>
         <div class="top-actions">
           <button class="icon-btn" id="sortToggle" aria-label="정렬">
-            <span id="sortIconWrap" aria-hidden="true"></span>
+            <span id="sortIconWrap" aria-hidden="true">
+              <svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+            </span>
           </button>
           <a class="icon-btn" id="keywordAlarmBtn" href="keywords.html" aria-label="키워드 알림">
-            <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+            <svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
           </a>
-          <button class="icon-btn" id="searchToggle" aria-label="검색"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
+          <button class="icon-btn" id="searchToggle" aria-label="검색"><svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg></button>
         </div>
       </div>
       <div class="search-wrap" id="searchWrap">
@@ -455,8 +457,11 @@
     }
 
     function renderSortIcon(){
-      const glyph = state.sortMode === 'temperature' ? 'device_thermostat' : 'schedule';
-      document.getElementById('sortIconWrap').innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${glyph}</span>`;
+      const wrap = document.getElementById('sortIconWrap');
+      const icon = state.sortMode === 'temperature'
+        ? '<svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V5a2 2 0 1 0-4 0v9.76a4 4 0 1 0 4 0Z"></path><path d="M12 7v8"></path></svg>'
+        : '<svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>';
+      wrap.innerHTML = icon;
     }
 
     function openSortSheet(){
@@ -717,6 +722,14 @@
     async function init(){
       restoreLastTab();
       restoreLastSort();
+      bindTabs();
+      bindSearch();
+      bindSortSheet();
+      bindReadTracking();
+      bindScrollChrome();
+      bindPullToRefresh();
+      bindAutoSync();
+
       const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
       applyItems(cached);
       render();
@@ -725,13 +738,6 @@
       await refreshFeed({ silent: true });
       refreshNaminDealsBackground();
 
-      bindTabs();
-      bindSearch();
-      bindSortSheet();
-      bindReadTracking();
-      bindScrollChrome();
-      bindPullToRefresh();
-      bindAutoSync();
       render();
       restoreListScrollState();
     }
