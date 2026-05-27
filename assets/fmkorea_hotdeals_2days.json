@@ -1,8 +1,8 @@
 {
   "source": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine",
-  "generatedAt": "2026-05-27T17:15:07.070435+09:00",
+  "generatedAt": "2026-05-27T17:50:03.758334+09:00",
   "rangeHours": 48,
-  "since": "2026-05-25T17:15:07.070435+09:00",
+  "since": "2026-05-25T17:50:03.758334+09:00",
   "today": "2026-05-27",
   "yesterday": "2026-05-26",
   "counts": {
@@ -31,25 +31,6 @@
       "registeredAt": "2026-05-26T00:00:00+09:00"
     },
     {
-      "id": "9876199793",
-      "title": "[네이버스토어] 푸마X키드슈퍼 유니폼 (클럽월드컵유니폼) 다수 (31,410~) (무료)",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "05.27",
-      "price": "무료",
-      "likes": 0,
-      "views": 39000,
-      "comments": 56,
-      "category": "기타",
-      "desc": "https://brand.naver.com/pumakorea/search?q=%ED%82%A4%EB%93%9C%EC%8A%88%ED%8D%BC",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260527/9876199793_1196365581_af1b28036046522e92f4c4dd6b7b70d4.png?c=20260527030712",
-      "buyLink": "https://brand.naver.com/pumakorea/search?q=키드슈퍼",
-      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9876199793",
-      "source": "fmkorea",
-      "date": "2026-05-27",
-      "registeredAt": "2026-05-27T00:00:00+09:00"
-    },
-    {
       "id": "9874749473",
       "title": "[플레이스토어] 드래곤퀘스트5 (12,000원) (x)",
       "area": "펨딜",
@@ -69,6 +50,25 @@
       "registeredAt": "2026-05-26T00:00:00+09:00"
     },
     {
+      "id": "9876199793",
+      "title": "[네이버스토어] 푸마X키드슈퍼 유니폼 (클럽월드컵유니폼) 다수 (31,410~) (무료)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.27",
+      "price": "무료",
+      "likes": 0,
+      "views": 40000,
+      "comments": 56,
+      "category": "기타",
+      "desc": "https://brand.naver.com/pumakorea/search?q=%ED%82%A4%EB%93%9C%EC%8A%88%ED%8D%BC",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260527/9876199793_1196365581_af1b28036046522e92f4c4dd6b7b70d4.png?c=20260527030712",
+      "buyLink": "https://brand.naver.com/pumakorea/search?q=키드슈퍼",
+      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9876199793",
+      "source": "fmkorea",
+      "date": "2026-05-27",
+      "registeredAt": "2026-05-27T00:00:00+09:00"
+    },
+    {
       "id": "9874877161",
       "title": "[네이버] 정발 펀키스 fl-esports NX87HE/NX108HE 8k 자석축 키보드 사전예약 (71,200원부터) (무배)",
       "area": "펨딜",
@@ -76,8 +76,8 @@
       "time": "05.26",
       "price": "71,200원",
       "likes": 0,
-      "views": 49000,
-      "comments": 102,
+      "views": 50000,
+      "comments": 105,
       "category": "기타",
       "desc": "https://smartstore.naver.com/funkeys/products/13549462272",
       "img": "https://image.fmkorea.com/files/attach/new5/20260526/9874877161_1196365581_1d29337014684a448953c08d80429103.png?c=20260526195236",
@@ -95,7 +95,7 @@
       "time": "05.27",
       "price": "4,490원",
       "likes": 0,
-      "views": 11000,
+      "views": 12000,
       "comments": 26,
       "category": "기타",
       "desc": "https://m.smartstore.naver.com/nutritionmate/products/7120901712?dtm_source=KK&dtm_detail=gMWDKJebTgJJKYQi6WkgAQ&dtm_campaign=commerce_info&dtm_medium=OG#ZOOM",
@@ -113,9 +113,9 @@
       "dist": "먹거리",
       "time": "16:47",
       "price": "14,710원",
-      "likes": 20,
+      "likes": 18,
       "views": 0,
-      "comments": 54,
+      "comments": 60,
       "category": "먹거리",
       "desc": "https://brand.naver.com/young5088/products/8887999242",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9877873996_140x100.crop.webp?c=20260527154712",
@@ -134,7 +134,7 @@
       "price": "1,100원",
       "likes": 18,
       "views": 0,
-      "comments": 76,
+      "comments": 79,
       "category": "세일정보",
       "desc": "https://joytel.co.kr/rateplan_view.do;jsessionid=D822406EFCB0DACC0BD3091B623008A9?type=T001&subtype=&no=451",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9877233863_140x100.crop.webp?c=20260527124112",
@@ -151,9 +151,9 @@
       "dist": "생활용품",
       "time": "15:20",
       "price": "30,460원",
-      "likes": 17,
+      "likes": 15,
       "views": 0,
-      "comments": 64,
+      "comments": 71,
       "category": "생활용품",
       "desc": "https://link.coupang.com/a/d5uKt6VpqC",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9877623733_140x100.crop.webp?c=20260527143614",
@@ -172,7 +172,7 @@
       "price": "2,900원",
       "likes": 11,
       "views": 0,
-      "comments": 34,
+      "comments": 36,
       "category": "먹거리",
       "desc": "https://brand.naver.com/lohasmart/products/9570314111",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9875820288_140x100.crop.webp?c=20260526234452",
@@ -267,7 +267,7 @@
       "price": "가격 정보 확인",
       "likes": 14,
       "views": 0,
-      "comments": 36,
+      "comments": 38,
       "category": "SW/게임",
       "desc": "https://play.google.com/store/apps/details?id=com.playstack.balatro.android",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9875863938_140x100.crop.webp?c=20260526235607",
@@ -322,7 +322,7 @@
       "dist": "먹거리",
       "time": "00:33",
       "price": "다양",
-      "likes": 67,
+      "likes": 68,
       "views": 0,
       "comments": 167,
       "category": "먹거리",
@@ -347,7 +347,7 @@
       "category": "먹거리",
       "desc": "토스",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874492721_140x100.crop.webp?c=20260526181327",
-      "buyLink": "https://ader.naver.com/v1/RtV-7jJjhJDOiMDg9HwnnsO0ETU-Pn2Sk2cinAtZBEoA1vhwRNXmQped3lnDojVnbv45mpYpK3sMFJsI-fVm37JdvkmHzpYp9CWXo55PKTfzOoHzM9FjSGnCXCXgZkJs-QxZdRHZKWpoWaHhHRpRRsM2CVTqGx-O9loR2P49ULpnLHuF5d53ALeUoVunDD_tZTp3_GC9tsYvQlaWXNZywbDxow1Ms0G_AhRgfKa_kdz0HLOsCZzFnvCr35q-NemVsRdAiuSj6PS-774_Tw47LUm01-NN6OVFKKviVNMoMgXO6VPWjl2UXkyJkEzEszcD5qZM4fRaSPhh-_quh3svaQ==?c=m_fmkorea.ch6&t=0",
+      "buyLink": "https://ader.naver.com/v1/_Jwk3eoGfXm-2hVIrIW5DDjPVi_6GLCRfzopKCd28bIpzVsoe2vAtwyL6a5ZFonSVZVLJtU7hhoywW206QRH6USL641YjTOfEF2m0d-z9-o_PK_9Y1iIXOD2bge1JWmkhrqfFsV1WfamDMh1WFXVCz04V63Xl4cwZSMiAi7an45fatlvi2t8Kjx7xyeZmLBe6iXTPrPu52P3XuYBwzie3a1EelqOYiCUy3FNGSiKq63rxzUtjfmRXpluiwUMSuTDRk4q5QcDq3-5iiUi9FYr0g7R1mjpe4ZWcqdr3lpTCvOXTI5sIR6z37efl6Wfr4Dop0d_ikgNbHMU3I3e2RafWA9xWrIii7DJhZGrWCKDjyhTdfUEBhkixFPNIa2L1KOrF6-eqjibEkZIOnXFvytdfl5ll-5117JkRbr8evSN2tw=?c=m_fmkorea.ch6&t=0",
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9874492721",
       "source": "fmkorea",
       "date": "2026-05-27",
@@ -360,9 +360,9 @@
       "dist": "PC제품",
       "time": "22:10",
       "price": "1,249,900원",
-      "likes": 299,
+      "likes": 302,
       "views": 0,
-      "comments": 214,
+      "comments": 216,
       "category": "PC제품",
       "desc": "http://www.11st.co.kr/products/9225407317/share",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9875264056_140x100.crop.webp?c=20260526214148",
@@ -381,7 +381,7 @@
       "price": "26,980원",
       "likes": 41,
       "views": 0,
-      "comments": 105,
+      "comments": 106,
       "category": "먹거리",
       "desc": "https://item.gmarket.co.kr/Item?goodscode=4575839600",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874688959_140x100.crop.webp?c=20260526190203",
@@ -446,7 +446,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873460001",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9873036549",
@@ -465,7 +465,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873036549",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9873378828",
@@ -484,7 +484,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873378828",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9871716720",
@@ -503,7 +503,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871716720",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9870841533",
@@ -522,7 +522,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9870841533",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9871832041",
@@ -541,7 +541,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871832041",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9872624042",
@@ -560,7 +560,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872624042",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9872015168",
@@ -579,7 +579,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872015168",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9871762076",
@@ -598,7 +598,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871762076",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9872097951",
@@ -617,7 +617,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872097951",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9871738575",
@@ -636,7 +636,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871738575",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9871730091",
@@ -655,7 +655,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871730091",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9869861230",
@@ -674,7 +674,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869861230",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9869355724",
@@ -693,7 +693,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869355724",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9868998243",
@@ -712,7 +712,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868998243",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9869502304",
@@ -731,7 +731,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869502304",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9868600443",
@@ -750,7 +750,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868600443",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9866611605",
@@ -769,7 +769,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866611605",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9869297462",
@@ -788,7 +788,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869297462",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9868701021",
@@ -807,7 +807,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868701021",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9868842131",
@@ -826,7 +826,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868842131",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9866405709",
@@ -845,7 +845,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866405709",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     },
     {
       "id": "9866089292",
@@ -864,7 +864,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866089292",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+      "registeredAt": "2026-05-27T17:50:03.758334+09:00"
     }
   ],
   "grouped": {
@@ -889,25 +889,6 @@
         "registeredAt": "2026-05-26T00:00:00+09:00"
       },
       {
-        "id": "9876199793",
-        "title": "[네이버스토어] 푸마X키드슈퍼 유니폼 (클럽월드컵유니폼) 다수 (31,410~) (무료)",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "05.27",
-        "price": "무료",
-        "likes": 0,
-        "views": 39000,
-        "comments": 56,
-        "category": "기타",
-        "desc": "https://brand.naver.com/pumakorea/search?q=%ED%82%A4%EB%93%9C%EC%8A%88%ED%8D%BC",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260527/9876199793_1196365581_af1b28036046522e92f4c4dd6b7b70d4.png?c=20260527030712",
-        "buyLink": "https://brand.naver.com/pumakorea/search?q=키드슈퍼",
-        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9876199793",
-        "source": "fmkorea",
-        "date": "2026-05-27",
-        "registeredAt": "2026-05-27T00:00:00+09:00"
-      },
-      {
         "id": "9874749473",
         "title": "[플레이스토어] 드래곤퀘스트5 (12,000원) (x)",
         "area": "펨딜",
@@ -927,6 +908,25 @@
         "registeredAt": "2026-05-26T00:00:00+09:00"
       },
       {
+        "id": "9876199793",
+        "title": "[네이버스토어] 푸마X키드슈퍼 유니폼 (클럽월드컵유니폼) 다수 (31,410~) (무료)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.27",
+        "price": "무료",
+        "likes": 0,
+        "views": 40000,
+        "comments": 56,
+        "category": "기타",
+        "desc": "https://brand.naver.com/pumakorea/search?q=%ED%82%A4%EB%93%9C%EC%8A%88%ED%8D%BC",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260527/9876199793_1196365581_af1b28036046522e92f4c4dd6b7b70d4.png?c=20260527030712",
+        "buyLink": "https://brand.naver.com/pumakorea/search?q=키드슈퍼",
+        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9876199793",
+        "source": "fmkorea",
+        "date": "2026-05-27",
+        "registeredAt": "2026-05-27T00:00:00+09:00"
+      },
+      {
         "id": "9874877161",
         "title": "[네이버] 정발 펀키스 fl-esports NX87HE/NX108HE 8k 자석축 키보드 사전예약 (71,200원부터) (무배)",
         "area": "펨딜",
@@ -934,8 +934,8 @@
         "time": "05.26",
         "price": "71,200원",
         "likes": 0,
-        "views": 49000,
-        "comments": 102,
+        "views": 50000,
+        "comments": 105,
         "category": "기타",
         "desc": "https://smartstore.naver.com/funkeys/products/13549462272",
         "img": "https://image.fmkorea.com/files/attach/new5/20260526/9874877161_1196365581_1d29337014684a448953c08d80429103.png?c=20260526195236",
@@ -953,7 +953,7 @@
         "time": "05.27",
         "price": "4,490원",
         "likes": 0,
-        "views": 11000,
+        "views": 12000,
         "comments": 26,
         "category": "기타",
         "desc": "https://m.smartstore.naver.com/nutritionmate/products/7120901712?dtm_source=KK&dtm_detail=gMWDKJebTgJJKYQi6WkgAQ&dtm_campaign=commerce_info&dtm_medium=OG#ZOOM",
@@ -971,9 +971,9 @@
         "dist": "먹거리",
         "time": "16:47",
         "price": "14,710원",
-        "likes": 20,
+        "likes": 18,
         "views": 0,
-        "comments": 54,
+        "comments": 60,
         "category": "먹거리",
         "desc": "https://brand.naver.com/young5088/products/8887999242",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9877873996_140x100.crop.webp?c=20260527154712",
@@ -992,7 +992,7 @@
         "price": "1,100원",
         "likes": 18,
         "views": 0,
-        "comments": 76,
+        "comments": 79,
         "category": "세일정보",
         "desc": "https://joytel.co.kr/rateplan_view.do;jsessionid=D822406EFCB0DACC0BD3091B623008A9?type=T001&subtype=&no=451",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9877233863_140x100.crop.webp?c=20260527124112",
@@ -1009,9 +1009,9 @@
         "dist": "생활용품",
         "time": "15:20",
         "price": "30,460원",
-        "likes": 17,
+        "likes": 15,
         "views": 0,
-        "comments": 64,
+        "comments": 71,
         "category": "생활용품",
         "desc": "https://link.coupang.com/a/d5uKt6VpqC",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9877623733_140x100.crop.webp?c=20260527143614",
@@ -1030,7 +1030,7 @@
         "price": "2,900원",
         "likes": 11,
         "views": 0,
-        "comments": 34,
+        "comments": 36,
         "category": "먹거리",
         "desc": "https://brand.naver.com/lohasmart/products/9570314111",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9875820288_140x100.crop.webp?c=20260526234452",
@@ -1125,7 +1125,7 @@
         "price": "가격 정보 확인",
         "likes": 14,
         "views": 0,
-        "comments": 36,
+        "comments": 38,
         "category": "SW/게임",
         "desc": "https://play.google.com/store/apps/details?id=com.playstack.balatro.android",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9875863938_140x100.crop.webp?c=20260526235607",
@@ -1180,7 +1180,7 @@
         "dist": "먹거리",
         "time": "00:33",
         "price": "다양",
-        "likes": 67,
+        "likes": 68,
         "views": 0,
         "comments": 167,
         "category": "먹거리",
@@ -1205,7 +1205,7 @@
         "category": "먹거리",
         "desc": "토스",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874492721_140x100.crop.webp?c=20260526181327",
-        "buyLink": "https://ader.naver.com/v1/RtV-7jJjhJDOiMDg9HwnnsO0ETU-Pn2Sk2cinAtZBEoA1vhwRNXmQped3lnDojVnbv45mpYpK3sMFJsI-fVm37JdvkmHzpYp9CWXo55PKTfzOoHzM9FjSGnCXCXgZkJs-QxZdRHZKWpoWaHhHRpRRsM2CVTqGx-O9loR2P49ULpnLHuF5d53ALeUoVunDD_tZTp3_GC9tsYvQlaWXNZywbDxow1Ms0G_AhRgfKa_kdz0HLOsCZzFnvCr35q-NemVsRdAiuSj6PS-774_Tw47LUm01-NN6OVFKKviVNMoMgXO6VPWjl2UXkyJkEzEszcD5qZM4fRaSPhh-_quh3svaQ==?c=m_fmkorea.ch6&t=0",
+        "buyLink": "https://ader.naver.com/v1/_Jwk3eoGfXm-2hVIrIW5DDjPVi_6GLCRfzopKCd28bIpzVsoe2vAtwyL6a5ZFonSVZVLJtU7hhoywW206QRH6USL641YjTOfEF2m0d-z9-o_PK_9Y1iIXOD2bge1JWmkhrqfFsV1WfamDMh1WFXVCz04V63Xl4cwZSMiAi7an45fatlvi2t8Kjx7xyeZmLBe6iXTPrPu52P3XuYBwzie3a1EelqOYiCUy3FNGSiKq63rxzUtjfmRXpluiwUMSuTDRk4q5QcDq3-5iiUi9FYr0g7R1mjpe4ZWcqdr3lpTCvOXTI5sIR6z37efl6Wfr4Dop0d_ikgNbHMU3I3e2RafWA9xWrIii7DJhZGrWCKDjyhTdfUEBhkixFPNIa2L1KOrF6-eqjibEkZIOnXFvytdfl5ll-5117JkRbr8evSN2tw=?c=m_fmkorea.ch6&t=0",
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9874492721",
         "source": "fmkorea",
         "date": "2026-05-27",
@@ -1218,9 +1218,9 @@
         "dist": "PC제품",
         "time": "22:10",
         "price": "1,249,900원",
-        "likes": 299,
+        "likes": 302,
         "views": 0,
-        "comments": 214,
+        "comments": 216,
         "category": "PC제품",
         "desc": "http://www.11st.co.kr/products/9225407317/share",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9875264056_140x100.crop.webp?c=20260526214148",
@@ -1239,7 +1239,7 @@
         "price": "26,980원",
         "likes": 41,
         "views": 0,
-        "comments": 105,
+        "comments": 106,
         "category": "먹거리",
         "desc": "https://item.gmarket.co.kr/Item?goodscode=4575839600",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874688959_140x100.crop.webp?c=20260526190203",
@@ -1304,7 +1304,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873460001",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9873036549",
@@ -1323,7 +1323,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873036549",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9873378828",
@@ -1342,7 +1342,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873378828",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9871716720",
@@ -1361,7 +1361,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871716720",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9870841533",
@@ -1380,7 +1380,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9870841533",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9871832041",
@@ -1399,7 +1399,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871832041",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9872624042",
@@ -1418,7 +1418,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872624042",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9872015168",
@@ -1437,7 +1437,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872015168",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9871762076",
@@ -1456,7 +1456,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871762076",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9872097951",
@@ -1475,7 +1475,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872097951",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9871738575",
@@ -1494,7 +1494,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871738575",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9871730091",
@@ -1513,7 +1513,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871730091",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9869861230",
@@ -1532,7 +1532,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869861230",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9869355724",
@@ -1551,7 +1551,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869355724",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9868998243",
@@ -1570,7 +1570,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868998243",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9869502304",
@@ -1589,7 +1589,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869502304",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9868600443",
@@ -1608,7 +1608,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868600443",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9866611605",
@@ -1627,7 +1627,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866611605",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9869297462",
@@ -1646,7 +1646,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869297462",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9868701021",
@@ -1665,7 +1665,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868701021",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9868842131",
@@ -1684,7 +1684,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868842131",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9866405709",
@@ -1703,7 +1703,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866405709",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       },
       {
         "id": "9866089292",
@@ -1722,7 +1722,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9866089292",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T17:15:07.070435+09:00"
+        "registeredAt": "2026-05-27T17:50:03.758334+09:00"
       }
     ],
     "yesterday": []
