@@ -1,8 +1,8 @@
 {
   "source": "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine",
-  "generatedAt": "2026-05-27T20:41:43.606301+09:00",
+  "generatedAt": "2026-05-27T21:17:10.214419+09:00",
   "rangeHours": 48,
-  "since": "2026-05-25T20:41:43.606301+09:00",
+  "since": "2026-05-25T21:17:10.214419+09:00",
   "today": "2026-05-27",
   "yesterday": "2026-05-26",
   "counts": {
@@ -19,8 +19,8 @@
       "time": "05.27",
       "price": "무료",
       "likes": 0,
-      "views": 46000,
-      "comments": 57,
+      "views": 48000,
+      "comments": 58,
       "category": "기타",
       "desc": "https://brand.naver.com/pumakorea/search?q=%ED%82%A4%EB%93%9C%EC%8A%88%ED%8D%BC",
       "img": "https://image.fmkorea.com/files/attach/new5/20260527/9876199793_1196365581_af1b28036046522e92f4c4dd6b7b70d4.png?c=20260527030712",
@@ -38,13 +38,32 @@
       "time": "05.27",
       "price": "29,900원",
       "likes": 0,
-      "views": 23000,
-      "comments": 64,
+      "views": 27000,
+      "comments": 70,
       "category": "기타",
       "desc": "https://smartstore.naver.com/cuktech/products/10704061656",
       "img": "https://image.fmkorea.com/files/attach/new5/20260527/9878715901_1196365581_99b983892094b5c6d2fc3736e15da7d1.jpg?c=20260527191107",
       "buyLink": "https://smartstore.naver.com/cuktech/products/10704061656",
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878715901",
+      "source": "fmkorea",
+      "date": "2026-05-27",
+      "registeredAt": "2026-05-27T00:00:00+09:00"
+    },
+    {
+      "id": "9878646379",
+      "title": "[11번가] 월드콘 바닐라 24개 (T멤18,650원) (무료)",
+      "area": "펨딜",
+      "dist": "기타",
+      "time": "05.27",
+      "price": "18,650원",
+      "likes": 0,
+      "views": 16000,
+      "comments": 31,
+      "category": "기타",
+      "desc": "https://www.11st.co.kr/products/pa/8428472949",
+      "img": "https://image.fmkorea.com/files/attach/new5/20260527/9878646379_1196365581_3b5df7b4fef24efe2e7f550edfd1ad0e.jpg?c=20260527184925",
+      "buyLink": "https://www.11st.co.kr/products/pa/8428472949",
+      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878646379",
       "source": "fmkorea",
       "date": "2026-05-27",
       "registeredAt": "2026-05-27T00:00:00+09:00"
@@ -57,8 +76,8 @@
       "time": "05.27",
       "price": "1,100원",
       "likes": 0,
-      "views": 30000,
-      "comments": 91,
+      "views": 31000,
+      "comments": 92,
       "category": "기타",
       "desc": "https://joytel.co.kr/rateplan_view.do;jsessionid=D822406EFCB0DACC0BD3091B623008A9?type=T001&subtype=&no=451",
       "img": "https://image.fmkorea.com/files/attach/new5/20260527/9877233863_1196365581_99b983892094b5c6d2fc3736e15da7d1.jpg?c=20260527124112",
@@ -76,8 +95,8 @@
       "time": "05.27",
       "price": "무료",
       "likes": 0,
-      "views": 31000,
-      "comments": 26,
+      "views": 32000,
+      "comments": 27,
       "category": "기타",
       "desc": "https://www.classicfootballshirts.co.uk/theme/cfs-weekly-deals.html",
       "img": "https://image.fmkorea.com/files/attach/new5/20260527/7621959602_1196365581_00155b731f1b0594ba7b6ca209b19a78.jpg?c=20260527083212",
@@ -88,23 +107,23 @@
       "registeredAt": "2026-05-27T00:00:00+09:00"
     },
     {
-      "id": "9876723549",
-      "title": "[지마켓] 띠부띠부씰 포켓몬 빵 6종 12개입 (18,450원) (무료배송)",
+      "id": "9878562613",
+      "title": "HMK WD011 워치페이스 외 5종",
       "area": "펨딜",
-      "dist": "기타",
-      "time": "05.27",
-      "price": "18,450원",
-      "likes": 0,
-      "views": 14000,
-      "comments": 43,
-      "category": "기타",
-      "desc": "https://m.gmarket.co.kr/vi/product/4100295928",
-      "img": "https://image.fmkorea.com/files/attach/new5/20260527/9876723549_1196365581_62dbb5759a95a4c2fae590c793aaa21d.jpeg?c=20260527100253",
-      "buyLink": "https://m.gmarket.co.kr/vi/product/4100295928",
-      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9876723549",
+      "dist": "SW/게임",
+      "time": "20:51",
+      "price": "무료",
+      "likes": 13,
+      "views": 0,
+      "comments": 2,
+      "category": "SW/게임",
+      "desc": "https://play.google.com/store/apps/details?id=com.watchfacestudio.hmk_wd011",
+      "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9878562613_140x100.crop.webp?c=20260527182859",
+      "buyLink": "https://play.google.com/store/apps/details?id=com.watchfacestudio.hmk_wd011",
+      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878562613",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T00:00:00+09:00"
+      "registeredAt": "2026-05-27T20:51:00+09:00"
     },
     {
       "id": "9878553237",
@@ -113,9 +132,9 @@
       "dist": "SW/게임",
       "time": "20:31",
       "price": "무료",
-      "likes": 11,
+      "likes": 12,
       "views": 0,
-      "comments": 1,
+      "comments": 2,
       "category": "SW/게임",
       "desc": "https://playstation.com/ko-kr/ps-plus/whats-new/?transactAction=redeemVoucher&cartAction=view#avatars",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9878553237_140x100.crop.webp?c=20260527182636",
@@ -126,32 +145,13 @@
       "registeredAt": "2026-05-27T20:31:00+09:00"
     },
     {
-      "id": "9878646379",
-      "title": "월드콘 바닐라 24개",
-      "area": "펨딜",
-      "dist": "먹거리",
-      "time": "20:08",
-      "price": "T멤18,650원",
-      "likes": 13,
-      "views": 0,
-      "comments": 25,
-      "category": "먹거리",
-      "desc": "https://www.11st.co.kr/products/pa/8428472949",
-      "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9878646379_140x100.crop.webp?c=20260527184925",
-      "buyLink": "https://www.11st.co.kr/products/pa/8428472949",
-      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878646379",
-      "source": "fmkorea",
-      "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:08:00+09:00"
-    },
-    {
       "id": "9877380208",
       "title": "원피스 해적무쌍 4 ULTIMATE EDI...",
       "area": "펨딜",
       "dist": "SW/게임",
       "time": "19:59",
       "price": "16,760원",
-      "likes": 13,
+      "likes": 14,
       "views": 0,
       "comments": 37,
       "category": "SW/게임",
@@ -191,7 +191,7 @@
       "price": "6,900원",
       "likes": 12,
       "views": 0,
-      "comments": 27,
+      "comments": 29,
       "category": "먹거리",
       "desc": "https://brand.naver.com/bbsusan/products/12677567501",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9876858303_140x100.crop.webp?c=20260527105315",
@@ -202,19 +202,38 @@
       "registeredAt": "2026-05-27T19:36:00+09:00"
     },
     {
+      "id": "9876723549",
+      "title": "띠부띠부씰 포켓몬 빵 6종 12개입",
+      "area": "펨딜",
+      "dist": "먹거리",
+      "time": "19:13",
+      "price": "18,450원",
+      "likes": 15,
+      "views": 0,
+      "comments": 43,
+      "category": "먹거리",
+      "desc": "https://m.gmarket.co.kr/vi/product/4100295928",
+      "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9876723549_140x100.crop.webp?c=20260527100253",
+      "buyLink": "https://m.gmarket.co.kr/vi/product/4100295928",
+      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9876723549",
+      "source": "fmkorea",
+      "date": "2026-05-27",
+      "registeredAt": "2026-05-27T19:13:00+09:00"
+    },
+    {
       "id": "9878591488",
       "title": "탄소중립포인트 등록시 2,00...",
       "area": "펨딜",
       "dist": "기타",
       "time": "18:47",
       "price": "무료",
-      "likes": 135,
+      "likes": 151,
       "views": 0,
-      "comments": 67,
+      "comments": 76,
       "category": "기타",
       "desc": "삼성월렛",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9878591488_140x100.crop.webp?c=20260527183800",
-      "buyLink": "https://ader.naver.com/v1/C4_Q7Ck5tPdfcK-9VC2CyuuG40SPS9K9b65HL88sHTnOAX79xeERaKpHfMHZOjqXkzkzhU6blEATfgneuHC4ww88_ygJJ3_MA2k-V7DCUTPzDs7Cr92QHiIl5YegplerHzqfvcxypB48d2ENTUUMa21y3KiYt7e08Mm1K56Bq_kTO-6uxwXGK-M6df_GYGrGYMNCtRkLdm03-XrgkXe2Huooud7vx1bkS-d8D-j5ZZMsR_JqlGOFWdWZ4rfsM2eTOzuFK5ACawAa5dByEXjo4UyfQwXj8Rx5BXZHSPWToHeTQRld81JYCyBADJ7keqR3ue_At6mt1g3Q6CCHJvK8_ru_6TM_3lRkGcX4Qw_Wzrmut0w-Z3TFdD9cz4rpt1Ieg9U7jldjNR8ZanT44_6d8VHKXBb_XqVjk1wqyXWL3FE=?c=m_fmkorea.ch6&t=0",
+      "buyLink": "https://ader.naver.com/v1/HC5jQA1hYeNdJ7-1rRWFKEKZq3Km7iCMobwLpb6TkFG4ec0Rx8LqLTn1JBUeF93Ls8lV9ll9Uf_pe28SdDI0rKqkFZAVAqKzy4O4Eay3fXfDNCcl4b45sp2-or_xMyu3-g3PigageSULR10SylhEcBpYV-Bcsw3E59Jma2AJ8DJn0sNSo43hPehg3oQZtskzCGpQ6qXpKj_DaVdTRzKw-vbVG4LoQzfm6saEzqKe1qRNBpfoQlgsCipIGgPTT6KzJH7qmmjlr3n39BtdAAHbEVJcC5C8vaGLs-gnmaceI4Ooy82mfkRWkOOSMBqww1Nq6EDNW0diDq9XqwmztPEfEEkPivEy7yr8KqfZ3f0OlZ0-K3Bpk78A8hnXgL7xnz-LuhcmamvpGDNSq6nDga4zRQ==?c=m_fmkorea.ch6&t=0",
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878591488",
       "source": "fmkorea",
       "date": "2026-05-27",
@@ -229,7 +248,7 @@
       "price": "30,460원",
       "likes": 36,
       "views": 0,
-      "comments": 205,
+      "comments": 213,
       "category": "생활용품",
       "desc": "https://link.coupang.com/a/d5uKt6VpqC",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9877623733_140x100.crop.webp?c=20260527143614",
@@ -286,7 +305,7 @@
       "price": "19,800원",
       "likes": 12,
       "views": 0,
-      "comments": 35,
+      "comments": 36,
       "category": "먹거리",
       "desc": "https://link.coupang.com/a/d3TMWBYEfY",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873816771_140x100.crop.webp?c=20260526153125",
@@ -341,7 +360,7 @@
       "dist": "생활용품",
       "time": "11:32",
       "price": "19,275원",
-      "likes": 12,
+      "likes": 13,
       "views": 0,
       "comments": 38,
       "category": "생활용품",
@@ -400,7 +419,7 @@
       "price": "71,200원부터",
       "likes": 22,
       "views": 0,
-      "comments": 112,
+      "comments": 113,
       "category": "PC제품",
       "desc": "https://smartstore.naver.com/funkeys/products/13549462272",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874877161_140x100.crop.webp?c=20260526195236",
@@ -423,7 +442,7 @@
       "category": "먹거리",
       "desc": "토스",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874492721_140x100.crop.webp?c=20260526181327",
-      "buyLink": "https://ader.naver.com/v1/FjNblFU9_xGZ4AQJFjcOpa3UUNYUh7yLztjm6a4qokd_NOrh1BYu4P2j067Vw1peU9rckNHjPVKm36NEcToaKYHqbcwvXuRDrMXL72MgXCO8t5S3xSi0L94fz4oeMorZbB1B9Dm6Q4q32jYVkLyu71TQ0_hlANpCYw3hMg6FAWEn7Uxe2qYOOhIA7FsC_88TgKBEIgRB-PNNfUUy-5LhJooleWmNHM4ZdwFywsxZ6EyjAodHvZ53PH5jIxGQHWrZm_RmDvfkxtidMT6j_hRNoNVY0R0ojxEX-mniNXHQEWE85hTCs3ab70PV_bt1pJY38eugjaAAHn6ZEVwgGsNRrSpBVnTPAYeA4j6pb_6TfLHGkQekpQOsCTNLQ_TyKhOGY2Q6tAY-GaIP9MMS2Hf1zf-sE7hCN4zHXQZ0plsYfw8=?c=m_fmkorea.ch6&t=0",
+      "buyLink": "https://ader.naver.com/v1/1P-REl34DU8zM71-XmgP4lyMUEoiPbmCPfNQxDTjL9A0-2UZdK5VSnELsEDfpMlIPmOTOuStvxeZwvZT-V_0Yksbj6Fx3K3MAqUsboWj6LODmhWziZWxM6uY39EFUCFJcA52dm5l9w-80bQEkzyp0s2l7B43_3uXoNyW4WDKgaB9DCkUoS69o_g23q6IguIF1Al6Zt0pKnFL2wQJz5XfLw==?c=m_fmkorea.ch6&t=0",
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9874492721",
       "source": "fmkorea",
       "date": "2026-05-27",
@@ -438,7 +457,7 @@
       "price": "1,249,900원",
       "likes": 305,
       "views": 0,
-      "comments": 218,
+      "comments": 219,
       "category": "PC제품",
       "desc": "http://www.11st.co.kr/products/9225407317/share",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9875264056_140x100.crop.webp?c=20260526214148",
@@ -476,7 +495,7 @@
       "price": "첫구매3,095",
       "likes": 43,
       "views": 0,
-      "comments": 28,
+      "comments": 29,
       "category": "먹거리",
       "desc": "https://mulhana.com/product/",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874981977_140x100.crop.webp?c=20260526201514",
@@ -490,39 +509,39 @@
       "id": "9874749473",
       "title": "드래곤퀘스트5",
       "area": "펨딜",
-      "dist": "SW/게임",
-      "time": "21:14",
+      "dist": "기타",
+      "time": "26.05",
       "price": "12,000원",
       "likes": 29,
       "views": 0,
       "comments": 66,
-      "category": "SW/게임",
+      "category": "기타",
       "desc": "https://play.google.com/store/apps/details?id=com.square_enix.android_googleplay.dq5",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874749473_140x100.crop.webp?c=20260526191819",
       "buyLink": "https://play.google.com/store/apps/details?id=com.square_enix.android_googleplay.dq5",
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9874749473",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T21:14:00+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9870551316",
       "title": "코인딜) Toocki 100W C to C 릴케...",
       "area": "펨딜",
-      "dist": "가전제품",
-      "time": "20:50",
+      "dist": "기타",
+      "time": "26.05",
       "price": "$6.4",
       "likes": 13,
       "views": 0,
       "comments": 67,
-      "category": "가전제품",
+      "category": "기타",
       "desc": "https://www.aliexpress.com/item/1005009738330168.html",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260525/9870551316_140x100.crop.webp?c=20260526000741",
       "buyLink": "https://www.aliexpress.com/item/1005009738330168.html",
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9870551316",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:50:00+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9872817083",
@@ -533,7 +552,7 @@
       "price": "13,320원",
       "likes": 13,
       "views": 0,
-      "comments": 49,
+      "comments": 50,
       "category": "기타",
       "desc": "https://brand.naver.com/lgcaremall/products/9591317129",
       "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9872817083_140x100.crop.webp?c=20260526103606",
@@ -541,7 +560,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872817083",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9873460001",
@@ -550,7 +569,7 @@
       "dist": "기타",
       "time": "26.05",
       "price": "29,000~",
-      "likes": 20,
+      "likes": 21,
       "views": 0,
       "comments": 52,
       "category": "기타",
@@ -560,7 +579,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873460001",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9873036549",
@@ -579,7 +598,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873036549",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9873378828",
@@ -598,7 +617,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873378828",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9871716720",
@@ -617,7 +636,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871716720",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9870841533",
@@ -636,7 +655,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9870841533",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9871832041",
@@ -655,7 +674,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871832041",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9872624042",
@@ -674,7 +693,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872624042",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9872015168",
@@ -693,7 +712,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872015168",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9871762076",
@@ -712,7 +731,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871762076",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9872097951",
@@ -731,7 +750,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872097951",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9871738575",
@@ -750,7 +769,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871738575",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9871730091",
@@ -769,7 +788,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871730091",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9869861230",
@@ -788,7 +807,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869861230",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9869355724",
@@ -807,7 +826,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869355724",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9868998243",
@@ -826,7 +845,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868998243",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     },
     {
       "id": "9869502304",
@@ -845,26 +864,7 @@
       "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869502304",
       "source": "fmkorea",
       "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
-    },
-    {
-      "id": "9868600443",
-      "title": "버터와플 이즈니, 316g, 2개",
-      "area": "펨딜",
-      "dist": "기타",
-      "time": "26.05",
-      "price": "9,390원",
-      "likes": 19,
-      "views": 0,
-      "comments": 28,
-      "category": "기타",
-      "desc": "https://link.coupang.com/a/d1OsvjBBee",
-      "img": "//image.fmkorea.com/filesn/cache/thumb/20260525/9868600443_140x100.crop.webp?c=20260525092137",
-      "buyLink": "https://link.coupang.com/a/d1OsvjBBee",
-      "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868600443",
-      "source": "fmkorea",
-      "date": "2026-05-27",
-      "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+      "registeredAt": "2026-05-27T21:17:10.214419+09:00"
     }
   ],
   "grouped": {
@@ -877,8 +877,8 @@
         "time": "05.27",
         "price": "무료",
         "likes": 0,
-        "views": 46000,
-        "comments": 57,
+        "views": 48000,
+        "comments": 58,
         "category": "기타",
         "desc": "https://brand.naver.com/pumakorea/search?q=%ED%82%A4%EB%93%9C%EC%8A%88%ED%8D%BC",
         "img": "https://image.fmkorea.com/files/attach/new5/20260527/9876199793_1196365581_af1b28036046522e92f4c4dd6b7b70d4.png?c=20260527030712",
@@ -896,13 +896,32 @@
         "time": "05.27",
         "price": "29,900원",
         "likes": 0,
-        "views": 23000,
-        "comments": 64,
+        "views": 27000,
+        "comments": 70,
         "category": "기타",
         "desc": "https://smartstore.naver.com/cuktech/products/10704061656",
         "img": "https://image.fmkorea.com/files/attach/new5/20260527/9878715901_1196365581_99b983892094b5c6d2fc3736e15da7d1.jpg?c=20260527191107",
         "buyLink": "https://smartstore.naver.com/cuktech/products/10704061656",
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878715901",
+        "source": "fmkorea",
+        "date": "2026-05-27",
+        "registeredAt": "2026-05-27T00:00:00+09:00"
+      },
+      {
+        "id": "9878646379",
+        "title": "[11번가] 월드콘 바닐라 24개 (T멤18,650원) (무료)",
+        "area": "펨딜",
+        "dist": "기타",
+        "time": "05.27",
+        "price": "18,650원",
+        "likes": 0,
+        "views": 16000,
+        "comments": 31,
+        "category": "기타",
+        "desc": "https://www.11st.co.kr/products/pa/8428472949",
+        "img": "https://image.fmkorea.com/files/attach/new5/20260527/9878646379_1196365581_3b5df7b4fef24efe2e7f550edfd1ad0e.jpg?c=20260527184925",
+        "buyLink": "https://www.11st.co.kr/products/pa/8428472949",
+        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878646379",
         "source": "fmkorea",
         "date": "2026-05-27",
         "registeredAt": "2026-05-27T00:00:00+09:00"
@@ -915,8 +934,8 @@
         "time": "05.27",
         "price": "1,100원",
         "likes": 0,
-        "views": 30000,
-        "comments": 91,
+        "views": 31000,
+        "comments": 92,
         "category": "기타",
         "desc": "https://joytel.co.kr/rateplan_view.do;jsessionid=D822406EFCB0DACC0BD3091B623008A9?type=T001&subtype=&no=451",
         "img": "https://image.fmkorea.com/files/attach/new5/20260527/9877233863_1196365581_99b983892094b5c6d2fc3736e15da7d1.jpg?c=20260527124112",
@@ -934,8 +953,8 @@
         "time": "05.27",
         "price": "무료",
         "likes": 0,
-        "views": 31000,
-        "comments": 26,
+        "views": 32000,
+        "comments": 27,
         "category": "기타",
         "desc": "https://www.classicfootballshirts.co.uk/theme/cfs-weekly-deals.html",
         "img": "https://image.fmkorea.com/files/attach/new5/20260527/7621959602_1196365581_00155b731f1b0594ba7b6ca209b19a78.jpg?c=20260527083212",
@@ -946,23 +965,23 @@
         "registeredAt": "2026-05-27T00:00:00+09:00"
       },
       {
-        "id": "9876723549",
-        "title": "[지마켓] 띠부띠부씰 포켓몬 빵 6종 12개입 (18,450원) (무료배송)",
+        "id": "9878562613",
+        "title": "HMK WD011 워치페이스 외 5종",
         "area": "펨딜",
-        "dist": "기타",
-        "time": "05.27",
-        "price": "18,450원",
-        "likes": 0,
-        "views": 14000,
-        "comments": 43,
-        "category": "기타",
-        "desc": "https://m.gmarket.co.kr/vi/product/4100295928",
-        "img": "https://image.fmkorea.com/files/attach/new5/20260527/9876723549_1196365581_62dbb5759a95a4c2fae590c793aaa21d.jpeg?c=20260527100253",
-        "buyLink": "https://m.gmarket.co.kr/vi/product/4100295928",
-        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9876723549",
+        "dist": "SW/게임",
+        "time": "20:51",
+        "price": "무료",
+        "likes": 13,
+        "views": 0,
+        "comments": 2,
+        "category": "SW/게임",
+        "desc": "https://play.google.com/store/apps/details?id=com.watchfacestudio.hmk_wd011",
+        "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9878562613_140x100.crop.webp?c=20260527182859",
+        "buyLink": "https://play.google.com/store/apps/details?id=com.watchfacestudio.hmk_wd011",
+        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878562613",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T00:00:00+09:00"
+        "registeredAt": "2026-05-27T20:51:00+09:00"
       },
       {
         "id": "9878553237",
@@ -971,9 +990,9 @@
         "dist": "SW/게임",
         "time": "20:31",
         "price": "무료",
-        "likes": 11,
+        "likes": 12,
         "views": 0,
-        "comments": 1,
+        "comments": 2,
         "category": "SW/게임",
         "desc": "https://playstation.com/ko-kr/ps-plus/whats-new/?transactAction=redeemVoucher&cartAction=view#avatars",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9878553237_140x100.crop.webp?c=20260527182636",
@@ -984,32 +1003,13 @@
         "registeredAt": "2026-05-27T20:31:00+09:00"
       },
       {
-        "id": "9878646379",
-        "title": "월드콘 바닐라 24개",
-        "area": "펨딜",
-        "dist": "먹거리",
-        "time": "20:08",
-        "price": "T멤18,650원",
-        "likes": 13,
-        "views": 0,
-        "comments": 25,
-        "category": "먹거리",
-        "desc": "https://www.11st.co.kr/products/pa/8428472949",
-        "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9878646379_140x100.crop.webp?c=20260527184925",
-        "buyLink": "https://www.11st.co.kr/products/pa/8428472949",
-        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878646379",
-        "source": "fmkorea",
-        "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:08:00+09:00"
-      },
-      {
         "id": "9877380208",
         "title": "원피스 해적무쌍 4 ULTIMATE EDI...",
         "area": "펨딜",
         "dist": "SW/게임",
         "time": "19:59",
         "price": "16,760원",
-        "likes": 13,
+        "likes": 14,
         "views": 0,
         "comments": 37,
         "category": "SW/게임",
@@ -1049,7 +1049,7 @@
         "price": "6,900원",
         "likes": 12,
         "views": 0,
-        "comments": 27,
+        "comments": 29,
         "category": "먹거리",
         "desc": "https://brand.naver.com/bbsusan/products/12677567501",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9876858303_140x100.crop.webp?c=20260527105315",
@@ -1060,19 +1060,38 @@
         "registeredAt": "2026-05-27T19:36:00+09:00"
       },
       {
+        "id": "9876723549",
+        "title": "띠부띠부씰 포켓몬 빵 6종 12개입",
+        "area": "펨딜",
+        "dist": "먹거리",
+        "time": "19:13",
+        "price": "18,450원",
+        "likes": 15,
+        "views": 0,
+        "comments": 43,
+        "category": "먹거리",
+        "desc": "https://m.gmarket.co.kr/vi/product/4100295928",
+        "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9876723549_140x100.crop.webp?c=20260527100253",
+        "buyLink": "https://m.gmarket.co.kr/vi/product/4100295928",
+        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9876723549",
+        "source": "fmkorea",
+        "date": "2026-05-27",
+        "registeredAt": "2026-05-27T19:13:00+09:00"
+      },
+      {
         "id": "9878591488",
         "title": "탄소중립포인트 등록시 2,00...",
         "area": "펨딜",
         "dist": "기타",
         "time": "18:47",
         "price": "무료",
-        "likes": 135,
+        "likes": 151,
         "views": 0,
-        "comments": 67,
+        "comments": 76,
         "category": "기타",
         "desc": "삼성월렛",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9878591488_140x100.crop.webp?c=20260527183800",
-        "buyLink": "https://ader.naver.com/v1/C4_Q7Ck5tPdfcK-9VC2CyuuG40SPS9K9b65HL88sHTnOAX79xeERaKpHfMHZOjqXkzkzhU6blEATfgneuHC4ww88_ygJJ3_MA2k-V7DCUTPzDs7Cr92QHiIl5YegplerHzqfvcxypB48d2ENTUUMa21y3KiYt7e08Mm1K56Bq_kTO-6uxwXGK-M6df_GYGrGYMNCtRkLdm03-XrgkXe2Huooud7vx1bkS-d8D-j5ZZMsR_JqlGOFWdWZ4rfsM2eTOzuFK5ACawAa5dByEXjo4UyfQwXj8Rx5BXZHSPWToHeTQRld81JYCyBADJ7keqR3ue_At6mt1g3Q6CCHJvK8_ru_6TM_3lRkGcX4Qw_Wzrmut0w-Z3TFdD9cz4rpt1Ieg9U7jldjNR8ZanT44_6d8VHKXBb_XqVjk1wqyXWL3FE=?c=m_fmkorea.ch6&t=0",
+        "buyLink": "https://ader.naver.com/v1/HC5jQA1hYeNdJ7-1rRWFKEKZq3Km7iCMobwLpb6TkFG4ec0Rx8LqLTn1JBUeF93Ls8lV9ll9Uf_pe28SdDI0rKqkFZAVAqKzy4O4Eay3fXfDNCcl4b45sp2-or_xMyu3-g3PigageSULR10SylhEcBpYV-Bcsw3E59Jma2AJ8DJn0sNSo43hPehg3oQZtskzCGpQ6qXpKj_DaVdTRzKw-vbVG4LoQzfm6saEzqKe1qRNBpfoQlgsCipIGgPTT6KzJH7qmmjlr3n39BtdAAHbEVJcC5C8vaGLs-gnmaceI4Ooy82mfkRWkOOSMBqww1Nq6EDNW0diDq9XqwmztPEfEEkPivEy7yr8KqfZ3f0OlZ0-K3Bpk78A8hnXgL7xnz-LuhcmamvpGDNSq6nDga4zRQ==?c=m_fmkorea.ch6&t=0",
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9878591488",
         "source": "fmkorea",
         "date": "2026-05-27",
@@ -1087,7 +1106,7 @@
         "price": "30,460원",
         "likes": 36,
         "views": 0,
-        "comments": 205,
+        "comments": 213,
         "category": "생활용품",
         "desc": "https://link.coupang.com/a/d5uKt6VpqC",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260527/9877623733_140x100.crop.webp?c=20260527143614",
@@ -1144,7 +1163,7 @@
         "price": "19,800원",
         "likes": 12,
         "views": 0,
-        "comments": 35,
+        "comments": 36,
         "category": "먹거리",
         "desc": "https://link.coupang.com/a/d3TMWBYEfY",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9873816771_140x100.crop.webp?c=20260526153125",
@@ -1199,7 +1218,7 @@
         "dist": "생활용품",
         "time": "11:32",
         "price": "19,275원",
-        "likes": 12,
+        "likes": 13,
         "views": 0,
         "comments": 38,
         "category": "생활용품",
@@ -1258,7 +1277,7 @@
         "price": "71,200원부터",
         "likes": 22,
         "views": 0,
-        "comments": 112,
+        "comments": 113,
         "category": "PC제품",
         "desc": "https://smartstore.naver.com/funkeys/products/13549462272",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874877161_140x100.crop.webp?c=20260526195236",
@@ -1281,7 +1300,7 @@
         "category": "먹거리",
         "desc": "토스",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874492721_140x100.crop.webp?c=20260526181327",
-        "buyLink": "https://ader.naver.com/v1/FjNblFU9_xGZ4AQJFjcOpa3UUNYUh7yLztjm6a4qokd_NOrh1BYu4P2j067Vw1peU9rckNHjPVKm36NEcToaKYHqbcwvXuRDrMXL72MgXCO8t5S3xSi0L94fz4oeMorZbB1B9Dm6Q4q32jYVkLyu71TQ0_hlANpCYw3hMg6FAWEn7Uxe2qYOOhIA7FsC_88TgKBEIgRB-PNNfUUy-5LhJooleWmNHM4ZdwFywsxZ6EyjAodHvZ53PH5jIxGQHWrZm_RmDvfkxtidMT6j_hRNoNVY0R0ojxEX-mniNXHQEWE85hTCs3ab70PV_bt1pJY38eugjaAAHn6ZEVwgGsNRrSpBVnTPAYeA4j6pb_6TfLHGkQekpQOsCTNLQ_TyKhOGY2Q6tAY-GaIP9MMS2Hf1zf-sE7hCN4zHXQZ0plsYfw8=?c=m_fmkorea.ch6&t=0",
+        "buyLink": "https://ader.naver.com/v1/1P-REl34DU8zM71-XmgP4lyMUEoiPbmCPfNQxDTjL9A0-2UZdK5VSnELsEDfpMlIPmOTOuStvxeZwvZT-V_0Yksbj6Fx3K3MAqUsboWj6LODmhWziZWxM6uY39EFUCFJcA52dm5l9w-80bQEkzyp0s2l7B43_3uXoNyW4WDKgaB9DCkUoS69o_g23q6IguIF1Al6Zt0pKnFL2wQJz5XfLw==?c=m_fmkorea.ch6&t=0",
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9874492721",
         "source": "fmkorea",
         "date": "2026-05-27",
@@ -1296,7 +1315,7 @@
         "price": "1,249,900원",
         "likes": 305,
         "views": 0,
-        "comments": 218,
+        "comments": 219,
         "category": "PC제품",
         "desc": "http://www.11st.co.kr/products/9225407317/share",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9875264056_140x100.crop.webp?c=20260526214148",
@@ -1334,7 +1353,7 @@
         "price": "첫구매3,095",
         "likes": 43,
         "views": 0,
-        "comments": 28,
+        "comments": 29,
         "category": "먹거리",
         "desc": "https://mulhana.com/product/",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874981977_140x100.crop.webp?c=20260526201514",
@@ -1348,39 +1367,39 @@
         "id": "9874749473",
         "title": "드래곤퀘스트5",
         "area": "펨딜",
-        "dist": "SW/게임",
-        "time": "21:14",
+        "dist": "기타",
+        "time": "26.05",
         "price": "12,000원",
         "likes": 29,
         "views": 0,
         "comments": 66,
-        "category": "SW/게임",
+        "category": "기타",
         "desc": "https://play.google.com/store/apps/details?id=com.square_enix.android_googleplay.dq5",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9874749473_140x100.crop.webp?c=20260526191819",
         "buyLink": "https://play.google.com/store/apps/details?id=com.square_enix.android_googleplay.dq5",
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9874749473",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T21:14:00+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9870551316",
         "title": "코인딜) Toocki 100W C to C 릴케...",
         "area": "펨딜",
-        "dist": "가전제품",
-        "time": "20:50",
+        "dist": "기타",
+        "time": "26.05",
         "price": "$6.4",
         "likes": 13,
         "views": 0,
         "comments": 67,
-        "category": "가전제품",
+        "category": "기타",
         "desc": "https://www.aliexpress.com/item/1005009738330168.html",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260525/9870551316_140x100.crop.webp?c=20260526000741",
         "buyLink": "https://www.aliexpress.com/item/1005009738330168.html",
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9870551316",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:50:00+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9872817083",
@@ -1391,7 +1410,7 @@
         "price": "13,320원",
         "likes": 13,
         "views": 0,
-        "comments": 49,
+        "comments": 50,
         "category": "기타",
         "desc": "https://brand.naver.com/lgcaremall/products/9591317129",
         "img": "//image.fmkorea.com/filesn/cache/thumb/20260526/9872817083_140x100.crop.webp?c=20260526103606",
@@ -1399,7 +1418,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872817083",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9873460001",
@@ -1408,7 +1427,7 @@
         "dist": "기타",
         "time": "26.05",
         "price": "29,000~",
-        "likes": 20,
+        "likes": 21,
         "views": 0,
         "comments": 52,
         "category": "기타",
@@ -1418,7 +1437,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873460001",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9873036549",
@@ -1437,7 +1456,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873036549",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9873378828",
@@ -1456,7 +1475,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9873378828",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9871716720",
@@ -1475,7 +1494,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871716720",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9870841533",
@@ -1494,7 +1513,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9870841533",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9871832041",
@@ -1513,7 +1532,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871832041",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9872624042",
@@ -1532,7 +1551,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872624042",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9872015168",
@@ -1551,7 +1570,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872015168",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9871762076",
@@ -1570,7 +1589,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871762076",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9872097951",
@@ -1589,7 +1608,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9872097951",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9871738575",
@@ -1608,7 +1627,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871738575",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9871730091",
@@ -1627,7 +1646,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9871730091",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9869861230",
@@ -1646,7 +1665,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869861230",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9869355724",
@@ -1665,7 +1684,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869355724",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9868998243",
@@ -1684,7 +1703,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868998243",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       },
       {
         "id": "9869502304",
@@ -1703,26 +1722,7 @@
         "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9869502304",
         "source": "fmkorea",
         "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
-      },
-      {
-        "id": "9868600443",
-        "title": "버터와플 이즈니, 316g, 2개",
-        "area": "펨딜",
-        "dist": "기타",
-        "time": "26.05",
-        "price": "9,390원",
-        "likes": 19,
-        "views": 0,
-        "comments": 28,
-        "category": "기타",
-        "desc": "https://link.coupang.com/a/d1OsvjBBee",
-        "img": "//image.fmkorea.com/filesn/cache/thumb/20260525/9868600443_140x100.crop.webp?c=20260525092137",
-        "buyLink": "https://link.coupang.com/a/d1OsvjBBee",
-        "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=9868600443",
-        "source": "fmkorea",
-        "date": "2026-05-27",
-        "registeredAt": "2026-05-27T20:41:43.606301+09:00"
+        "registeredAt": "2026-05-27T21:17:10.214419+09:00"
       }
     ],
     "yesterday": []
