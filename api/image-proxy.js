@@ -17,14 +17,16 @@ module.exports = async (req, res) => {
     }
 
     const u = new URL(url);
-    if (!/ruliweb\.com$/i.test(u.hostname)) {
+    const allowedHost = /(^|\.)ruliweb\.com$/i.test(u.hostname) || /(^|\.)ppomppu\.co\.kr$/i.test(u.hostname);
+    if (!allowedHost) {
       return fail(res, 403, 'Host not allowed');
     }
 
     const upstream = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36',
         'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        'Referer': u.hostname.includes('ppomppu.co.kr') ? 'https://www.ppomppu.co.kr/' : 'https://www.ruliweb.com/',
       },
       redirect: 'follow',
     });
@@ -43,7 +45,7 @@ module.exports = async (req, res) => {
 
     res.statusCode = 200;
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+    res.setHeader('Cache-Control', 'public, max-age=172800, s-maxage=172800, stale-while-revalidate=86400');
     res.setHeader('Content-Length', String(buf.length));
     res.end(buf);
   } catch (e) {
