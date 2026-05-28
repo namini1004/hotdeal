@@ -338,15 +338,12 @@
     function optimizeImageUrl(src){
       const raw = String(src || '').trim();
       if(!raw) return FALLBACK_IMAGE;
-      // 뽐뿌 CDN 직접 링크는 핫링크 차단 경고 이미지가 표시될 수 있어
-      // 우리 도메인의 이미지 프록시를 통해 실제 이미지를 캐시/전달한다.
-      const normalized = /^https:\/\/cdn2\.ppomppu\.co\.kr\//i.test(raw)
+      // 런타임 이미지 프록시는 원본 사이트 밴 리스크가 있어 사용하지 않는다.
+      // 뽐뿌 이미지는 GitHub Actions 동기화 시 Supabase Storage에 미러링된 URL을 우선 저장한다.
+      // 기존 원격 URL이 남아 있는 동안은 cdn2 -> cdn3 호스트 보정만 적용하고, 실패 시 fallback으로 내린다.
+      return /^https:\/\/cdn2\.ppomppu\.co\.kr\//i.test(raw)
         ? raw.replace(/^https:\/\/cdn2\.ppomppu\.co\.kr\//i, 'https://cdn3.ppomppu.co.kr/')
         : raw;
-      if(/^https:\/\/[^/]*ppomppu\.co\.kr\//i.test(normalized)){
-        return `/api/image-proxy?url=${encodeURIComponent(normalized)}`;
-      }
-      return normalized;
     }
 
     function hexToRgb(hex){

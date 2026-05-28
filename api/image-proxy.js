@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
     }
 
     const u = new URL(url);
-    const allowedHost = /(^|\.)ruliweb\.com$/i.test(u.hostname) || /(^|\.)ppomppu\.co\.kr$/i.test(u.hostname);
+    const allowedHost = /(^|\.)ruliweb\.com$/i.test(u.hostname);
     if (!allowedHost) {
       return fail(res, 403, 'Host not allowed');
     }
@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36',
         'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-        'Referer': u.hostname.includes('ppomppu.co.kr') ? 'https://www.ppomppu.co.kr/' : 'https://www.ruliweb.com/',
+        'Referer': 'https://www.ruliweb.com/',
       },
       redirect: 'follow',
     });

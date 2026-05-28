@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import hashlib
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 from urllib.parse import quote
 
 import requests
@@ -31,6 +33,15 @@ TRACKED_FIELDS = [
     "date",
     "registered_at",
 ]
+
+IMAGE_BUCKET = os.environ.get("SUPABASE_IMAGE_BUCKET", "deal-images").strip() or "deal-images"
+PPOMPPU_IMAGE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
+    "Referer": "https://m.ppomppu.co.kr/",
+    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+}
+MAX_MIRROR_IMAGE_BYTES = int(os.environ.get("MAX_MIRROR_IMAGE_BYTES", "3145728"))
+_bucket_ready = False
 
 
 def load_items() -> List[Dict]:
@@ -78,6 +89,123 @@ def row_changed(new_row: Dict, old_row: Dict) -> bool:
         if (new_row.get(f) or "") != (old_row.get(f) or ""):
             return True
     return False
+
+
+def storage_public_prefix(supabase_url: str) -> str:
+    return f"{supabase_url}/storage/v1/object/public/{IMAGE_BUCKET}/"
+
+
+def is_storage_image_url(img: str, supabase_url: str) -> bool:
+    return str(img or "").startswith(storage_public_prefix(supabase_url))
+
+
+def image_type_from_response(content: bytes, content_type: str) -> tuple[str, str]:
+    if content.startswith(b"\xff\xd8\xff"):
+        return "jpg", "image/jpeg"
+    if content.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png", "image/png"
+    if content.startswith(b"RIFF") and content[8:12] == b"WEBP":
+        return "webp", "image/webp"
+    if content.startswith(b"GIF87a") or content.startswith(b"GIF89a"):
+        return "gif", "image/gif"
+
+    ct = (content_type or "").lower()
+    if "png" in ct:
+        return "png", "image/png"
+    if "webp" in ct:
+        return "webp", "image/webp"
+    if "gif" in ct:
+        return "gif", "image/gif"
+    return "jpg", "image/jpeg"
+
+
+def bbs_no_from_source_link(source_link: str) -> str:
+    m = re.search(r"[?&]no=(\d+)", source_link or "")
+    return m.group(1) if m else hashlib.sha1((source_link or "").encode("utf-8")).hexdigest()[:12]
+
+
+def ensure_public_image_bucket(supabase_url: str, service_key: str):
+    global _bucket_ready
+    if _bucket_ready:
+        return
+
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": "application/json",
+    }
+    bucket_url = f"{supabase_url}/storage/v1/bucket/{quote(IMAGE_BUCKET, safe='')}"
+    res = requests.get(bucket_url, headers=headers, timeout=30)
+    if res.status_code == 404 or "Bucket not found" in (res.text or ""):
+        create_res = requests.post(
+            f"{supabase_url}/storage/v1/bucket",
+            headers=headers,
+            json={"id": IMAGE_BUCKET, "name": IMAGE_BUCKET, "public": True},
+            timeout=30,
+        )
+        if not create_res.ok and create_res.status_code not in {400, 409}:
+            raise RuntimeError(f"Supabase storage bucket create failed ({create_res.status_code}): {create_res.text}")
+    elif not res.ok:
+        raise RuntimeError(f"Supabase storage bucket check failed ({res.status_code}): {res.text}")
+
+    _bucket_ready = True
+
+
+def mirror_ppomppu_image(row: Dict, prev: Optional[Dict], supabase_url: str, service_key: str) -> str:
+    """런타임 프록시 대신 파싱/동기화 시점에 뽐뿌 이미지를 Supabase Storage로 1회 미러링한다."""
+    src = str(row.get("img") or "").strip()
+    if not src or not src.startswith("http"):
+        return src
+    if is_storage_image_url(src, supabase_url):
+        return src
+
+    prev_img = str((prev or {}).get("img") or "").strip()
+    if is_storage_image_url(prev_img, supabase_url):
+        # 같은 게시글은 기존 Storage 객체를 재사용해 뽐뿌 CDN 재요청을 최소화한다.
+        return prev_img
+
+    ensure_public_image_bucket(supabase_url, service_key)
+    res = requests.get(src, headers=PPOMPPU_IMAGE_HEADERS, timeout=25)
+    if not res.ok:
+        raise RuntimeError(f"Ppomppu image download failed ({res.status_code})")
+
+    content_type = res.headers.get("content-type") or ""
+    if not content_type.lower().startswith("image/"):
+        raise RuntimeError(f"Ppomppu image response is not image ({content_type})")
+    if len(res.content) < 500:
+        raise RuntimeError("Ppomppu image response too small")
+    if len(res.content) > MAX_MIRROR_IMAGE_BYTES:
+        raise RuntimeError(f"Ppomppu image too large ({len(res.content)} bytes)")
+
+    ext, upload_content_type = image_type_from_response(res.content, content_type)
+    digest = hashlib.sha1(src.encode("utf-8")).hexdigest()[:12]
+    bbs_no = bbs_no_from_source_link(row.get("source_link") or "")
+    object_path = f"ppomppu/{bbs_no}-{digest}.{ext}"
+    upload_url = f"{supabase_url}/storage/v1/object/{IMAGE_BUCKET}/{object_path}"
+    upload_headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": upload_content_type,
+        "Cache-Control": "172800",
+        "x-upsert": "true",
+    }
+    upload_res = requests.post(upload_url, headers=upload_headers, data=res.content, timeout=60)
+    if not upload_res.ok:
+        raise RuntimeError(f"Supabase image upload failed ({upload_res.status_code}): {upload_res.text}")
+
+    return f"{storage_public_prefix(supabase_url)}{object_path}"
+
+
+def mirror_feed_images(rows: List[Dict], existing_map: Dict[str, Dict], supabase_url: str, service_key: str):
+    for row in rows:
+        if row.get("source") != "ppomppu":
+            continue
+        key = f"{row['source']}::{row['source_link']}"
+        try:
+            row["img"] = mirror_ppomppu_image(row, existing_map.get(key), supabase_url, service_key)
+        except Exception as exc:
+            # 이미지 미러링 실패가 피드 전체 갱신 실패로 번지지 않게 원본 URL을 유지한다.
+            print(f"WARN_IMAGE_MIRROR_SKIP source_link={row.get('source_link')} reason={exc}")
 
 
 def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
@@ -164,6 +292,7 @@ def main():
         return
 
     existing_map = fetch_existing_map(supabase_url, service_key)
+    mirror_feed_images(rows, existing_map, supabase_url, service_key)
     now_iso = datetime.now(timezone.utc).isoformat()
 
     changed_rows: List[Dict] = []
