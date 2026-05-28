@@ -43,7 +43,7 @@
       to{transform:rotate(360deg)}
     }
 
-    .list{padding:0}
+    .list{padding:0;touch-action:pan-y}
     .item{display:grid;grid-template-columns:98px 1fr;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit}
     .item.viewed{background:#dfe5ec}
     .item.viewed .item-title{color:#4b5563}
@@ -420,6 +420,19 @@
       localStorage.setItem(LAST_TAB_KEY, state.activeTab || 'today');
     }
 
+    const TAB_ORDER = ['today','quasar','fmkorea','ruliweb','namin'];
+
+    function switchTab(nextTab){
+      if(!TAB_ORDER.includes(nextTab) || state.activeTab === nextTab) return false;
+      state.activeTab = nextTab;
+      persistLastTab();
+      setActiveTabUI();
+      const activeChip = document.querySelector(`#tabs .chip[data-tab="${nextTab}"]`);
+      activeChip?.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+      render();
+      return true;
+    }
+
     function restoreLastSort(){
       const saved = localStorage.getItem(LAST_SORT_KEY);
       if(saved === 'latest' || saved === 'temperature'){
@@ -436,11 +449,55 @@
       tabs.addEventListener('click', (e) => {
         const btn = e.target.closest('.chip[data-tab]');
         if(!btn) return;
-        state.activeTab = btn.dataset.tab;
-        persistLastTab();
-        setActiveTabUI();
-        render();
+        switchTab(btn.dataset.tab);
       });
+    }
+
+    function bindListSwipeTabs(){
+      const list = document.getElementById('list');
+      let startX = 0;
+      let startY = 0;
+      let tracking = false;
+      let swiped = false;
+      const threshold = 56;
+      const verticalTolerance = 42;
+
+      list.addEventListener('touchstart', (e) => {
+        if(e.touches.length !== 1) return;
+        tracking = true;
+        swiped = false;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }, { passive:true });
+
+      list.addEventListener('touchmove', (e) => {
+        if(!tracking || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        if(Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > verticalTolerance){
+          tracking = false;
+        }
+      }, { passive:true });
+
+      list.addEventListener('touchend', (e) => {
+        if(!tracking) return;
+        tracking = false;
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        if(Math.abs(dx) < threshold || Math.abs(dx) < Math.abs(dy) * 1.35) return;
+        const currentIndex = TAB_ORDER.indexOf(state.activeTab);
+        const nextIndex = dx < 0 ? currentIndex + 1 : currentIndex - 1;
+        if(nextIndex < 0 || nextIndex >= TAB_ORDER.length) return;
+        swiped = switchTab(TAB_ORDER[nextIndex]);
+      }, { passive:true });
+
+      list.addEventListener('click', (e) => {
+        if(!swiped) return;
+        e.preventDefault();
+        e.stopPropagation();
+        swiped = false;
+      }, true);
     }
 
     function bindSearch(){
@@ -723,6 +780,7 @@
       restoreLastTab();
       restoreLastSort();
       bindTabs();
+      bindListSwipeTabs();
       bindSearch();
       bindSortSheet();
       bindReadTracking();

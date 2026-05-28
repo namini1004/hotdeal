@@ -50,14 +50,41 @@ def parse_time_to_date_label(time_text: str, now: datetime) -> str:
     return parse_time_to_datetime(time_text, now).strftime("%Y-%m-%d")
 
 
+def to_jina_url(url: str) -> str:
+    parsed = urlsplit(url)
+    path = parsed.path or '/'
+    query = f'?{parsed.query}' if parsed.query else ''
+    return f"https://r.jina.ai/http://{parsed.netloc}{path}{query}"
+
+
+def clean_price(price: str) -> str:
+    price = clean(price)
+    if '(KRW)' in price:
+        num_m = re.search(r'([0-9][0-9,]*)\s*\(KRW\)', price, re.I)
+        if num_m:
+            price = f"{num_m.group(1)}원"
+        else:
+            price = price.replace('(KRW)', '원').replace(' KRW', '원')
+    price = price.replace('￦', '').replace('₩', '').strip()
+    price = re.sub(r'\s+', ' ', price)
+    price = re.sub(r'\s*원\s*원$', '원', price)
+    return price
+
+
 def normalize_source_link(raw_link: str) -> str:
     absolute = urljoin(BASE, html.unescape(raw_link or ""))
     parsed = urlsplit(absolute)
     # 목록 page/query가 상세 URL에 붙어 있어도 동일 게시글로 canonicalize 한다.
-    return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+    scheme = 'https' if parsed.netloc.endswith('quasarzone.com') else parsed.scheme
+    return f"{scheme}://{parsed.netloc}{parsed.path}"
 
 
 def extract_buy_link_from_detail(detail_html: str) -> str:
+    # 0) r.jina.ai 마크다운 렌더: 상세 표의 링크 행
+    m = re.search(r'\|\s*링크[\s\S]*?\|\s*\[(https?://[^\]\s]+)\]\(', detail_html, re.I)
+    if m:
+        return html.unescape(m.group(1)).strip()
+
     # 1) 퀘이사 본문 우측 링크 버튼이 이 함수의 url 변수로 내려오는 경우가 많음
     m = re.search(
         r'function\s+contentLinkPrice\(\)\s*\{[\s\S]*?var\s+url\s*=\s*[\'\"]([^\'\"]+)',
@@ -98,6 +125,12 @@ def extract_buy_link_from_detail(detail_html: str) -> str:
 
 
 def extract_body_text_from_detail(detail_html: str) -> str:
+    md_body_m = re.search(r'\|\s*배송비/직배[\s\S]*?\|[^\n]*\n\n([\s\S]*?)\n\n\[\]\(http', detail_html, re.I)
+    if md_body_m:
+        text = re.sub(r'!\[[^\]]*\]\([^\)]*\)', ' ', md_body_m.group(1))
+        text = re.sub(r'\[([^\]]+)\]\([^\)]*\)', r'\1', text)
+        return clean(text)
+
     body_m = re.search(r'<textarea[^>]*id="org_contents"[^>]*>([\s\S]*?)</textarea>', detail_html, re.I)
     if body_m:
         body_html = html.unescape(body_m.group(1))
@@ -162,16 +195,7 @@ def parse_list_items(page_html: str, seen=None):
         category = clean(category_m.group(1)) if category_m else "기타"
 
         price_m = re.search(r'<span class="text-orange">([\s\S]*?)</span>', row)
-        price = clean(price_m.group(1)) if price_m else "가격 정보 확인"
-        if '(KRW)' in price:
-            num_m = re.search(r'([0-9][0-9,]*)\s*\(KRW\)', price, re.I)
-            if num_m:
-                price = f"{num_m.group(1)}원"
-            else:
-                price = price.replace('(KRW)', '원').replace(' KRW', '원')
-        price = price.replace('￦', '').replace('₩', '').strip()
-        price = re.sub(r'\s+', ' ', price)
-        price = re.sub(r'\s*원\s*원$', '원', price)
+        price = clean_price(price_m.group(1)) if price_m else "가격 정보 확인"
 
         comments_m = re.search(r'class="ctn-count\s*">\s*([0-9,]+)\s*</span>', row)
         comments = int((comments_m.group(1).replace(',', '') if comments_m else '0') or '0')
@@ -233,6 +257,85 @@ def parse_list_items(page_html: str, seen=None):
     return items
 
 
+def parse_jina_list_items(markdown_text: str, seen=None):
+    items = []
+    if seen is None:
+        seen = set()
+
+    # r.jina.ai 렌더는 표 한 줄에 썸네일 링크 + 제목 링크 + 메타를 평탄화해 준다.
+    for line in (markdown_text or '').splitlines():
+        if '/bbs/qb_saleinfo/views/' not in line or '가격' not in line:
+            continue
+        title_m = re.search(
+            r'(?:진행중|인기)\[(.*?)\]\((https?://(?:www\.)?quasarzone\.com/bbs/qb_saleinfo/views/(\d+)(?:\?[^\)]*)?)\)',
+            line,
+        )
+        if not title_m:
+            continue
+
+        raw_title, href, post_id = title_m.group(1), title_m.group(2), title_m.group(3)
+        if post_id in seen or post_id == '1948168':
+            continue
+        seen.add(post_id)
+
+        title = clean(re.sub(r'^진행중\s*', '', raw_title))
+        trailing_comment_m = re.search(r'^(\[[^\]]+\].*?)(\d{1,3})$', title)
+        if trailing_comment_m:
+            title = trailing_comment_m.group(1).strip()
+            comments = int(trailing_comment_m.group(2))
+        else:
+            comments = 0
+        comment_m = re.search(r'\s+([0-9,]+)$', title)
+        if comment_m:
+            comments = int(comment_m.group(1).replace(',', ''))
+            title = title[:comment_m.start()].strip()
+
+        after = line[line.find(f']({href})') + len(f']({href})'):]
+        category_m = re.search(r'\)\s*([^\s|]+)\s+가격\s+', line)
+        category = clean(category_m.group(1)) if category_m else '기타'
+        price_m = re.search(r'가격\s+([^|!]+?)(?:배송비|\!\[|\s{2,}|$)', after)
+        price = clean_price(price_m.group(1)) if price_m else '가격 정보 확인'
+
+        img_candidates = re.findall(r'!\[[^\]]*\]\((https?://[^\)]+)\)', line)
+        img = ''
+        for src in img_candidates:
+            if 'thumb_no_image.svg' in src or '/level/' in src or '/store/' in src:
+                continue
+            img = clean(src)
+            break
+
+        tail_m = re.search(r'\s([0-9.,]+k?)\s+(방금|조금 전|\d+분 전|\d+시간 전|\d{2}-\d{2})\s*\|?\s*$', line)
+        views_text = tail_m.group(1) if tail_m else '0'
+        time_text = tail_m.group(2) if tail_m else ''
+        v = views_text.lower().replace(',', '').strip()
+        try:
+            views = int(float(v[:-1]) * 1000) if v.endswith('k') else int(float(v))
+        except Exception:
+            views = 0
+
+        items.append(
+            {
+                "id": post_id,
+                "title": title or "제목 없음",
+                "area": "퀘이사딜",
+                "dist": category,
+                "time": time_text,
+                "price": price,
+                "likes": 0,
+                "views": views,
+                "comments": comments,
+                "category": category,
+                "desc": "",
+                "img": img,
+                "buyLink": "",
+                "sourceLink": normalize_source_link(href),
+                "source": "quasar",
+            }
+        )
+
+    return items
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
@@ -246,6 +349,9 @@ def main():
         page_url = LIST_URL if page == 1 else f"{LIST_URL}?page={page}"
         html_text = sess.get(page_url, timeout=25).text
         rows = parse_list_items(html_text, seen)
+        if not rows:
+            jina_text = sess.get(to_jina_url(page_url), timeout=45).text
+            rows = parse_jina_list_items(jina_text, seen)
         if not rows:
             continue
 
@@ -262,6 +368,8 @@ def main():
             detail_html = ""
             try:
                 detail_html = sess.get(row["sourceLink"], timeout=25).text
+                if not extract_buy_link_from_detail(detail_html) and not re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}', detail_html):
+                    detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=45).text
                 real_link = extract_buy_link_from_detail(detail_html)
                 row["buyLink"] = real_link or row["sourceLink"]
                 row["desc"] = extract_body_text_from_detail(detail_html)
