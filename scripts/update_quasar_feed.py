@@ -330,6 +330,7 @@ def parse_jina_list_items(markdown_text: str, seen=None):
                 "buyLink": "",
                 "sourceLink": normalize_source_link(href),
                 "source": "quasar",
+                "_detailViaJina": True,
             }
         )
 
@@ -367,9 +368,12 @@ def main():
             # 사이트별 룰: 상세에서 실제 구매처 링크/작성시각 추출
             detail_html = ""
             try:
-                detail_html = sess.get(row["sourceLink"], timeout=25).text
-                if not extract_buy_link_from_detail(detail_html) and not re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}', detail_html):
-                    detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=45).text
+                if row.get("_detailViaJina"):
+                    detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
+                else:
+                    detail_html = sess.get(row["sourceLink"], timeout=25).text
+                    if not extract_buy_link_from_detail(detail_html) and not re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}', detail_html):
+                        detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
                 real_link = extract_buy_link_from_detail(detail_html)
                 row["buyLink"] = real_link or row["sourceLink"]
                 row["desc"] = extract_body_text_from_detail(detail_html)
@@ -392,6 +396,7 @@ def main():
                 old_count += 1
                 continue
 
+            row.pop("_detailViaJina", None)
             filtered.append(row)
 
         if old_count == len(rows):
