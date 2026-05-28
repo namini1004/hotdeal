@@ -3,6 +3,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Dict, List
 from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
@@ -228,6 +229,16 @@ def extract_detail_bundle_in_page(page, url: str) -> dict:
     }''')
 
 
+def load_previous_items() -> List[Dict]:
+    if not JSON_PATH.exists():
+        return []
+    try:
+        data = json.loads(JSON_PATH.read_text(encoding="utf-8"))
+        return list(data.get("items") or [])
+    except Exception:
+        return []
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
@@ -387,6 +398,14 @@ def main():
         if key and key not in dedup:
             dedup[key] = it
     items = list(dedup.values())
+
+    if not items:
+        previous_items = load_previous_items()
+        if previous_items:
+            items = previous_items
+            print(f"WARN_FMKOREA_ZERO_ITEMS_KEEP_PREVIOUS previous={len(previous_items)} all_rows={len(all_rows)}")
+        else:
+            print(f"WARN_FMKOREA_ZERO_ITEMS_NO_PREVIOUS all_rows={len(all_rows)}")
 
     out = {
         "source": LIST_URL,

@@ -26,6 +26,7 @@ FEED_FILES = [
     ROOT / "assets" / "fmkorea_hotdeals_2days.json",
     ROOT / "assets" / "ruliweb_hotdeals_1day.json",
 ]
+EXPECTED_FEED_SOURCES = {"ppomppu", "quasar", "fmkorea", "ruliweb"}
 
 TRACKED_FIELDS = [
     "buy_link",
@@ -348,6 +349,64 @@ def send_push_ingest(changed_rows: List[Dict]):
     return "OK"
 
 
+def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: str):
+    """변경 upsert 대상과 soft-delete 대상을 계산한다.
+
+    특정 피드 소스가 이번 수집에서 0건이면 파서/원천 차단 실패로 보고,
+    해당 소스의 기존 row를 삭제 처리하지 않는다. 펨코처럼 Actions 환경에서
+    일시적으로 0건이 나와 운영 탭이 통째로 사라지는 문제를 방지한다.
+    """
+    changed_rows: List[Dict] = []
+    current_keys = set()
+    current_sources = {str(row.get("source") or "").strip() for row in rows if row.get("source")}
+    skipped_delete_sources = EXPECTED_FEED_SOURCES - current_sources
+
+    for row in rows:
+        key = f"{row['source']}::{row['source_link']}"
+        current_keys.add(key)
+        prev = existing_map.get(key)
+        if not prev:
+            row["updated_at"] = now_iso
+            changed_rows.append(row)
+            continue
+
+        # soft-deleted 되었던 글이 다시 수집되면 즉시 복구
+        if prev.get("deleted_at"):
+            row["updated_at"] = now_iso
+            row["deleted_at"] = None
+            changed_rows.append(row)
+            continue
+
+        if row_changed(row, prev):
+            row["updated_at"] = now_iso
+            changed_rows.append(row)
+
+    # 이번 수집 결과에 없는 기존 feed 글은 soft delete 처리하되,
+    # 0건 수집된 소스는 파서 실패 가능성이 높으므로 기존 데이터를 유지한다.
+    deleted_rows: List[Dict] = []
+    for key, prev in existing_map.items():
+        if key in current_keys:
+            continue
+        if prev.get("deleted_at"):
+            continue
+        source = str(prev.get("source") or "").strip()
+        source_link = str(prev.get("source_link") or "").strip()
+        if not source or not source_link:
+            continue
+        if source in skipped_delete_sources:
+            continue
+        deleted_rows.append(
+            {
+                "source": source,
+                "source_link": source_link,
+                "deleted_at": now_iso,
+                "updated_at": now_iso,
+            }
+        )
+
+    return changed_rows, deleted_rows, skipped_delete_sources
+
+
 def main():
     supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -371,47 +430,9 @@ def main():
     mirror_feed_images(rows, existing_map, supabase_url, service_key)
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    changed_rows: List[Dict] = []
-    current_keys = set()
-    for row in rows:
-        key = f"{row['source']}::{row['source_link']}"
-        current_keys.add(key)
-        prev = existing_map.get(key)
-        if not prev:
-            row["updated_at"] = now_iso
-            changed_rows.append(row)
-            continue
-
-        # soft-deleted 되었던 글이 다시 수집되면 즉시 복구
-        if prev.get("deleted_at"):
-            row["updated_at"] = now_iso
-            row["deleted_at"] = None
-            changed_rows.append(row)
-            continue
-
-        if row_changed(row, prev):
-            row["updated_at"] = now_iso
-            changed_rows.append(row)
-
-    # 이번 수집 결과에 없는 기존 feed 글은 soft delete 처리
-    deleted_rows: List[Dict] = []
-    for key, prev in existing_map.items():
-        if key in current_keys:
-            continue
-        if prev.get("deleted_at"):
-            continue
-        source = str(prev.get("source") or "").strip()
-        source_link = str(prev.get("source_link") or "").strip()
-        if not source or not source_link:
-            continue
-        deleted_rows.append(
-            {
-                "source": source,
-                "source_link": source_link,
-                "deleted_at": now_iso,
-                "updated_at": now_iso,
-            }
-        )
+    changed_rows, deleted_rows, skipped_delete_sources = build_sync_plan(rows, existing_map, now_iso)
+    if skipped_delete_sources:
+        print(f"WARN_SOFT_DELETE_GUARD skipped_sources={','.join(sorted(skipped_delete_sources))}")
 
     if not changed_rows and not deleted_rows:
         print("NO_CHANGE")
