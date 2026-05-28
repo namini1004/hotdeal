@@ -273,6 +273,11 @@
     function optimizeImageUrl(src){
       const raw = String(src || '').trim();
       if(!raw) return FALLBACK_IMAGE;
+      // 뽐뿌 cdn2는 브라우저 이미지 로딩에서 간헐적으로 실패한다.
+      // 같은 경로가 cdn3에서는 정상 제공되므로 렌더링 직전에 안전 호스트로 보정한다.
+      if(/^https:\/\/cdn2\.ppomppu\.co\.kr\//i.test(raw)){
+        return raw.replace(/^https:\/\/cdn2\.ppomppu\.co\.kr\//i, 'https://cdn3.ppomppu.co.kr/');
+      }
       return raw;
     }
 

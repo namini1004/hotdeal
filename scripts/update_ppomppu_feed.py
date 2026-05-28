@@ -101,8 +101,14 @@ def normalize_image_url(src: str) -> str:
     if not src:
         return ''
     if src.startswith('//'):
-        return 'https:' + src
-    return urljoin(BASE, src)
+        return normalize_ppomppu_cdn_host('https:' + src)
+    normalized = urljoin(BASE, src)
+    return normalize_ppomppu_cdn_host(normalized)
+
+
+def normalize_ppomppu_cdn_host(src: str) -> str:
+    """cdn2 이미지는 브라우저에서 실패하는 케이스가 있어 같은 경로의 cdn3로 저장한다."""
+    return re.sub(r'^https://cdn2\.ppomppu\.co\.kr/', 'https://cdn3.ppomppu.co.kr/', src or '', flags=re.I)
 
 
 def is_body_image_candidate(src: str) -> bool:
@@ -226,6 +232,7 @@ def parse_items():
                 img = 'https:' + img
             elif img.startswith('/'):
                 img = urljoin(BASE, img)
+            img = normalize_ppomppu_cdn_host(img)
 
             category = cat_m.group(1).strip() if cat_m else "기타"
             link_rows.append({"href": href, "raw_title": raw_title, "img": img, "category": category})
@@ -245,6 +252,7 @@ def parse_items():
         og_desc = pick(r'<meta property="og:description" content="([^"]*)"', detail)
         body_desc = extract_body_text(detail)
         og_img = pick(r'<meta property="og:image" content="([^"]*)"', detail) or img
+        og_img = normalize_ppomppu_cdn_host(og_img)
         body_img = extract_body_image(detail)
         representative_img = body_img or og_img
 
