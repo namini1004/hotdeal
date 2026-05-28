@@ -757,20 +757,10 @@
     }
 
     function bindAutoSync(){
-      const intervalMs = 30000;
-      setInterval(() => {
-        if(document.visibilityState !== 'visible') return;
-        refreshFeed({ silent: true });
-        refreshNaminDealsBackground();
-      }, intervalMs);
-
+      // 무료 사용량 보호: 30초 자동 polling은 제거하고,
+      // 앱 진입/init + 화면 복귀 + 사용자의 당겨서 새로고침에서만 갱신한다.
       document.addEventListener('visibilitychange', () => {
         if(document.visibilityState !== 'visible') return;
-        refreshFeed({ silent: true });
-        refreshNaminDealsBackground();
-      });
-
-      window.addEventListener('focus', () => {
         refreshFeed({ silent: true });
         refreshNaminDealsBackground();
       });
