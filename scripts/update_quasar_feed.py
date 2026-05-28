@@ -4,12 +4,13 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
 import requests
 
 LIST_URL = "https://quasarzone.com/bbs/qb_saleinfo"
 BASE = "https://quasarzone.com"
+MAX_PAGES = 8
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "quasar_hotdeals_2days.json"
 KST = timezone(timedelta(hours=9))
@@ -20,10 +21,19 @@ def clean(text: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(text or "")).strip()
 
 
-def parse_time_to_date_label(time_text: str, now: datetime) -> str:
+def parse_time_to_datetime(time_text: str, now: datetime) -> datetime:
     text = (time_text or "").strip()
-    if "분 전" in text or "시간 전" in text or text in {"방금", "조금 전"}:
-        return now.strftime("%Y-%m-%d")
+    if text in {"방금", "조금 전"}:
+        return now
+
+    minute_m = re.search(r"(\d+)\s*분 전", text)
+    if minute_m:
+        return now - timedelta(minutes=int(minute_m.group(1)))
+
+    hour_m = re.search(r"(\d+)\s*시간 전", text)
+    if hour_m:
+        return now - timedelta(hours=int(hour_m.group(1)))
+
     m = re.search(r"(\d{2})-(\d{2})", text)
     if m:
         mm, dd = int(m.group(1)), int(m.group(2))
@@ -31,8 +41,20 @@ def parse_time_to_date_label(time_text: str, now: datetime) -> str:
         # 연초 경계 처리
         if now.month == 1 and mm == 12:
             year -= 1
-        return f"{year:04d}-{mm:02d}-{dd:02d}"
-    return now.strftime("%Y-%m-%d")
+        return datetime(year, mm, dd, 0, 0, tzinfo=KST)
+
+    return now
+
+
+def parse_time_to_date_label(time_text: str, now: datetime) -> str:
+    return parse_time_to_datetime(time_text, now).strftime("%Y-%m-%d")
+
+
+def normalize_source_link(raw_link: str) -> str:
+    absolute = urljoin(BASE, html.unescape(raw_link or ""))
+    parsed = urlsplit(absolute)
+    # 목록 page/query가 상세 URL에 붙어 있어도 동일 게시글로 canonicalize 한다.
+    return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
 
 
 def extract_buy_link_from_detail(detail_html: str) -> str:
@@ -110,15 +132,14 @@ def extract_registered_at_from_detail(detail_html: str, fallback_date_label: str
     return f"{fallback_date_label}T00:00:00+09:00"
 
 
-def parse_list_items(page_html: str):
+def parse_list_items(page_html: str, seen=None):
     rows = re.findall(r"<tr>[\s\S]*?<\/tr>", page_html)
     items = []
-    seen = set()
-    sess = requests.Session()
-    sess.headers.update(HEADERS)
+    if seen is None:
+        seen = set()
 
     for row in rows:
-        link_m = re.search(r'href="(/bbs/qb_saleinfo/views/(\d+))"', row)
+        link_m = re.search(r'href="(/bbs/qb_saleinfo/views/(\d+)(?:\?[^\"]*)?)"', row)
         if not link_m:
             continue
 
@@ -204,7 +225,7 @@ def parse_list_items(page_html: str):
                 "desc": "",
                 "img": img,
                 "buyLink": "",
-                "sourceLink": urljoin(BASE, rel_link),
+                "sourceLink": normalize_source_link(rel_link),
                 "source": "quasar",
             }
         )
@@ -215,52 +236,78 @@ def parse_list_items(page_html: str):
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
-    html_text = requests.get(LIST_URL, headers=HEADERS, timeout=25).text
-    rows = parse_list_items(html_text)
+    sess = requests.Session()
+    sess.headers.update(HEADERS)
 
     filtered = []
-    for row in rows:
-        date_label = parse_time_to_date_label(row.get("time", ""), now)
-        try:
-            dt = datetime.fromisoformat(f"{date_label}T00:00:00+09:00")
-        except Exception:
-            dt = now
-        if dt < since.replace(hour=0, minute=0, second=0, microsecond=0):
+    seen = set()
+
+    for page in range(1, MAX_PAGES + 1):
+        page_url = LIST_URL if page == 1 else f"{LIST_URL}?page={page}"
+        html_text = sess.get(page_url, timeout=25).text
+        rows = parse_list_items(html_text, seen)
+        if not rows:
             continue
 
-        # 사이트별 룰: 상세에서 실제 구매처 링크 추출
-        detail_html = ""
-        try:
-            detail_html = requests.get(row["sourceLink"], headers=HEADERS, timeout=25).text
-            real_link = extract_buy_link_from_detail(detail_html)
-            row["buyLink"] = real_link or row["sourceLink"]
-            row["desc"] = extract_body_text_from_detail(detail_html)
-            if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:
-                row["buyLink"] = row["sourceLink"]
-        except Exception:
-            row["buyLink"] = row["sourceLink"]
+        old_count = 0
+        for row in rows:
+            dt = parse_time_to_datetime(row.get("time", ""), now)
+            date_label = parse_time_to_date_label(row.get("time", ""), now)
+            # MM-DD만 있는 경계일은 상세 작성시각을 봐야 48시간 포함 여부를 정확히 알 수 있다.
+            if dt < since and dt.date() != since.date():
+                old_count += 1
+                continue
 
-        row["date"] = date_label
-        try:
-            row["registeredAt"] = extract_registered_at_from_detail(detail_html, date_label)
-        except Exception:
-            row["registeredAt"] = f"{date_label}T00:00:00+09:00"
-        filtered.append(row)
+            # 사이트별 룰: 상세에서 실제 구매처 링크/작성시각 추출
+            detail_html = ""
+            try:
+                detail_html = sess.get(row["sourceLink"], timeout=25).text
+                real_link = extract_buy_link_from_detail(detail_html)
+                row["buyLink"] = real_link or row["sourceLink"]
+                row["desc"] = extract_body_text_from_detail(detail_html)
+                if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:
+                    row["buyLink"] = row["sourceLink"]
+            except Exception:
+                row["buyLink"] = row["sourceLink"]
+
+            row["date"] = date_label
+            try:
+                row["registeredAt"] = extract_registered_at_from_detail(detail_html, date_label)
+            except Exception:
+                row["registeredAt"] = f"{date_label}T00:00:00+09:00"
+
+            try:
+                registered_dt = datetime.fromisoformat(row["registeredAt"])
+            except Exception:
+                registered_dt = dt
+            if registered_dt < since:
+                old_count += 1
+                continue
+
+            filtered.append(row)
+
+        if old_count == len(rows):
+            break
+
+    today_label = str(now.date())
+    yesterday_label = str((now - timedelta(days=1)).date())
+    today_items = [item for item in filtered if item.get("date") == today_label]
+    yesterday_items = [item for item in filtered if item.get("date") == yesterday_label]
 
     out = {
         "source": LIST_URL,
         "generatedAt": now.isoformat(),
         "rangeHours": 48,
         "since": since.isoformat(),
-        "today": str(now.date()),
-        "yesterday": str((now - timedelta(days=1)).date()),
+        "today": today_label,
+        "yesterday": yesterday_label,
         "counts": {
-            "today": len(filtered),
-            "yesterday": 0,
+            "today": len(today_items),
+            "yesterday": len(yesterday_items),
             "total": len(filtered),
         },
         "items": filtered,
-        "grouped": {"today": filtered, "yesterday": []},
+        "grouped": {"today": today_items, "yesterday": yesterday_items},
     }
 
     JSON_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
