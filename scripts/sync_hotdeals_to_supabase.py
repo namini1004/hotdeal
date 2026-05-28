@@ -46,7 +46,8 @@ TRACKED_FIELDS = [
 
 IMAGE_BUCKET = os.environ.get("SUPABASE_IMAGE_BUCKET", "deal-images").strip() or "deal-images"
 THUMBNAIL_MAX_SIZE = int(os.environ.get("MIRROR_THUMBNAIL_MAX_SIZE", "320"))
-DETAIL_IMAGE_MAX_SIZE = int(os.environ.get("MIRROR_DETAIL_IMAGE_MAX_SIZE", "480"))
+DETAIL_IMAGE_MAX_SIZE = int(os.environ.get("MIRROR_DETAIL_IMAGE_MAX_SIZE", "640"))
+DETAIL_IMAGE_VARIANT = f"detail{DETAIL_IMAGE_MAX_SIZE}"
 THUMBNAIL_WEBP_QUALITY = int(os.environ.get("MIRROR_THUMBNAIL_WEBP_QUALITY", "75"))
 DETAIL_IMAGE_WEBP_QUALITY = int(os.environ.get("MIRROR_DETAIL_IMAGE_WEBP_QUALITY", "82"))
 IMAGE_HEADERS_BY_SOURCE = {
@@ -208,7 +209,7 @@ def ensure_public_image_bucket(supabase_url: str, service_key: str):
 
 
 def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, service_key: str) -> Dict[str, str]:
-    """뽐딜/루딜 원본 이미지를 목록용 320px와 상세용 480px WebP로 저장한다."""
+    """뽐딜/루딜 원본 이미지를 목록용 320px와 상세용 640px WebP로 저장한다."""
     source = str(row.get("source") or "").strip()
     src = decode_proxy_image_url(row.get("img") or "")
     if source not in IMAGE_HEADERS_BY_SOURCE:
@@ -221,8 +222,8 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
 
     prev_img = str((prev or {}).get("img") or "").strip()
     prev_detail_img = str((prev or {}).get("detail_img") or "").strip()
-    if is_reusable_storage_webp(prev_img, source, supabase_url, "thumb") and is_reusable_storage_webp(prev_detail_img, source, supabase_url, "detail"):
-        # 같은 게시글은 기존 WebP 썸네일을 재사용해 원본 CDN 재요청을 최소화한다.
+    if is_reusable_storage_webp(prev_img, source, supabase_url, "thumb") and is_reusable_storage_webp(prev_detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT):
+        # 같은 게시글은 기존 WebP 썸네일/상세 이미지를 재사용해 원본 CDN 재요청을 최소화한다.
         return {"img": prev_img, "detail_img": prev_detail_img}
 
     ensure_public_image_bucket(supabase_url, service_key)
@@ -238,10 +239,17 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
     if len(res.content) > MAX_MIRROR_IMAGE_BYTES:
         raise RuntimeError(f"{source} image too large ({len(res.content)} bytes)")
 
-    variants = {
-        "thumb": make_webp_image(res.content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY),
-        "detail": make_webp_image(res.content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY),
-    }
+    variants = {}
+    public_urls = {}
+    if is_reusable_storage_webp(prev_img, source, supabase_url, "thumb"):
+        public_urls["thumb"] = prev_img
+    else:
+        variants["thumb"] = make_webp_image(res.content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY)
+
+    if is_reusable_storage_webp(prev_detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT):
+        public_urls[DETAIL_IMAGE_VARIANT] = prev_detail_img
+    else:
+        variants[DETAIL_IMAGE_VARIANT] = make_webp_image(res.content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY)
     digest = hashlib.sha1(src.encode("utf-8")).hexdigest()[:12]
     row_id = row_id_from_source_link(source, row.get("source_link") or "")
     upload_headers = {
@@ -251,7 +259,6 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
         "Cache-Control": "31536000",
         "x-upsert": "true",
     }
-    public_urls = {}
     for variant, body in variants.items():
         object_path = f"{source}/{row_id}-{variant}-{digest}.webp"
         upload_url = f"{supabase_url}/storage/v1/object/{IMAGE_BUCKET}/{object_path}"
@@ -260,7 +267,7 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
             raise RuntimeError(f"Supabase image upload failed ({upload_res.status_code}): {upload_res.text}")
         public_urls[variant] = f"{storage_public_prefix(supabase_url)}{object_path}"
 
-    return {"img": public_urls["thumb"], "detail_img": public_urls["detail"]}
+    return {"img": public_urls["thumb"], "detail_img": public_urls[DETAIL_IMAGE_VARIANT]}
 
 
 def mirror_feed_images(rows: List[Dict], existing_map: Dict[str, Dict], supabase_url: str, service_key: str):
