@@ -14,7 +14,10 @@ MAX_PAGES = 8
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "quasar_hotdeals_2days.json"
 KST = timezone(timedelta(hours=9))
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
+    "Referer": "https://quasarzone.com/bbs/qb_saleinfo",
+}
 
 
 def clean(text: str) -> str:
@@ -107,23 +110,51 @@ def is_body_image_candidate(src: str) -> bool:
     return not any(token in src_l for token in blocked)
 
 
-def extract_body_image_from_detail(detail_html: str) -> str:
-    """퀘딜 대표 이미지는 목록 썸네일/기본 이미지가 아니라 상세 본문 첫 이미지로 고정한다."""
-    # 1) 원본 HTML: 가격/배송 메타 뒤 실제 본문은 textarea#org_contents 안에 보관된다.
-    body_m = re.search(r'<textarea[^>]*id="org_contents"[^>]*>([\s\S]*?)</textarea>', detail_html, re.I)
-    if body_m:
-        body_html = html.unescape(body_m.group(1))
-        for img_m in re.finditer(r'<img\b[^>]*>', body_html, re.I):
-            tag = img_m.group(0)
-            src_m = re.search(r'(?:data-src|data-original|src)=[\"\']([^\"\']+)', tag, re.I)
-            if not src_m:
-                continue
-            candidate = normalize_image_url(src_m.group(1))
+def get_img_src_from_tag(tag: str) -> str:
+    """lazy 이미지에서 placeholder src보다 실제 data-* 원본을 우선한다."""
+    for attr in ("data-src", "data-original", "data-url", "src"):
+        m = re.search(rf'\b{attr}=[\"\']([^\"\']+)', tag, re.I)
+        if m:
+            candidate = normalize_image_url(m.group(1))
             if is_body_image_candidate(candidate):
                 return candidate
 
-    # 2) r.jina.ai markdown fallback: 가격/배송 표 이후 본문에서 첫 markdown 이미지를 고른다.
-    marker = re.search(r'\|\s*배송[^\n]*\n', detail_html, re.I)
+    srcset_m = re.search(r'\bsrcset=[\"\']([^\"\']+)', tag, re.I)
+    if srcset_m:
+        for part in srcset_m.group(1).split(','):
+            candidate = normalize_image_url(part.strip().split()[0] if part.strip() else '')
+            if is_body_image_candidate(candidate):
+                return candidate
+
+    return ''
+
+
+def iter_detail_body_html(detail_html: str):
+    """퀘이사 상세에서 가격/배송 표 이후의 실제 본문 영역 후보만 순서대로 반환한다."""
+    # 1) 원본 HTML: 가격/배송 메타 뒤 실제 본문은 textarea#org_contents 안에 보관된다.
+    for body_m in re.finditer(r'<textarea[^>]*\bid=[\"\']org_contents[\"\'][^>]*>([\s\S]*?)</textarea>', detail_html, re.I):
+        yield html.unescape(body_m.group(1))
+
+    # 2) 일부 렌더/개편 케이스: 본문 컨테이너 후보. 상단 판매처 로고/프로필 영역은 제외한다.
+    container_patterns = [
+        r'<div[^>]*\bclass=[\"\'][^\"\']*(?:board-view-content|view-content|content-detail|fr-view|se-viewer)[^\"\']*[\"\'][^>]*>([\s\S]*?)</div>\s*</div>',
+        r'<article[^>]*>([\s\S]*?)</article>',
+    ]
+    for pattern in container_patterns:
+        for body_m in re.finditer(pattern, detail_html, re.I):
+            yield html.unescape(body_m.group(1))
+
+
+def extract_body_image_from_detail(detail_html: str) -> str:
+    """퀘딜 대표 이미지는 목록 썸네일/상단 판매처 로고가 아니라 가격/배송비 뒤 본문 첫 이미지로 고정한다."""
+    for body_html in iter_detail_body_html(detail_html):
+        for img_m in re.finditer(r'<img\b[^>]*>', body_html, re.I):
+            candidate = get_img_src_from_tag(img_m.group(0))
+            if candidate:
+                return candidate
+
+    # r.jina.ai markdown fallback: 링크/판매처/가격/배송 표 이후 본문에서 첫 markdown 이미지를 고른다.
+    marker = re.search(r'\|\s*배송(?:비/직배)?[^\n]*\n', detail_html, re.I)
     body_text = detail_html[marker.end():] if marker else detail_html
     for md_m in re.finditer(r'!\[[^\]]*\]\((https?://[^\)\s]+)', body_text):
         candidate = normalize_image_url(md_m.group(1))
