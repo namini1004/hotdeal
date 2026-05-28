@@ -2,6 +2,7 @@
 import base64
 import html
 import json
+import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -78,12 +79,72 @@ def parse_post_stats(detail: str) -> tuple[int, int]:
     return views, comments
 
 
+def extract_body_chunk(detail: str) -> str:
+    # 모바일 본문은 id=KH_Content 영역에 들어간다. 중첩 div 때문에 단순 non-greedy div 매칭 대신
+    # 본문 시작점부터 하단 추천/댓글 영역 전까지 잘라 쓴다.
+    start_m = re.search(r'<div[^>]+id=["\']KH_Content["\'][^>]*>', detail, re.I)
+    if not start_m:
+        body_m = re.search(r'<div[^>]+class=["\'][^"\']*cont[^"\']*["\'][^>]*>[\s\S]*?</div>', detail, re.I)
+        return body_m.group(0) if body_m else detail
+
+    chunk = detail[start_m.start():]
+    end_m = re.search(
+        r'<(?:div|section|ul)[^>]+(?:class|id)=["\'][^"\']*(?:bbs_view_bottom|comment|reply|recommend|bottom_btn)[^"\']*["\']',
+        chunk,
+        re.I,
+    )
+    return chunk[:end_m.start()] if end_m else chunk
+
+
+def normalize_image_url(src: str) -> str:
+    src = html.unescape(src or '').strip()
+    if not src:
+        return ''
+    if src.startswith('//'):
+        return 'https:' + src
+    return urljoin(BASE, src)
+
+
+def is_body_image_candidate(src: str) -> bool:
+    src_l = (src or '').lower()
+    if not src_l.startswith('http'):
+        return False
+    blocked = [
+        'logo',
+        'blank.',
+        'transparent.',
+        'noimage',
+        'no_image',
+        'btn_',
+        'icon',
+        'emoticon',
+        'avatar',
+        'profile',
+        '/images/main/',
+        '/images/menu/',
+        '/images/common/',
+    ]
+    return not any(token in src_l for token in blocked)
+
+
+def extract_body_image(detail: str) -> str:
+    """뽐딜 대표 이미지는 og:image/목록 이미지보다 본문(KH_Content)의 첫 실제 이미지를 우선한다."""
+    chunk = extract_body_chunk(detail)
+    chunk = re.sub(r'<script[\s\S]*?</script>', ' ', chunk, flags=re.I)
+    chunk = re.sub(r'<style[\s\S]*?</style>', ' ', chunk, flags=re.I)
+    for img_m in re.finditer(r'<img\b[^>]*>', chunk, re.I):
+        tag = img_m.group(0)
+        src_m = re.search(r'(?:data-original|data-src|src)=["\']([^"\']+)', tag, re.I)
+        if not src_m:
+            continue
+        candidate = normalize_image_url(src_m.group(1))
+        if is_body_image_candidate(candidate):
+            return candidate
+    return ''
+
+
 def extract_body_text(detail: str) -> str:
-    # 모바일 본문은 id=KH_Content 영역에 들어간다.
-    body_m = re.search(r'<div[^>]+id="KH_Content"[^>]*>[\s\S]*?</div>', detail, re.I)
-    if not body_m:
-        body_m = re.search(r'<div[^>]+class="[^\"]*cont[^\"]*"[^>]*>[\s\S]*?</div>', detail, re.I)
-    chunk = body_m.group(0) if body_m else detail
+    chunk = extract_body_chunk(detail)
 
     # 본문에 섞여 들어오는 script/style 제거
     chunk = re.sub(r'<script[\s\S]*?</script>', ' ', chunk, flags=re.I)
@@ -184,6 +245,8 @@ def parse_items():
         og_desc = pick(r'<meta property="og:description" content="([^"]*)"', detail)
         body_desc = extract_body_text(detail)
         og_img = pick(r'<meta property="og:image" content="([^"]*)"', detail) or img
+        body_img = extract_body_image(detail)
+        representative_img = body_img or og_img
 
         dt = parse_registered_at(detail)
         date_label = dt.strftime('%Y-%m-%d') if dt else ""
@@ -225,7 +288,7 @@ def parse_items():
             "comments": comments,
             "category": category,
             "desc": body_desc or og_desc or "",
-            "img": og_img,
+            "img": representative_img,
             "buyLink": buy_link,
             "sourceLink": href,
             "source": "ppomppu",
@@ -290,13 +353,16 @@ def cache_thumbnails(data):
         nid = m.group(1) if m else it.get('id', 'x')
 
         local_rel = ''
+        existing_rel = ''
         for ext in ['.jpg', '.png', '.webp', '.gif']:
             p = THUMB_DIR / f'{nid}{ext}'
             if p.exists():
-                local_rel = f'assets/ppomppu_thumbs/{nid}{ext}'
+                existing_rel = f'assets/ppomppu_thumbs/{nid}{ext}'
                 break
 
-        if not local_rel and src.startswith('http'):
+        # 본문 첫 이미지 추출 로직이 바뀐 뒤 기존 og/list 썸네일 캐시가 남아 있으면
+        # 계속 오래된 이미지가 보이므로, 원격 본문 이미지가 있으면 우선 재다운로드한다.
+        if src.startswith('http'):
             try:
                 r = s.get(src, timeout=15)
                 if r.status_code == 200 and len(r.content) > 500:
@@ -307,6 +373,8 @@ def cache_thumbnails(data):
             except Exception:
                 pass
 
+        if not local_rel:
+            local_rel = existing_rel
         if local_rel:
             it['img'] = local_rel
         src_map[it.get('sourceLink')] = it
@@ -320,7 +388,11 @@ def cache_thumbnails(data):
 
 def main():
     new_data = parse_items()
-    cache_thumbnails(new_data)
+    # Supabase/GitHub Actions 운영에서는 15분마다 웹 배포를 하지 않으므로 새 로컬 썸네일 경로를
+    # JSON에 쓰면 운영 화면에서 파일이 없을 수 있다. 기본은 본문 원격 이미지 URL을 유지하고,
+    # 정적 배포용 로컬 캐시가 필요할 때만 CACHE_PPOMPPU_THUMBS=1로 켠다.
+    if (os.environ.get('CACHE_PPOMPPU_THUMBS') or '').strip() == '1':
+        cache_thumbnails(new_data)
 
     old = None
     if JSON_PATH.exists():

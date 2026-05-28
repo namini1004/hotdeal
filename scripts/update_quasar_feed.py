@@ -79,6 +79,60 @@ def normalize_source_link(raw_link: str) -> str:
     return f"{scheme}://{parsed.netloc}{parsed.path}"
 
 
+def normalize_image_url(src: str) -> str:
+    src = html.unescape(src or '').strip()
+    if not src:
+        return ''
+    if src.startswith('//'):
+        return 'https:' + src
+    return urljoin(BASE, src)
+
+
+def is_body_image_candidate(src: str) -> bool:
+    src_l = (src or '').lower()
+    if not src_l.startswith('http'):
+        return False
+    blocked = [
+        'thumb_no_image',
+        'no_image',
+        '/assets/images/',
+        '/level/',
+        '/store/',
+        'emoticon',
+        'avatar',
+        'profile',
+        'blank.',
+        'transparent.',
+    ]
+    return not any(token in src_l for token in blocked)
+
+
+def extract_body_image_from_detail(detail_html: str) -> str:
+    """퀘딜 대표 이미지는 목록 썸네일/기본 이미지가 아니라 상세 본문 첫 이미지로 고정한다."""
+    # 1) 원본 HTML: 가격/배송 메타 뒤 실제 본문은 textarea#org_contents 안에 보관된다.
+    body_m = re.search(r'<textarea[^>]*id="org_contents"[^>]*>([\s\S]*?)</textarea>', detail_html, re.I)
+    if body_m:
+        body_html = html.unescape(body_m.group(1))
+        for img_m in re.finditer(r'<img\b[^>]*>', body_html, re.I):
+            tag = img_m.group(0)
+            src_m = re.search(r'(?:data-src|data-original|src)=[\"\']([^\"\']+)', tag, re.I)
+            if not src_m:
+                continue
+            candidate = normalize_image_url(src_m.group(1))
+            if is_body_image_candidate(candidate):
+                return candidate
+
+    # 2) r.jina.ai markdown fallback: 가격/배송 표 이후 본문에서 첫 markdown 이미지를 고른다.
+    marker = re.search(r'\|\s*배송[^\n]*\n', detail_html, re.I)
+    body_text = detail_html[marker.end():] if marker else detail_html
+    for md_m in re.finditer(r'!\[[^\]]*\]\((https?://[^\)\s]+)', body_text):
+        candidate = normalize_image_url(md_m.group(1))
+        if is_body_image_candidate(candidate):
+            return candidate
+
+    return ''
+
+
 def extract_buy_link_from_detail(detail_html: str) -> str:
     # 0) r.jina.ai 마크다운 렌더: 상세 표의 링크 행
     m = re.search(r'\|\s*링크[\s\S]*?\|\s*\[(https?://[^\]\s]+)\]\(', detail_html, re.I)
@@ -375,8 +429,11 @@ def main():
                     if not extract_buy_link_from_detail(detail_html) and not re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}', detail_html):
                         detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
                 real_link = extract_buy_link_from_detail(detail_html)
+                body_img = extract_body_image_from_detail(detail_html)
                 row["buyLink"] = real_link or row["sourceLink"]
                 row["desc"] = extract_body_text_from_detail(detail_html)
+                if body_img:
+                    row["img"] = body_img
                 if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:
                     row["buyLink"] = row["sourceLink"]
             except Exception:
