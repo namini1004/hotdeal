@@ -34,6 +34,7 @@ TRACKED_FIELDS = [
     "price",
     "category",
     "img",
+    "detail_img",
     "area",
     "dist",
     "time",
@@ -45,7 +46,9 @@ TRACKED_FIELDS = [
 
 IMAGE_BUCKET = os.environ.get("SUPABASE_IMAGE_BUCKET", "deal-images").strip() or "deal-images"
 THUMBNAIL_MAX_SIZE = int(os.environ.get("MIRROR_THUMBNAIL_MAX_SIZE", "320"))
+DETAIL_IMAGE_MAX_SIZE = int(os.environ.get("MIRROR_DETAIL_IMAGE_MAX_SIZE", "480"))
 THUMBNAIL_WEBP_QUALITY = int(os.environ.get("MIRROR_THUMBNAIL_WEBP_QUALITY", "75"))
+DETAIL_IMAGE_WEBP_QUALITY = int(os.environ.get("MIRROR_DETAIL_IMAGE_WEBP_QUALITY", "82"))
 IMAGE_HEADERS_BY_SOURCE = {
     "ppomppu": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
@@ -85,6 +88,7 @@ def normalize(item: Dict) -> Dict:
         "price": str(item.get("price") or "").strip(),
         "category": str(item.get("category") or "기타").strip(),
         "img": str(item.get("img") or "").strip(),
+        "detail_img": str(item.get("detailImg") or item.get("detail_img") or "").strip(),
         "area": str(item.get("area") or "뽐뿌 핫딜").strip(),
         "dist": str(item.get("dist") or "기타").strip(),
         "time": str(item.get("time") or item.get("date") or "").strip(),
@@ -125,8 +129,12 @@ def decode_proxy_image_url(src: str) -> str:
     return raw
 
 
-def is_reusable_storage_webp(img: str, source: str, supabase_url: str) -> bool:
+def is_reusable_storage_webp(img: str, source: str, supabase_url: str, variant: str = "") -> bool:
     prefix = f"{storage_public_prefix(supabase_url)}{source}/"
+    if variant:
+        prefix = f"{prefix}"
+        if f"-{variant}-" not in str(img or ""):
+            return False
     return str(img or "").startswith(prefix) and urlparse(str(img)).path.lower().endswith(".webp")
 
 
@@ -153,7 +161,7 @@ def is_blocked_image_candidate(source: str, src: str) -> bool:
     return any(token in src_l for token in blocked_tokens)
 
 
-def make_webp_thumbnail(content: bytes) -> bytes:
+def make_webp_image(content: bytes, max_size: int, quality: Optional[int] = None) -> bytes:
     image = Image.open(io.BytesIO(content))
     image = ImageOps.exif_transpose(image)
     if image.mode == "RGBA":
@@ -162,10 +170,14 @@ def make_webp_thumbnail(content: bytes) -> bytes:
         image = background
     else:
         image = image.convert("RGB")
-    image.thumbnail((THUMBNAIL_MAX_SIZE, THUMBNAIL_MAX_SIZE), Image.Resampling.LANCZOS)
+    image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
     out = io.BytesIO()
-    image.save(out, format="WEBP", quality=THUMBNAIL_WEBP_QUALITY, method=6)
+    image.save(out, format="WEBP", quality=quality if quality is not None else THUMBNAIL_WEBP_QUALITY, method=6)
     return out.getvalue()
+
+
+def make_webp_thumbnail(content: bytes) -> bytes:
+    return make_webp_image(content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY)
 
 
 def ensure_public_image_bucket(supabase_url: str, service_key: str):
@@ -195,21 +207,23 @@ def ensure_public_image_bucket(supabase_url: str, service_key: str):
     _bucket_ready = True
 
 
-def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, service_key: str) -> str:
-    """뽐딜/루딜 원본 이미지를 320px WebP 썸네일로 변환해 Supabase Storage에 저장한다."""
+def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, service_key: str) -> Dict[str, str]:
+    """뽐딜/루딜 원본 이미지를 목록용 320px와 상세용 480px WebP로 저장한다."""
     source = str(row.get("source") or "").strip()
     src = decode_proxy_image_url(row.get("img") or "")
     if source not in IMAGE_HEADERS_BY_SOURCE:
-        return str(row.get("img") or "").strip()
+        raw_img = str(row.get("img") or "").strip()
+        return {"img": raw_img, "detail_img": str(row.get("detail_img") or raw_img).strip()}
     if is_blocked_image_candidate(source, src):
-        return ""
+        return {"img": "", "detail_img": ""}
     if is_reusable_storage_webp(src, source, supabase_url):
-        return src
+        return {"img": src, "detail_img": str(row.get("detail_img") or src).strip()}
 
     prev_img = str((prev or {}).get("img") or "").strip()
-    if is_reusable_storage_webp(prev_img, source, supabase_url):
+    prev_detail_img = str((prev or {}).get("detail_img") or "").strip()
+    if is_reusable_storage_webp(prev_img, source, supabase_url, "thumb") and is_reusable_storage_webp(prev_detail_img, source, supabase_url, "detail"):
         # 같은 게시글은 기존 WebP 썸네일을 재사용해 원본 CDN 재요청을 최소화한다.
-        return prev_img
+        return {"img": prev_img, "detail_img": prev_detail_img}
 
     ensure_public_image_bucket(supabase_url, service_key)
     res = requests.get(src, headers=IMAGE_HEADERS_BY_SOURCE[source], timeout=25)
@@ -224,11 +238,12 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
     if len(res.content) > MAX_MIRROR_IMAGE_BYTES:
         raise RuntimeError(f"{source} image too large ({len(res.content)} bytes)")
 
-    thumbnail = make_webp_thumbnail(res.content)
+    variants = {
+        "thumb": make_webp_image(res.content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY),
+        "detail": make_webp_image(res.content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY),
+    }
     digest = hashlib.sha1(src.encode("utf-8")).hexdigest()[:12]
     row_id = row_id_from_source_link(source, row.get("source_link") or "")
-    object_path = f"{source}/{row_id}-{digest}.webp"
-    upload_url = f"{supabase_url}/storage/v1/object/{IMAGE_BUCKET}/{object_path}"
     upload_headers = {
         "apikey": service_key,
         "Authorization": f"Bearer {service_key}",
@@ -236,11 +251,16 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
         "Cache-Control": "31536000",
         "x-upsert": "true",
     }
-    upload_res = requests.post(upload_url, headers=upload_headers, data=thumbnail, timeout=60)
-    if not upload_res.ok:
-        raise RuntimeError(f"Supabase image upload failed ({upload_res.status_code}): {upload_res.text}")
+    public_urls = {}
+    for variant, body in variants.items():
+        object_path = f"{source}/{row_id}-{variant}-{digest}.webp"
+        upload_url = f"{supabase_url}/storage/v1/object/{IMAGE_BUCKET}/{object_path}"
+        upload_res = requests.post(upload_url, headers=upload_headers, data=body, timeout=60)
+        if not upload_res.ok:
+            raise RuntimeError(f"Supabase image upload failed ({upload_res.status_code}): {upload_res.text}")
+        public_urls[variant] = f"{storage_public_prefix(supabase_url)}{object_path}"
 
-    return f"{storage_public_prefix(supabase_url)}{object_path}"
+    return {"img": public_urls["thumb"], "detail_img": public_urls["detail"]}
 
 
 def mirror_feed_images(rows: List[Dict], existing_map: Dict[str, Dict], supabase_url: str, service_key: str):
@@ -249,7 +269,9 @@ def mirror_feed_images(rows: List[Dict], existing_map: Dict[str, Dict], supabase
             continue
         key = f"{row['source']}::{row['source_link']}"
         try:
-            row["img"] = mirror_feed_image(row, existing_map.get(key), supabase_url, service_key)
+            mirrored = mirror_feed_image(row, existing_map.get(key), supabase_url, service_key)
+            row["img"] = mirrored.get("img", "")
+            row["detail_img"] = mirrored.get("detail_img", row["img"])
         except Exception as exc:
             # 이미지 미러링 실패가 피드 전체 갱신 실패로 번지지 않게 기존/원본 URL을 유지한다.
             print(f"WARN_IMAGE_MIRROR_SKIP source={row.get('source')} source_link={row.get('source_link')} reason={exc}")
@@ -263,7 +285,7 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
     }
     endpoint = (
         f"{supabase_url}/rest/v1/deals"
-        "?select=source,source_link,buy_link,title,desc,price,category,img,area,dist,time,views,comments,date,registered_at,updated_at,deleted_at"
+        "?select=source,source_link,buy_link,title,desc,price,category,img,detail_img,area,dist,time,views,comments,date,registered_at,updated_at,deleted_at"
         "&source=neq.user"
     )
 

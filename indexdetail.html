@@ -150,6 +150,7 @@
         price: item.price || '-',
         desc: item.desc ?? '',
         img: item.img || 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&w=1400&q=80',
+        detailImg: item.detailImg || item.detail_img || item.img || '',
         buyLink: item.buyLink || '',
         sourceLink: item.sourceLink || '',
         date: item.date || '',
@@ -299,6 +300,45 @@
       }
     }
 
+    function sameImageUrl(a, b){
+      const left = String(a || '').trim();
+      const right = String(b || '').trim();
+      if(!left || !right) return left === right;
+      try{
+        return new URL(left, location.origin).href === new URL(right, location.origin).href;
+      }catch(_){
+        return left === right;
+      }
+    }
+
+    function applyProgressiveDetailImage(imgEl, item){
+      const thumbUrl = optimizeImageUrl(item.img);
+      const detailUrl = optimizeImageUrl(item.detailImg || item.detail_img || item.img);
+      imgEl.src = thumbUrl;
+      imgEl.alt = item.title;
+      imgEl.dataset.webpRetried = '0';
+      imgEl.onerror = () => {
+        const next = makeJpegFallbackUrl(imgEl.src);
+        if(imgEl.dataset.webpRetried !== '1' && next){
+          imgEl.dataset.webpRetried = '1';
+          imgEl.src = next;
+          return;
+        }
+        imgEl.onerror = null;
+        imgEl.src = FALLBACK_IMAGE;
+      };
+
+      if(!detailUrl || sameImageUrl(thumbUrl, detailUrl)) return;
+      const highRes = new Image();
+      highRes.onload = () => {
+        if(currentItem && String(currentItem.id || '') === String(item.id || '')){
+          imgEl.dataset.webpRetried = '0';
+          imgEl.src = detailUrl;
+        }
+      };
+      highRes.src = detailUrl;
+    }
+
     function getCachedItems(){
       return dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]);
     }
@@ -315,19 +355,7 @@
       document.getElementById('price').textContent = item.price;
       document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.relativeTime || item.time || '날짜 없음'}`;
       const imgEl = document.getElementById('img');
-      imgEl.src = optimizeImageUrl(item.img);
-      imgEl.alt = item.title;
-      imgEl.dataset.webpRetried = '0';
-      imgEl.onerror = () => {
-        const next = makeJpegFallbackUrl(imgEl.src);
-        if(imgEl.dataset.webpRetried !== '1' && next){
-          imgEl.dataset.webpRetried = '1';
-          imgEl.src = next;
-          return;
-        }
-        imgEl.onerror = null;
-        imgEl.src = FALLBACK_IMAGE;
-      };
+      applyProgressiveDetailImage(imgEl, item);
       document.getElementById('desc').innerHTML = renderRichText(item.desc);
 
       if(item.sourceLink || item.buyLink){
@@ -351,6 +379,7 @@
         a.price || '',
         a.desc || '',
         a.img || '',
+        a.detailImg || a.detail_img || '',
         a.views || 0,
         a.comments || 0,
         a.updatedAt || a.registeredAt || a.date || ''
@@ -359,6 +388,7 @@
         b.price || '',
         b.desc || '',
         b.img || '',
+        b.detailImg || b.detail_img || '',
         b.views || 0,
         b.comments || 0,
         b.updatedAt || b.registeredAt || b.date || ''
