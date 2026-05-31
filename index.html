@@ -389,14 +389,16 @@
       }
       const readKeys = getReadKeys();
       const showReadHighlight = isReadHighlightEnabled();
-      list.innerHTML = items.map(item => {
+      list.innerHTML = items.map((item, idx) => {
         const dealKey = getDealKey(item);
         const viewedClass = (showReadHighlight && readKeys.has(dealKey)) ? 'viewed' : '';
         const favBadge = isFavorited(item) ? '<span class="fav-badge" aria-label="찜됨">♥</span>' : '';
+        const imageLoading = idx < 4 ? 'eager' : 'lazy';
+        const imageFetchPriority = idx === 0 ? 'high' : 'auto';
         return `
         <a class="item ${viewedClass}" data-key="${dealKey}" href="indexdetail.html?id=${encodeURIComponent(item.id)}">
           <div class="thumb-wrap">
-            <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
+            <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="${imageLoading}" decoding="async" fetchpriority="${imageFetchPriority}" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
             ${favBadge}
           </div>
           <div>

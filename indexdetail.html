@@ -95,7 +95,7 @@
 <body>
   <div class="app">
     <section class="hero">
-      <img id="img" alt="상품 이미지">
+      <img id="img" alt="상품 이미지" decoding="async" fetchpriority="high">
       <div class="hero-fav-badge" id="heroFavBadge" aria-hidden="true">♥</div>
       <div class="topbtns">
         <a class="icon-link" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
@@ -123,7 +123,7 @@
         </svg>
       </button>
       <a id="sourceBottom" class="cta-btn source-bottom" href="#" target="_blank" rel="noopener">원본보기</a>
-      <a id="buyBottom" class="cta-btn buy-bottom" href="#" target="_blank" rel="noopener">가지고싶다</a>
+      <a id="buyBottom" class="cta-btn buy-bottom" href="#" target="_blank" rel="noopener">사러가기</a>
     </div>
   </div>
 
@@ -313,6 +313,13 @@
       return String(text || '');
     }
 
+    function shouldUseSingleSourceCta(item){
+      if(!item) return true;
+      if(item.source === 'ruliweb') return true;
+      if(!item.buyLink) return true;
+      return Boolean(item.sourceLink && item.buyLink === item.sourceLink);
+    }
+
     function renderItem(item){
       document.title = item?.title ? `${item.title} - 가지딜` : '가지딜 - 핫딜 상세';
       document.getElementById('title').textContent = item.title;
@@ -334,17 +341,27 @@
       };
       document.getElementById('desc').innerHTML = renderRichText(item.desc);
 
+      const sourceBottom = document.getElementById('sourceBottom');
+      const buyBottom = document.getElementById('buyBottom');
+      const buyBottomWrap = document.getElementById('buyBottomWrap');
+      buyBottomWrap.style.display = 'none';
+      sourceBottom.style.gridColumn = '';
+      sourceBottom.textContent = '원본보기';
+      buyBottom.textContent = '사러가기';
+      buyBottom.style.display = 'flex';
+      sourceBottom.href = '#';
+      buyBottom.href = '#';
+
       if(item.sourceLink || item.buyLink){
-        const sourceBottom = document.getElementById('sourceBottom');
-        const buyBottom = document.getElementById('buyBottom');
+        const singleSourceCta = shouldUseSingleSourceCta(item);
         sourceBottom.href = item.sourceLink || item.buyLink || '#';
-        buyBottom.href = item.buyLink || item.sourceLink || '#';
-
-        buyBottom.style.display = 'flex';
-        sourceBottom.style.gridColumn = '';
-        sourceBottom.textContent = '원본보기';
-
-        document.getElementById('buyBottomWrap').style.display = 'block';
+        if(singleSourceCta){
+          sourceBottom.style.gridColumn = '2 / 4';
+          buyBottom.style.display = 'none';
+        }else{
+          buyBottom.href = item.buyLink;
+        }
+        buyBottomWrap.style.display = 'block';
       }
     }
 
