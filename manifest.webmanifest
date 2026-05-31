@@ -1,0 +1,41 @@
+{
+  "name": "가지딜 - 커뮤니티 핫딜 모아보기",
+  "short_name": "가지딜",
+  "description": "뽐딜, 퀘딜, 펨딜, 루딜과 가지딜을 한곳에서 빠르게 확인하세요.",
+  "lang": "ko-KR",
+  "start_url": "/index.html?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "categories": ["shopping", "news", "utilities"],
+  "icons": [
+    {
+      "src": "/assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "핫딜 보기",
+      "short_name": "핫딜",
+      "url": "/index.html",
+      "icons": [{ "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "가지딜 쓰기",
+      "short_name": "글쓰기",
+      "url": "/indexcreate.html",
+      "icons": [{ "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "키워드 알림",
+      "short_name": "알림",
+      "url": "/keywords.html",
+      "icons": [{ "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

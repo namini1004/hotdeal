@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
   <link rel="shortcut icon" href="/assets/favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="가지딜" />
   <title>가지딜 - 핫딜 상세</title>
   <meta name="description" content="커뮤니티 핫딜과 특가 정보를 가지에서 빠르게 확인하세요." />
   <meta name="robots" content="index,follow" />
@@ -267,6 +271,30 @@
       const set = getFavoriteKeys();
       if(on) set.add(key); else set.delete(key);
       localStorage.setItem(favoriteStorageKey(), JSON.stringify([...set]));
+    }
+
+    async function loadRemoteFavorites(){
+      if(!currentUser) return;
+      try{
+        const res = await fetch(`${DEALS_API}?action=favorites&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(!res.ok) return;
+        const data = await res.json();
+        if(Array.isArray(data.keys)){
+          localStorage.setItem(favoriteStorageKey(), JSON.stringify(data.keys));
+        }
+      }catch(_){ }
+    }
+
+    async function syncFavorite(item, on){
+      const key = getDealKey(item);
+      if(!key) return;
+      const res = await fetch(`${DEALS_API}?action=favorite`, {
+        method: on ? 'POST' : 'DELETE',
+        credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ dealKey: key })
+      });
+      if(!res.ok) throw new Error('favorite sync failed');
     }
 
     function refreshFavoriteUI(){
@@ -546,6 +574,7 @@
 
     async function init(){
       await loadMe();
+      await loadRemoteFavorites();
       const id = new URLSearchParams(location.search).get('id');
       const cachedItems = getCachedItems();
       let item = cachedItems.find(v => String(v.id) === String(id)) || null;
@@ -614,9 +643,24 @@
       const next = !isFavorited(currentItem);
       setFavorited(currentItem, next);
       refreshFavoriteUI();
-      showToast(next ? '찜했어요.' : '찜을 해제했어요.');
+      try{
+        await syncFavorite(currentItem, next);
+        showToast(next ? '찜했어요.' : '찜을 해제했어요.');
+      }catch(_){
+        setFavorited(currentItem, !next);
+        refreshFavoriteUI();
+        showToast('찜 저장에 실패했습니다. 다시 시도해주세요.');
+      }
     });
     init();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(() => undefined);
+      });
+    }
   </script>
 </body>
 </html>

@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
   <link rel="shortcut icon" href="/assets/favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="가지딜" />
   <title>가지딜 - 커뮤니티 핫딜 모아보기</title>
   <meta name="description" content="뽐딜, 퀘딜, 펨딜, 루딜과 가지딜을 한곳에서 빠르게 확인하세요." />
   <meta name="robots" content="index,follow" />
@@ -858,6 +862,14 @@
     window.addEventListener('beforeunload', saveListScrollState);
 
     init();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(() => undefined);
+      });
+    }
   </script>
 </body>
 </html>

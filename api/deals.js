@@ -42,6 +42,50 @@ function filterBySince(items, since) {
   });
 }
 
+function getSessionUserId(sessionUser) {
+  return String(sessionUser?.id || sessionUser?.email || '').trim();
+}
+
+function normalizeDealKey(raw = '') {
+  return String(raw || '').trim().slice(0, 512);
+}
+
+async function handleFavoriteRequest(req, res) {
+  const sessionUser = readSession(req);
+  const userId = getSessionUserId(sessionUser);
+  if (!userId) return json(res, 401, { error: 'login required' });
+
+  if (req.method === 'GET') {
+    const rows = await supabaseRequest(
+      `favorite_deals?user_id=eq.${encodeURIComponent(userId)}&select=deal_key&order=created_at.desc`,
+    );
+    return json(res, 200, { keys: (rows || []).map((row) => row.deal_key).filter(Boolean) });
+  }
+
+  const dealKey = normalizeDealKey(req.body?.dealKey || req.body?.deal_key || '');
+  if (!dealKey) return json(res, 400, { error: 'dealKey is required' });
+
+  if (req.method === 'POST') {
+    await supabaseRequest('favorite_deals?on_conflict=user_id,deal_key', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify([{ user_id: userId, deal_key: dealKey }]),
+    });
+    return json(res, 200, { ok: true, favorited: true });
+  }
+
+  if (req.method === 'DELETE') {
+    await supabaseRequest(
+      `favorite_deals?user_id=eq.${encodeURIComponent(userId)}&deal_key=eq.${encodeURIComponent(dealKey)}`,
+      { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
+    );
+    return json(res, 200, { ok: true, favorited: false });
+  }
+
+  res.setHeader('Allow', 'GET, POST, DELETE');
+  return json(res, 405, { error: 'Method not allowed' });
+}
+
 async function handleItemRequest(req, res, id) {
   if (!id) return json(res, 400, { error: 'id is required' });
 
@@ -93,6 +137,8 @@ module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
       const url = new URL(req.url, 'http://localhost');
+      const action = url.searchParams.get('action') || req.query?.action || '';
+      if (action === 'favorites') return handleFavoriteRequest(req, res);
       const id = url.searchParams.get('id') || req.query?.id || '';
       if (id) return handleItemRequest(req, res, id);
 
@@ -129,11 +175,17 @@ module.exports = async (req, res) => {
 
     if (req.method === 'PATCH' || req.method === 'DELETE') {
       const url = new URL(req.url, 'http://localhost');
+      const action = url.searchParams.get('action') || req.query?.action || '';
+      if (action === 'favorite') return handleFavoriteRequest(req, res);
       const id = url.searchParams.get('id') || req.query?.id || '';
       return handleItemRequest(req, res, id);
     }
 
     if (req.method === 'POST') {
+      const url = new URL(req.url, 'http://localhost');
+      const action = url.searchParams.get('action') || req.query?.action || '';
+      if (action === 'favorite') return handleFavoriteRequest(req, res);
+
       const sessionUser = readSession(req);
       if (!sessionUser) return json(res, 401, { error: 'login required' });
 
