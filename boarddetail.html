@@ -92,11 +92,28 @@
     const FALLBACK_IMAGE = 'assets/gaji-eggplant.jpg';
     let currentPost = null;
 
+    function normalizeBoardCategory(value){
+      return ['tips', 'mydeals'].includes(String(value || '').trim()) ? String(value || '').trim() : 'tips';
+    }
+
+    function getBoardCategoryFromBody(body){
+      return String(body || '').match(/^<!--gaji-category:(tips|mydeals)-->/)?.[1] || 'tips';
+    }
+
+    function stripBoardCategoryMarker(body){
+      return String(body || '').replace(/^<!--gaji-category:(tips|mydeals)-->/, '').replace(/^\n+/, '');
+    }
+
+    function getCategoryLabel(category){
+      return normalizeBoardCategory(category) === 'mydeals' ? '내가올린 핫딜' : '여러 가지 팁';
+    }
+
     function normalizePosts(posts){
       return (posts || []).map((post, idx) => ({
         id: String(post.id || `local-${idx}`),
         title: post.title || '제목 없음',
-        body: post.body || '',
+        body: stripBoardCategoryMarker(post.body || ''),
+        category: normalizeBoardCategory(post.category || getBoardCategoryFromBody(post.body)),
         img: post.img || '',
         author: post.author || '익명',
         views: Number(post.views || 0),
@@ -135,7 +152,7 @@
     function renderPost(post){
       currentPost = post;
       document.getElementById('title').textContent = post.title || '제목 없음';
-      document.getElementById('meta').textContent = `${post.author || '익명'} · ${formatTime(post.createdAt)}`;
+      document.getElementById('meta').textContent = `${getCategoryLabel(post.category)} · ${post.author || '익명'} · ${formatTime(post.createdAt)}`;
       document.getElementById('body').innerHTML = renderRichText(post.body || '');
       document.getElementById('img').src = post.img || FALLBACK_IMAGE;
     }

@@ -23,18 +23,16 @@ module.exports = async (req, res) => {
 
       const payload = mapBoardPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });
-      if (!req.body?.author) {
-        let nickname = '';
-        if (sessionUser) {
-          try {
-            const profile = await getNicknameProfile(sessionUser);
-            nickname = profile?.nickname || '';
-          } catch (_) {
-            nickname = '';
-          }
+      let nickname = '';
+      if (sessionUser) {
+        try {
+          const profile = await getNicknameProfile(sessionUser);
+          nickname = profile?.nickname || '';
+        } catch (_) {
+          nickname = '';
         }
-        payload.author = nickname || sessionUser?.name || '익명';
       }
+      payload.author = nickname || sessionUser?.name || payload.author || '익명';
       const now = new Date().toISOString();
       const rows = await supabaseRequest('board_posts', {
         method: 'POST',

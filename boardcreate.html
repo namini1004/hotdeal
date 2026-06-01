@@ -24,7 +24,8 @@
     .field{border-top:1px solid var(--line);padding:14px 0}
     .field:first-of-type{border-top:none;padding-top:0}
     label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
-    input,textarea{width:100%;border:none;outline:none;font:inherit;font-size:16px;color:#111;background:#fff}
+    input,textarea,select{width:100%;border:none;outline:none;font:inherit;font-size:16px;color:#111;background:#fff}
+    select{height:44px;appearance:none;background:linear-gradient(45deg,transparent 50%,#8b95a1 50%),linear-gradient(135deg,#8b95a1 50%,transparent 50%);background-position:calc(100% - 18px) 18px,calc(100% - 12px) 18px;background-size:6px 6px,6px 6px;background-repeat:no-repeat;padding-right:34px}
     textarea{min-height:180px;line-height:1.65;resize:none}
     .hint{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
     .photo{border:1px solid #e3e7ec;border-radius:12px;width:96px;height:96px;display:grid;place-items:center;color:#7c3aed;font-size:13px;font-weight:700;margin-bottom:16px;background:var(--bg);cursor:pointer;overflow:hidden;text-align:center}
@@ -47,6 +48,14 @@
     </header>
 
     <form class="wrap" id="form">
+      <div class="field">
+        <label for="category">게시판</label>
+        <select id="category" required>
+          <option value="tips">여러 가지 팁</option>
+          <option value="mydeals">내가올린 핫딜</option>
+        </select>
+      </div>
+
       <button class="photo" id="photoButton" type="button">
         <span class="photo-text"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span><span>사진 첨부</span></span>
         <img class="photo-preview" id="photoPreview" alt="첨부한 사진 미리보기">
@@ -78,11 +87,24 @@
     let previewImage = '';
     let editPost = null;
 
+    function normalizeBoardCategory(value){
+      return ['tips', 'mydeals'].includes(String(value || '').trim()) ? String(value || '').trim() : 'tips';
+    }
+
+    function getBoardCategoryFromBody(body){
+      return String(body || '').match(/^<!--gaji-category:(tips|mydeals)-->/)?.[1] || 'tips';
+    }
+
+    function stripBoardCategoryMarker(body){
+      return String(body || '').replace(/^<!--gaji-category:(tips|mydeals)-->/, '').replace(/^\n+/, '');
+    }
+
     function normalizePosts(posts){
       return (posts || []).map((post, idx) => ({
         id: String(post.id || `local-${idx}`),
         title: post.title || '제목 없음',
-        body: post.body || '',
+        body: stripBoardCategoryMarker(post.body || ''),
+        category: normalizeBoardCategory(post.category || getBoardCategoryFromBody(post.body)),
         img: post.img || '',
         sourceLink: post.sourceLink || '',
         author: post.author || '익명',
@@ -114,6 +136,7 @@
       document.querySelector('.title').textContent = '게시글 편집';
       document.querySelector('.submit').textContent = '수정 완료';
       document.getElementById('title').value = post.title || '';
+      document.getElementById('category').value = normalizeBoardCategory(post.category);
       document.getElementById('body').value = post.body || '';
       if(post.img){
         previewImage = post.img;
@@ -226,6 +249,7 @@
       const canWrite = await ensureLoggedIn();
       if(!canWrite) return;
       const title = document.getElementById('title').value.trim();
+      const category = normalizeBoardCategory(document.getElementById('category').value);
       const body = document.getElementById('body').value.trim();
       if(!title) return;
 
@@ -247,10 +271,11 @@
         ...(editPost || {}),
         id: editPost?.id || `local-${Date.now()}`,
         title,
+        category,
         body,
         img,
         sourceLink:'',
-        author: editPost?.author || '익명',
+        author: editPost?.author,
         createdAt: editPost?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -280,6 +305,7 @@
       }
     });
     async function init(){
+      document.getElementById('category').value = normalizeBoardCategory(new URLSearchParams(location.search).get('category'));
       const canWrite = await ensureLoggedIn();
       if(!canWrite) return;
       await loadEditPost();

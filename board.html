@@ -27,6 +27,9 @@
     .search-wrap{display:none;margin-top:10px}
     .search-wrap.show{display:block}
     .search-input{width:100%;height:42px;border:1px solid #d9dde3;border-radius:10px;padding:0 12px;font-size:14px;outline:none}
+    .board-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 16px 8px;background:#fff;position:sticky;top:73px;z-index:4;border-bottom:1px solid var(--line)}
+    .board-tab{height:42px;border:1px solid var(--line);border-radius:999px;background:#fff;color:#6b7280;font-size:14px;font-weight:900;letter-spacing:-.015em;cursor:pointer}
+    .board-tab.active{border-color:rgba(var(--brand-rgb),.2);background:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(var(--brand-rgb),.18)}
     .list{padding:0 16px}
     .post{display:grid;grid-template-columns:82px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
     .thumb{width:82px;height:82px;border-radius:12px;object-fit:cover;background:#f3f4f6}
@@ -114,6 +117,10 @@
     </header>
 
     <section class="view active" id="listView">
+      <nav class="board-tabs" aria-label="게시판 구분">
+        <button class="board-tab active" type="button" data-category="tips">여러 가지 팁</button>
+        <button class="board-tab" type="button" data-category="mydeals">내가올린 핫딜</button>
+      </nav>
       <main class="list" id="list"></main>
       <button class="fab" id="writeBtn" type="button" aria-label="글쓰기"><span class="fab-plus" aria-hidden="true">+</span><span class="fab-text">글쓰기</span></button>
     </section>
@@ -169,13 +176,38 @@
     const LINK_PREVIEW_API = '/api/link-preview';
     const STORAGE_KEY = 'gaji_board_posts_v1';
     const FALLBACK_IMAGE = 'assets/gaji-eggplant.jpg';
-    let state = { posts: [], keyword: '', selectedImage: '', previewImage: '', previewUrl: '' };
+    let state = { posts: [], keyword: '', category: 'tips', selectedImage: '', previewImage: '', previewUrl: '' };
+
+    function normalizeBoardCategory(value){
+      return ['tips', 'mydeals'].includes(String(value || '').trim()) ? String(value || '').trim() : 'tips';
+    }
+
+    function getBoardCategoryFromBody(body){
+      return String(body || '').match(/^<!--gaji-category:(tips|mydeals)-->/)?.[1] || 'tips';
+    }
+
+    function stripBoardCategoryMarker(body){
+      return String(body || '').replace(/^<!--gaji-category:(tips|mydeals)-->/, '').replace(/^\n+/, '');
+    }
+
+    function getCategoryLabel(category){
+      return normalizeBoardCategory(category) === 'mydeals' ? '내가올린 핫딜' : '여러 가지 팁';
+    }
+
+    function syncCategoryTabs(){
+      document.querySelectorAll('.board-tab').forEach(tab => {
+        const active = tab.dataset.category === state.category;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    }
 
     function normalizePosts(posts){
       return (posts || []).map((post, idx) => ({
         id: String(post.id || `local-${idx}`),
         title: post.title || '제목 없음',
-        body: post.body || '',
+        body: stripBoardCategoryMarker(post.body || ''),
+        category: normalizeBoardCategory(post.category || getBoardCategoryFromBody(post.body)),
         img: post.img || '',
         author: post.author || '익명',
         views: Number(post.views || 0),
@@ -235,15 +267,18 @@
 
     function getFilteredPosts(){
       const kw = state.keyword.trim().toLowerCase();
-      if(!kw) return state.posts;
-      return state.posts.filter(post => `${post.title} ${post.body}`.toLowerCase().includes(kw));
+      return state.posts.filter(post => {
+        if(normalizeBoardCategory(post.category) !== state.category) return false;
+        if(!kw) return true;
+        return `${post.title} ${post.body} ${post.author}`.toLowerCase().includes(kw);
+      });
     }
 
     function renderList(){
       const list = document.getElementById('list');
       const posts = getFilteredPosts();
       if(!posts.length){
-        list.innerHTML = '<div class="empty-list">아직 게시글이 없습니다.<br>첫 글을 남겨보세요.</div>';
+        list.innerHTML = `<div class="empty-list">${getCategoryLabel(state.category)} 게시글이 없습니다.<br>첫 글을 남겨보세요.</div>`;
         return;
       }
       list.innerHTML = posts.map(post => `
@@ -252,7 +287,7 @@
           <div>
             <div class="post-title">${escapeHtml(post.title)}</div>
             <div class="excerpt">${renderExcerpt(post.body || '내용 없음')}</div>
-            <div class="meta">${escapeHtml(post.author)} · ${formatTime(post.createdAt)}</div>
+            <div class="meta">${getCategoryLabel(post.category)} · ${escapeHtml(post.author)} · ${formatTime(post.createdAt)}</div>
           </div>
         </a>
       `).join('');
@@ -429,7 +464,7 @@
           img = state.selectedImage || state.previewImage;
         }
 
-        const post = { id:`local-${Date.now()}`, title, body, img, sourceLink, author:'익명', createdAt:new Date().toISOString() };
+        const post = { id:`local-${Date.now()}`, title, body, category:state.category, img, sourceLink, createdAt:new Date().toISOString() };
         try{
           const res = await fetch(BOARD_API, {
             method:'POST',
@@ -493,7 +528,17 @@
       document.getElementById('writeBtn').addEventListener('click', async () => {
         const ok = await ensureLoggedInForWrite();
         if(!ok) return;
-        location.href = 'boardcreate.html';
+        location.href = `boardcreate.html?category=${encodeURIComponent(state.category)}`;
+      });
+      document.querySelectorAll('.board-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          state.category = normalizeBoardCategory(tab.dataset.category);
+          const params = new URLSearchParams(location.search);
+          params.set('category', state.category);
+          history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+          syncCategoryTabs();
+          renderList();
+        });
       });
       document.getElementById('searchToggle').addEventListener('click', () => {
         const wrap = document.getElementById('searchWrap');
@@ -510,6 +555,8 @@
       bindForm();
       bindListControls();
       const params = new URLSearchParams(location.search);
+      state.category = normalizeBoardCategory(params.get('category'));
+      syncCategoryTabs();
       const id = params.get('id');
       if(id){
         location.replace(`boarddetail.html?id=${encodeURIComponent(id)}`);
