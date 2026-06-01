@@ -255,6 +255,16 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizePosts(posts)));
     }
 
+    function mergePosts(primary = [], secondary = []){
+      const seen = new Set();
+      return normalizePosts([...primary, ...secondary]).filter(post => {
+        const key = String(post.id || '');
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
     function formatTime(value){
       return window.TimeFormat?.toRelativeKorean(value) || '';
     }
@@ -325,10 +335,11 @@
       state.posts = local;
       renderList();
       try{
-        const res = await fetch(BOARD_API, { cache:'no-store' });
+        const res = await fetch(`${BOARD_API}?_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
         if(!res.ok) throw new Error('api failed');
         const data = await res.json();
-        state.posts = normalizePosts(data.items || []);
+        const remote = normalizePosts(data.items || []);
+        state.posts = mergePosts(remote, local);
         saveLocalPosts(state.posts);
         renderList();
       }catch(_){
