@@ -512,6 +512,8 @@
         const favBadge = isFavorited(item) ? '<span class="fav-badge" aria-label="찜됨">♥</span>' : '';
         const imageLoading = idx < 4 ? 'eager' : 'lazy';
         const imageFetchPriority = idx === 0 ? 'high' : 'auto';
+        const timeText = state.activeTab === 'pick' ? '' : (item.relativeTime || item.time || '');
+        const metaTime = timeText ? `<span>${timeText}</span>` : '';
         return `
         <a class="item ${viewedClass}" data-key="${dealKey}" href="indexdetail.html?id=${encodeURIComponent(item.id)}">
           <div class="thumb-wrap">
@@ -521,10 +523,10 @@
           <div class="item-body">
             <div class="item-main-row">
               <div class="item-title">${item.title}</div>
-              <div class="meta-list-time">${(item.relativeTime || item.time || '')}</div>
+              <div class="meta-list-time">${timeText}</div>
               <div class="temperature temp-inline" style="color:${temperatureColor(item.temperature)}"><span class="temp-info-btn" role="button" tabindex="0" data-temp="${Math.max(0, Math.min(100, Number(item.temperature || 0)))}" aria-label="가지온도 설명 보기">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</span></div>
             </div>
-            <div class="meta"><span>${item.area}</span><span>${item.dist}</span><span>${(item.relativeTime || item.time || '')}</span></div>
+            <div class="meta"><span>${item.area}</span><span>${item.dist}</span>${metaTime}</div>
             <div class="stats-row">
               <div class="stats">조회 ${formatCount(item.views)} · 댓글 ${formatCount(item.comments)}</div>
               <div class="temperature temp-stats" style="color:${temperatureColor(item.temperature)}"><span class="temp-info-btn" role="button" tabindex="0" data-temp="${Math.max(0, Math.min(100, Number(item.temperature || 0)))}" aria-label="가지온도 설명 보기">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</span></div>

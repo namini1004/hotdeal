@@ -16,7 +16,7 @@
     *{box-sizing:border-box}
     body{margin:0;background:var(--page);color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
     a{color:inherit}
-    .shell{width:min(1120px,100%);min-height:100vh;margin:0 auto;padding:22px 18px 102px}
+    .shell{width:min(1120px,100%);min-height:100vh;margin:0 auto;padding:22px 18px 56px}
     .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
     .brandmark{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:950;letter-spacing:-.04em;font-size:24px}
     .brand-icon{width:38px;height:38px;border-radius:14px;background:linear-gradient(145deg,#8b5cf6,#5b21b6);display:grid;place-items:center;box-shadow:0 12px 28px rgba(124,58,237,.28)}
@@ -54,8 +54,7 @@
     .menu-left{display:flex;align-items:center;gap:12px;min-width:0}.menu-icon{width:44px;height:44px;border-radius:16px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-deep);font-size:20px;font-weight:950;flex:0 0 auto}.menu-icon.profile-menu-avatar{object-fit:cover;background:#fff}.menu-copy{min-width:0}
     .fav-card-title,.nickname-card-name{font-size:16px;font-weight:950;letter-spacing:-.02em}.nickname-card-label{font-size:11px;color:#9aa2b1;font-weight:850;letter-spacing:-.01em}.fav-card-desc,.nickname-card-help{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.42}.fav-card-arrow{font-size:24px;color:#a6adba;font-weight:900}
     .setting-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px}.read-toggle-label{font-size:14px;font-weight:900;color:#374151;letter-spacing:-.01em}.read-toggle-help{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.42}.switch{position:relative;width:48px;height:30px;display:inline-block;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:999px;transition:.2s}.slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.switch input:checked + .slider{background:var(--brand)}.switch input:checked + .slider:before{transform:translateX(18px)}
-    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:68px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.96);border-top:1px solid #ececf1;box-shadow:0 -12px 28px rgba(17,24,39,.06);z-index:20}.bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(3,1fr)}.nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:750}.nav-tab.active{color:#111827;font-weight:950}.nav-tab .nav-ico{font-size:22px}.nav-tab .nav-eggplant{width:23px;height:23px}
-    @media (min-width:768px){.shell{padding:28px 28px 56px}.desktop-nav{display:flex}.bottom-nav{display:none}.topbar{margin-bottom:22px}.profile-chip{height:36px;max-width:154px;border:1px solid var(--line);padding-right:11px}.profile-avatar{width:28px;height:28px}.layout{grid-template-columns:minmax(340px,420px) minmax(0,1fr);align-items:start}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-card,.menu-card,.setting-card{border-radius:26px}.account-card{position:sticky;top:28px;min-height:242px;padding:28px}.menu-card,.setting-card{min-height:116px;padding:18px}}
+    @media (min-width:768px){.shell{padding:28px 28px 56px}.desktop-nav{display:flex}.topbar{margin-bottom:22px}.profile-chip{height:36px;max-width:154px;border:1px solid var(--line);padding-right:11px}.profile-avatar{width:28px;height:28px}.layout{grid-template-columns:minmax(340px,420px) minmax(0,1fr);align-items:start}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-card,.menu-card,.setting-card{border-radius:26px}.account-card{position:sticky;top:28px;min-height:242px;padding:28px}.menu-card,.setting-card{min-height:116px;padding:18px}}
   </style>
 </head>
 <body>
@@ -161,14 +160,6 @@
       </section>
     </main>
   </div>
-
-  <nav class="bottom-nav" aria-label="하단 네비게이션">
-    <div class="bottom-nav-row">
-      <a class="nav-tab" href="index.html"><span class="nav-ico">⌂</span><span>홈</span></a>
-      <a class="nav-tab" href="gajigaji.html"><img class="nav-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
-      <a class="nav-tab active" href="my-gaji.html" aria-current="page"><span class="nav-ico">●</span><span>내 가지</span></a>
-    </div>
-  </nav>
 
   <script src="assets/anonymous-identity.js?v=20260607"></script>
   <div class="nick-modal-backdrop" id="nickModal" role="dialog" aria-modal="true" aria-labelledby="nickModalTitle">
