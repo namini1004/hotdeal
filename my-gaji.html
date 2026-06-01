@@ -22,10 +22,14 @@
     .brand-icon{width:38px;height:38px;border-radius:14px;background:linear-gradient(145deg,#8b5cf6,#5b21b6);display:grid;place-items:center;box-shadow:0 12px 28px rgba(124,58,237,.28)}
     .brand-icon img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.16))}
     .brand-word{color:var(--brand);letter-spacing:-.08em}.title-rest{color:var(--ink);letter-spacing:-.045em;margin-left:1px}
+    .top-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
     .desktop-nav{display:none;align-items:center;gap:8px;padding:6px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.76);box-shadow:0 10px 30px rgba(42,25,82,.05)}
     .desktop-nav a{height:38px;display:flex;align-items:center;gap:7px;padding:0 14px;border-radius:999px;color:#667085;text-decoration:none;font-size:13px;font-weight:850;letter-spacing:-.01em}
     .desktop-nav a.active{background:var(--brand);color:#fff;box-shadow:0 10px 24px rgba(124,58,237,.22)}
     .nav-ico{font-size:16px;line-height:1}.nav-eggplant{width:17px;height:17px;display:block}
+    .profile-chip{height:34px;max-width:128px;display:flex;align-items:center;gap:7px;border:none;border-radius:999px;background:#fff;color:#2d2438;padding:0 9px 0 4px;cursor:pointer;box-shadow:0 8px 22px rgba(42,25,82,.06)}
+    .profile-avatar{width:26px;height:26px;border-radius:999px;display:block;object-fit:cover;flex:0 0 auto}.profile-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:900;letter-spacing:-.02em}
+    .nick-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);display:none;place-items:center;z-index:80;padding:18px}.nick-modal-backdrop.show{display:grid}.nick-modal{width:min(320px,100%);background:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 18px 60px rgba(17,24,39,.24);text-align:center}.nick-modal-title{font-size:17px;font-weight:950;letter-spacing:-.03em}.nick-modal-body{margin-top:8px;color:#667085;font-size:14px;line-height:1.45}.nick-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.nick-modal-btn{height:44px;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer}.nick-modal-btn.cancel{background:#f4f6f8;color:#374151}.nick-modal-btn.confirm{background:var(--brand);color:#fff}
     .layout{display:grid;gap:14px}
     .account-card,.menu-card,.setting-card{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:0 12px 34px rgba(42,25,82,.055)}
     .account-card{min-height:242px;padding:24px;background:linear-gradient(135deg,#7c3aed 0%,#4c1d95 100%);color:#fff;border:none;box-shadow:0 22px 54px rgba(76,29,149,.28);display:flex;flex-direction:column;justify-content:center}
@@ -47,11 +51,11 @@
     .panel.loading #loggedIn,.panel.loading #accountActions{display:none!important}
     .menu-grid{display:grid;gap:10px}
     .menu-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px;text-decoration:none;color:inherit}
-    .menu-left{display:flex;align-items:center;gap:12px;min-width:0}.menu-icon{width:44px;height:44px;border-radius:16px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-deep);font-size:20px;font-weight:950;flex:0 0 auto}.menu-copy{min-width:0}
+    .menu-left{display:flex;align-items:center;gap:12px;min-width:0}.menu-icon{width:44px;height:44px;border-radius:16px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-deep);font-size:20px;font-weight:950;flex:0 0 auto}.menu-icon.profile-menu-avatar{object-fit:cover;background:#fff}.menu-copy{min-width:0}
     .fav-card-title,.nickname-card-name{font-size:16px;font-weight:950;letter-spacing:-.02em}.nickname-card-label{font-size:11px;color:#9aa2b1;font-weight:850;letter-spacing:-.01em}.fav-card-desc,.nickname-card-help{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.42}.fav-card-arrow{font-size:24px;color:#a6adba;font-weight:900}
     .setting-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px}.read-toggle-label{font-size:14px;font-weight:900;color:#374151;letter-spacing:-.01em}.read-toggle-help{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.42}.switch{position:relative;width:48px;height:30px;display:inline-block;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:999px;transition:.2s}.slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.switch input:checked + .slider{background:var(--brand)}.switch input:checked + .slider:before{transform:translateX(18px)}
     .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:68px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.96);border-top:1px solid #ececf1;box-shadow:0 -12px 28px rgba(17,24,39,.06);z-index:20}.bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(3,1fr)}.nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:750}.nav-tab.active{color:#111827;font-weight:950}.nav-tab .nav-ico{font-size:22px}.nav-tab .nav-eggplant{width:23px;height:23px}
-    @media (min-width:768px){.shell{padding:28px 28px 56px}.desktop-nav{display:flex}.bottom-nav{display:none}.topbar{margin-bottom:22px}.layout{grid-template-columns:minmax(340px,420px) minmax(0,1fr);align-items:start}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-card,.menu-card,.setting-card{border-radius:26px}.account-card{position:sticky;top:28px;min-height:242px;padding:28px}.menu-card,.setting-card{min-height:116px;padding:18px}}
+    @media (min-width:768px){.shell{padding:28px 28px 56px}.desktop-nav{display:flex}.bottom-nav{display:none}.topbar{margin-bottom:22px}.profile-chip{height:36px;max-width:154px;border:1px solid var(--line);padding-right:11px}.profile-avatar{width:28px;height:28px}.layout{grid-template-columns:minmax(340px,420px) minmax(0,1fr);align-items:start}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-card,.menu-card,.setting-card{border-radius:26px}.account-card{position:sticky;top:28px;min-height:242px;padding:28px}.menu-card,.setting-card{min-height:116px;padding:18px}}
   </style>
 </head>
 <body>
@@ -61,10 +65,16 @@
         <span class="brand-icon"><img src="assets/gaji-eggplant-transparent.png" alt="" aria-hidden="true"></span>
         <span><span class="brand-word">가지</span><span class="title-rest">고 싶다</span></span>
       </a>
-      <nav class="desktop-nav" aria-label="주요 메뉴">
-        <a href="index.html"><span class="nav-ico">⌂</span><span>홈</span></a>
-        <a href="gajigaji.html"><img class="nav-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
-      </nav>
+      <div class="top-actions">
+        <nav class="desktop-nav" aria-label="주요 메뉴">
+          <a href="index.html"><span class="nav-ico">⌂</span><span>홈</span></a>
+          <a href="gajigaji.html"><img class="nav-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
+        </nav>
+        <button class="profile-chip" id="profileChip" type="button" aria-label="닉네임 변경">
+          <img class="profile-avatar" id="profileAvatar" alt="" aria-hidden="true">
+          <span class="profile-name" id="profileName"></span>
+        </button>
+      </div>
     </header>
 
     <main class="layout">
@@ -103,7 +113,7 @@
       <section class="menu-grid" aria-label="내 가지 메뉴">
         <a class="menu-card" id="nicknameCard" href="nickname.html" aria-label="닉네임 설정">
           <div class="menu-left">
-            <span class="menu-icon">가</span>
+            <img class="menu-icon profile-menu-avatar" id="nicknameCardAvatar" alt="" aria-hidden="true">
             <div class="menu-copy">
               <div class="nickname-card-label">닉네임 설정</div>
               <div class="nickname-card-name" id="nicknameCardDesc">현재 닉네임</div>
@@ -160,7 +170,17 @@
     </div>
   </nav>
 
-  <script src="assets/anonymous-identity.js?v=20260604"></script>
+  <script src="assets/anonymous-identity.js?v=20260605"></script>
+  <div class="nick-modal-backdrop" id="nickModal" role="dialog" aria-modal="true" aria-labelledby="nickModalTitle">
+    <div class="nick-modal">
+      <div class="nick-modal-title" id="nickModalTitle">닉네임을 변경할까요?</div>
+      <div class="nick-modal-body">내 가지의 닉네임 설정 화면으로 이동합니다.</div>
+      <div class="nick-modal-actions">
+        <button class="nick-modal-btn cancel" id="nickCancel" type="button">취소</button>
+        <button class="nick-modal-btn confirm" id="nickConfirm" type="button">확인</button>
+      </div>
+    </div>
+  </div>
   <script>
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const READ_HIGHLIGHT_TOGGLE_KEY = 'hotdeal_read_highlight_enabled_v1';
@@ -215,23 +235,51 @@
       document.getElementById('avatarFallback').style.display = 'grid';
     }
 
+    function nicknameForDisplay(user = loadCachedUser()){
+      return user?.nickname || window.GajiIdentity?.getNickname?.() || '익명 가지';
+    }
+
+    function updateNicknameSurfaces(user = loadCachedUser()){
+      const nickname = nicknameForDisplay(user);
+      const avatarUrl = window.GajiIdentity?.getAvatarUrl?.(nickname) || '';
+      const profileName = document.getElementById('profileName');
+      const profileAvatar = document.getElementById('profileAvatar');
+      const nicknameDesc = document.getElementById('nicknameCardDesc');
+      const nicknameAvatar = document.getElementById('nicknameCardAvatar');
+      if(profileName) profileName.textContent = nickname;
+      if(profileAvatar) profileAvatar.src = avatarUrl;
+      if(nicknameDesc) nicknameDesc.textContent = nickname;
+      if(nicknameAvatar) nicknameAvatar.src = avatarUrl;
+    }
+
+    function accountDisplayName(user){
+      if(!user || user.anonymous) return 'Google 계정';
+      const nickname = String(user.nickname || '').trim();
+      const name = String(user.name || '').trim();
+      if(name && name !== nickname) return name;
+      const emailName = String(user.email || '').split('@')[0].trim();
+      return emailName || 'Google 사용자';
+    }
+
     function renderLoggedOut(){
       loggedOut.style.display = 'block';
       loggedIn.style.display = 'none';
       accountActions.style.display = 'none';
       clearAvatar();
       try{ localStorage.removeItem(USER_CACHE_KEY); }catch(_){ }
+      updateNicknameSurfaces(window.GajiIdentity?.getUser?.());
     }
 
     function renderLoggedIn(user){
       if(!user) return renderLoggedOut();
       loggedOut.style.display = user.anonymous ? 'block' : 'none';
-      loggedIn.style.display = 'flex';
+      loggedIn.style.display = user.anonymous ? 'none' : 'flex';
       accountActions.style.display = user.anonymous ? 'none' : 'grid';
-      document.getElementById('userName').textContent = user.name || '사용자';
+      const displayName = accountDisplayName(user);
+      document.getElementById('userName').textContent = displayName;
       document.getElementById('userEmail').textContent = user.email || '';
       document.getElementById('userProvider').textContent = user.anonymous ? '익명 기기 인증' : (user.provider === 'google' ? 'Google 로그인' : '로그인됨');
-      const fallbackText = (user.name || user.email || '가').trim().charAt(0) || '가';
+      const fallbackText = (displayName || user.email || 'G').trim().charAt(0) || 'G';
       document.getElementById('avatarFallback').textContent = fallbackText;
       if(user.avatar){
         const img = document.getElementById('avatarImg');
@@ -241,9 +289,8 @@
       }else{
         clearAvatar();
       }
-      const desc = document.getElementById('nicknameCardDesc');
-      if(desc) desc.textContent = user.nickname || '현재 닉네임';
       try{ localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)); }catch(_){ }
+      updateNicknameSurfaces(user);
     }
 
     function loadCachedUser(){
@@ -307,6 +354,20 @@
       });
     }
 
+    function bindProfileChip(){
+      const chip = document.getElementById('profileChip');
+      const modal = document.getElementById('nickModal');
+      const cancel = document.getElementById('nickCancel');
+      const confirm = document.getElementById('nickConfirm');
+      updateNicknameSurfaces(loadCachedUser() || window.GajiIdentity?.getUser?.());
+      chip?.addEventListener('click', () => modal?.classList.add('show'));
+      cancel?.addEventListener('click', () => modal?.classList.remove('show'));
+      modal?.addEventListener('click', (event) => {
+        if(event.target === modal) modal.classList.remove('show');
+      });
+      confirm?.addEventListener('click', () => { location.href = 'nickname.html'; });
+    }
+
     const cachedUser = loadCachedUser();
     if(cachedUser){
       renderLoggedIn(cachedUser);
@@ -315,6 +376,7 @@
 
     loadConfig();
     initReadHighlightToggle();
+    bindProfileChip();
     bindKeywordLoginGate();
     loadMe();
   </script>
