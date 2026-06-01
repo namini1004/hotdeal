@@ -101,6 +101,8 @@ def is_body_image_candidate(src: str) -> bool:
         '/assets/images/',
         '/level/',
         '/store/',
+        '/homepage/real/themes/',
+        'util_bt_',
         'emoticon',
         'avatar',
         'profile',
@@ -110,30 +112,107 @@ def is_body_image_candidate(src: str) -> bool:
     return not any(token in src_l for token in blocked)
 
 
+def parse_int(value: str):
+    m = re.search(r'(\d{1,5})', str(value or ''))
+    return int(m.group(1)) if m else None
+
+
+def image_size_from_tag(tag: str):
+    width = height = None
+    for attr in ('width', 'data-width'):
+        m = re.search(rf'\b{attr}=[\"\']?([^\"\'\s>]+)', tag, re.I)
+        if m:
+            width = parse_int(m.group(1))
+            break
+    for attr in ('height', 'data-height'):
+        m = re.search(rf'\b{attr}=[\"\']?([^\"\'\s>]+)', tag, re.I)
+        if m:
+            height = parse_int(m.group(1))
+            break
+
+    style_m = re.search(r'\bstyle=[\"\']([^\"\']+)', tag, re.I)
+    if style_m:
+        style = style_m.group(1)
+        width_m = re.search(r'\bwidth\s*:\s*([^;]+)', style, re.I)
+        height_m = re.search(r'\bheight\s*:\s*([^;]+)', style, re.I)
+        if width_m and not width:
+            width = parse_int(width_m.group(1))
+        if height_m and not height:
+            height = parse_int(height_m.group(1))
+    return width, height
+
+
+def image_size_from_url(src: str):
+    text = html.unescape(src or '')
+    patterns = [
+        r'(?<!\d)(\d{2,4})[xX](\d{2,4})(?!\d)',
+        r'(?<!\d)(\d{2,4})_(\d{2,4})(?!\d)',
+        r'[?&](?:w|width)=(\d{2,4}).*?[?&](?:h|height)=(\d{2,4})',
+        r'[?&](?:h|height)=(\d{2,4}).*?[?&](?:w|width)=(\d{2,4})',
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, text, re.I)
+        if m:
+            return int(m.group(1)), int(m.group(2))
+    return None, None
+
+
+def is_too_small_image(tag: str, src: str) -> bool:
+    width, height = image_size_from_tag(tag)
+    url_width, url_height = image_size_from_url(src)
+    width = width or url_width
+    height = height or url_height
+    if width and width <= 100:
+        return True
+    if height and height <= 100:
+        return True
+    return False
+
+
 def get_img_src_from_tag(tag: str) -> str:
     """lazy 이미지에서 placeholder src보다 실제 data-* 원본을 우선한다."""
     for attr in ("data-src", "data-original", "data-url", "src"):
         m = re.search(rf'\b{attr}=[\"\']([^\"\']+)', tag, re.I)
         if m:
             candidate = normalize_image_url(m.group(1))
-            if is_body_image_candidate(candidate):
+            if is_body_image_candidate(candidate) and not is_too_small_image(tag, candidate):
                 return candidate
 
     srcset_m = re.search(r'\bsrcset=[\"\']([^\"\']+)', tag, re.I)
     if srcset_m:
         for part in srcset_m.group(1).split(','):
             candidate = normalize_image_url(part.strip().split()[0] if part.strip() else '')
-            if is_body_image_candidate(candidate):
+            if is_body_image_candidate(candidate) and not is_too_small_image(tag, candidate):
                 return candidate
 
     return ''
+
+
+def trim_to_after_price_area(body_html: str) -> str:
+    """상단 프로필/작성자 영역을 피하고 가격/배송 정보 뒤 본문 이미지부터 보게 한다."""
+    markers = [
+        r'>\s*가격\s*<',
+        r'>\s*배송(?:비|비/직배)?\s*<',
+        r'\|\s*가격\s+',
+        r'\|\s*배송(?:비|비/직배)?\s+',
+    ]
+    last_end = -1
+    for pattern in markers:
+        for m in re.finditer(pattern, body_html, re.I):
+            last_end = max(last_end, m.end())
+    if last_end < 0:
+        return body_html
+    close_m = re.search(r'(?:</tr>|</table>|</dl>|</ul>|</section>|</div>)', body_html[last_end:], re.I)
+    if close_m:
+        return body_html[last_end + close_m.end():]
+    return body_html[last_end:]
 
 
 def iter_detail_body_html(detail_html: str):
     """퀘이사 상세에서 가격/배송 표 이후의 실제 본문 영역 후보만 순서대로 반환한다."""
     # 1) 원본 HTML: 가격/배송 메타 뒤 실제 본문은 textarea#org_contents 안에 보관된다.
     for body_m in re.finditer(r'<textarea[^>]*\bid=[\"\']org_contents[\"\'][^>]*>([\s\S]*?)</textarea>', detail_html, re.I):
-        yield html.unescape(body_m.group(1))
+        yield trim_to_after_price_area(html.unescape(body_m.group(1)))
 
     # 2) 일부 렌더/개편 케이스: 본문 컨테이너 후보. 상단 판매처 로고/프로필 영역은 제외한다.
     container_patterns = [
@@ -142,7 +221,10 @@ def iter_detail_body_html(detail_html: str):
     ]
     for pattern in container_patterns:
         for body_m in re.finditer(pattern, detail_html, re.I):
-            yield html.unescape(body_m.group(1))
+            yield trim_to_after_price_area(html.unescape(body_m.group(1)))
+
+    # 3) 컨테이너 정규식이 중첩 div에서 짧게 끊기는 경우를 대비해 상세 전체도 가격/배송 이후만 fallback으로 본다.
+    yield trim_to_after_price_area(html.unescape(detail_html))
 
 
 def extract_body_image_from_detail(detail_html: str) -> str:
@@ -158,7 +240,7 @@ def extract_body_image_from_detail(detail_html: str) -> str:
     body_text = detail_html[marker.end():] if marker else detail_html
     for md_m in re.finditer(r'!\[[^\]]*\]\((https?://[^\)\s]+)', body_text):
         candidate = normalize_image_url(md_m.group(1))
-        if is_body_image_candidate(candidate):
+        if is_body_image_candidate(candidate) and not is_too_small_image('', candidate):
             return candidate
 
     return ''
@@ -316,8 +398,13 @@ def parse_list_items(page_html: str, seen=None):
         date_m = re.search(r'<span class="date">\s*([\s\S]*?)\s*</span>', row)
         time_text = clean(date_m.group(1)) if date_m else ''
 
+        img = ''
         img_m = re.search(r'<img[^>]+class="maxImg"[^>]+src="([^"]+)"', row)
-        img = clean(img_m.group(1)) if img_m else ''
+        if img_m:
+            img_tag = img_m.group(0)
+            candidate = normalize_image_url(img_m.group(1))
+            if is_body_image_candidate(candidate) and not is_too_small_image(img_tag, candidate):
+                img = candidate
 
         items.append(
             {
@@ -384,9 +471,10 @@ def parse_jina_list_items(markdown_text: str, seen=None):
         img_candidates = re.findall(r'!\[[^\]]*\]\((https?://[^\)]+)\)', line)
         img = ''
         for src in img_candidates:
-            if 'thumb_no_image.svg' in src or '/level/' in src or '/store/' in src:
+            candidate = normalize_image_url(src)
+            if not is_body_image_candidate(candidate) or is_too_small_image('', candidate):
                 continue
-            img = clean(src)
+            img = candidate
             break
 
         tail_m = re.search(r'\s([0-9.,]+k?)\s+(방금|조금 전|\d+분 전|\d+시간 전|\d{2}-\d{2})\s*\|?\s*$', line)
