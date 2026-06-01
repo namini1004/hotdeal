@@ -1,4 +1,5 @@
 const { readSession } = require('./_lib/auth');
+const { getActor } = require('./_lib/anonymous');
 const { normalizeBoardRow, supabaseRequest, mapBoardPayload } = require('./_lib/board');
 const { getNicknameProfile } = require('./_lib/nickname');
 
@@ -19,12 +20,12 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-      const sessionUser = readSession(req);
+      const sessionUser = getActor(req, req.body || {}, readSession(req));
 
       const payload = mapBoardPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });
       let nickname = '';
-      if (sessionUser) {
+      if (sessionUser && !sessionUser.anonymous) {
         try {
           const profile = await getNicknameProfile(sessionUser);
           nickname = profile?.nickname || '';

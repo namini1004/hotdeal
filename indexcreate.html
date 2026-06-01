@@ -123,6 +123,7 @@
   </div>
 
   <script src="assets/text-format.js"></script>
+  <script src="assets/anonymous-identity.js"></script>
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
@@ -370,20 +371,8 @@
     syncKeyboardUI();
 
     async function ensureLoggedIn(){
-      try{
-        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
-        if(res.ok){
-          const data = await res.json();
-          if(data?.user) return true;
-        }
-      }catch(_){ }
-      if(window.HotdealAndroid?.requireLogin){
-        window.HotdealAndroid.requireLogin();
-      }else{
-        alert('로그인하세요.');
-        location.href = 'my-gaji.html';
-      }
-      return false;
+      window.GajiIdentity?.getUser?.();
+      return true;
     }
 
     function setActiveCategory(category){

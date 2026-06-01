@@ -31,6 +31,7 @@
     <div class="top"><a class="back" href="my-gaji.html">←</a><div class="title">내가 찜한 가지</div></div>
     <div id="list"></div>
   </main>
+  <script src="assets/anonymous-identity.js"></script>
   <script>
     const STORAGE_KEY='hotdeal_items_v3';
     const USER_CACHE_KEY='gaji_auth_user_cache_v1';
@@ -52,8 +53,7 @@
         </a>`).join('');
     }
     async function init(){
-      const me = await loadMe();
-      if(!me){ document.getElementById('list').innerHTML='<div class="empty">로그인 후 이용해주세요.</div>'; return; }
+      const me = await loadMe() || window.GajiIdentity?.getUser?.();
       const remoteFav = await loadFavoriteKeys();
       const fav = remoteFav || getFavorites();
       let items = getItems();

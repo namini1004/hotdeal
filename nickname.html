@@ -36,6 +36,7 @@
     </section>
   </main>
 
+  <script src="assets/anonymous-identity.js"></script>
   <script>
     const input = document.getElementById('nicknameInput');
     const current = document.getElementById('current');
@@ -75,6 +76,7 @@
       setMsg('자동 생성 중...');
       try{
         const data = await callApi({ mode:'auto' });
+        if(window.GajiIdentity) window.GajiIdentity.setNickname(data.nickname || input.value);
         input.value = data.nickname || '';
         current.textContent = `현재 닉네임: ${data.nickname || '-'}`;
         setMsg('자동 생성 닉네임을 적용했어요.');
@@ -87,6 +89,7 @@
       setMsg('저장 중...');
       try{
         const data = await callApi({ mode:'manual', nickname });
+        if(window.GajiIdentity) window.GajiIdentity.setNickname(data.nickname || nickname);
         current.textContent = `현재 닉네임: ${data.nickname || nickname}`;
         setMsg('저장되었습니다.');
       }catch(err){ setMsg(toFriendlyMessage(err)); }

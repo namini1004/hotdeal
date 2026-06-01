@@ -50,6 +50,7 @@
     <section class="list" id="keywordList"></section>
   </main>
 
+  <script src="assets/anonymous-identity.js"></script>
   <script>
     const listEl = document.getElementById('keywordList');
     const inputEl = document.getElementById('termInput');
@@ -64,6 +65,25 @@
 
     function escapeHtml(v){
       return String(v||'').replace(/[&<>'"]/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[m]));
+    }
+
+    function goGoogleLogin(){
+      location.href = `/api/auth?action=start&provider=google&returnTo=${encodeURIComponent('keywords.html')}`;
+    }
+
+    async function ensureGoogleLogin(){
+      try{
+        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(res.ok){
+          const data = await res.json();
+          const user = data.user || null;
+          if(user && !user.anonymous && user.provider === 'google') return true;
+        }
+      }catch(_){ }
+      showStatus('관심 키워드 알림은 Google 로그인 후 사용할 수 있어요. 잠시 후 로그인으로 이동합니다.');
+      render([]);
+      setTimeout(goGoogleLogin, 700);
+      return false;
     }
 
     function render(items){
@@ -109,10 +129,12 @@
     }
 
     async function loadKeywords(){
+      if(!await ensureGoogleLogin()) return;
       const res = await fetch('/api/push/keywords', { credentials:'include', cache:'no-store' });
       if(res.status===401){
-        showStatus('로그인이 필요합니다. 내 가지에서 로그인해주세요.');
+        showStatus('관심 키워드 알림은 Google 로그인이 필요합니다.');
         render([]);
+        setTimeout(goGoogleLogin, 700);
         return;
       }
       if(!res.ok){
@@ -138,7 +160,8 @@
           body: JSON.stringify({ term, enabled:true })
         });
         if(res.status===401){
-          showStatus('로그인이 필요합니다. 내 가지에서 로그인해주세요.');
+          showStatus('관심 키워드 알림은 Google 로그인이 필요합니다.');
+          setTimeout(goGoogleLogin, 700);
           return;
         }
         if(!res.ok){

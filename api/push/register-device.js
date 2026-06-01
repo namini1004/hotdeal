@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { json, readSession } = require('../_lib/auth');
+const { getActor } = require('../_lib/anonymous');
 const { firestore } = require('../_lib/firebase-admin');
 
 function normalizeToken(value) {
@@ -13,9 +14,9 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const user = readSession(req);
-    if (!user || !user.provider || !user.providerId) {
-      return json(res, 401, { error: 'Unauthorized' });
+    const user = getActor(req, req.body || {}, readSession(req));
+    if (!user || !user.provider || !user.providerId || user.anonymous || user.provider !== 'google') {
+      return json(res, 401, { error: 'Google login required' });
     }
 
     const token = normalizeToken(req.body?.fcmToken);

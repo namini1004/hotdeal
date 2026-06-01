@@ -52,7 +52,7 @@
     .comments-panel{padding:16px;background:#fff;border-top:1px solid var(--line)}
     .comments-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
     .comments-title{font-size:18px;font-weight:950;letter-spacing:-.03em}.comments-count{color:var(--muted);font-size:13px;font-weight:850}
-    .comment-list{display:grid;gap:14px;padding-bottom:12px}.comment-item{display:grid;grid-template-columns:36px 1fr;gap:10px}.comment-avatar{width:36px;height:36px;border-radius:999px;background:#f3edff;color:#5b21b6;display:grid;place-items:center;font-size:13px;font-weight:950}.comment-main{min-width:0}.comment-meta{display:flex;align-items:center;gap:6px;color:#8b95a1;font-size:12px;font-weight:800}.comment-name{color:#4b5563;font-weight:950}.comment-body{margin-top:4px;color:#111827;font-size:14px;line-height:1.5;word-break:break-word;white-space:pre-wrap}.comment-empty{padding:20px 0;color:#8b95a1;font-size:14px;text-align:center}.comment-composer{position:sticky;bottom:78px;display:flex;align-items:center;gap:8px;padding:10px 0 0;background:#fff}.comment-input{flex:1;height:44px;border:1px solid #e5e7eb;border-radius:999px;background:#f4f4f5;padding:0 14px;font-size:14px;outline:none}.comment-input:focus{border-color:#d8c7ff;background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.08)}.comment-send{width:44px;height:44px;border:none;border-radius:999px;background:#ff0050;color:#fff;font-size:21px;font-weight:950;display:grid;place-items:center;cursor:pointer}.comment-send:disabled{opacity:.38;cursor:not-allowed}.comment-note{margin-top:8px;color:#9ca3af;font-size:11px;line-height:1.35}
+    .comment-list{display:grid;gap:14px;padding-bottom:12px}.comment-item{display:grid;grid-template-columns:36px 1fr;gap:10px}.comment-avatar{width:36px;height:36px;border-radius:999px;background:#f3edff;color:#5b21b6;display:grid;place-items:center;font-size:13px;font-weight:950;overflow:hidden}.comment-avatar img{width:100%;height:100%;display:block;object-fit:cover}.comment-main{min-width:0}.comment-meta{display:flex;align-items:center;gap:6px;color:#8b95a1;font-size:12px;font-weight:800}.comment-name{color:#4b5563;font-weight:950}.comment-body{margin-top:4px;color:#111827;font-size:14px;line-height:1.5;word-break:break-word;white-space:pre-wrap}.comment-empty{padding:20px 0;color:#8b95a1;font-size:14px;text-align:center}.comment-composer{--composer-avatar:none;position:sticky;bottom:78px;display:flex;align-items:center;gap:8px;padding:10px 0 0;background:#fff}.comment-composer:before{content:"";width:38px;height:38px;border-radius:999px;flex:0 0 auto;background:#f3edff var(--composer-avatar) center/cover no-repeat}.comment-input{flex:1;height:44px;border:1px solid #e5e7eb;border-radius:999px;background:#f4f4f5;padding:0 14px;font-size:14px;outline:none}.comment-input:focus{border-color:#d8c7ff;background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.08)}.comment-send{width:44px;height:44px;border:1px solid #eadfff;border-radius:999px;background:#fff;color:transparent;font-size:0;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,58,237,.1);position:relative}.comment-send:before{content:"";width:25px;height:25px;background:url("assets/gaji-outline.svg") center/contain no-repeat;display:block}.comment-send:disabled{opacity:.38;cursor:not-allowed}.comment-note{margin-top:8px;color:#9ca3af;font-size:11px;line-height:1.35}
     .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:30}
@@ -162,6 +162,7 @@
 
   <script src="assets/text-format.js"></script>
   <script src="assets/time-format.js"></script>
+  <script src="assets/anonymous-identity.js"></script>
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
@@ -510,6 +511,32 @@
       return String(text || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     }
 
+    function commentAvatarUrl(nickname){
+      const name = String(nickname || '가지').trim() || '가지';
+      let hash = 0;
+      for(let i = 0; i < name.length; i += 1){
+        hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+      }
+      const palettes = [
+        ['#f3edff','#7c3aed','#4c1d95'],
+        ['#eef2ff','#6366f1','#312e81'],
+        ['#ecfeff','#0891b2','#164e63'],
+        ['#f0fdf4','#16a34a','#14532d'],
+        ['#fff7ed','#ea580c','#7c2d12'],
+        ['#fdf2f8','#db2777','#831843']
+      ];
+      const [bg, mid, ink] = palettes[Math.abs(hash) % palettes.length];
+      const initial = escapeHtml(name.charAt(0));
+      const tilt = (Math.abs(hash) % 17) - 8;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><circle cx="66" cy="28" r="18" fill="${mid}" opacity=".18"/><circle cx="29" cy="72" r="24" fill="${mid}" opacity=".12"/><g transform="translate(48 49) rotate(${tilt})"><ellipse cx="0" cy="6" rx="16" ry="22" fill="${mid}"/><path d="M6-16c8-6 16-6 22-1-7 1-14 5-18 12" fill="${ink}"/></g><text x="48" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#fff">${initial}</text></svg>`;
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    }
+
+    function updateComposerAvatar(){
+      const form = document.getElementById('commentForm');
+      if(form) form.style.setProperty('--composer-avatar', `url("${commentAvatarUrl(getCommentNickname())}")`);
+    }
+
     function formatCommentTime(value){
       return window.TimeFormat?.toRelativeKorean(value) || '';
     }
@@ -521,16 +548,17 @@
       const note = document.getElementById('commentNicknameNote');
       if(count) count.textContent = normalized.length ? normalized.length.toLocaleString('ko-KR') : '0';
       if(note) note.textContent = `${getCommentNickname()} 닉네임으로 댓글이 등록됩니다. 변경은 내 가지에서 로그인 후 가능합니다.`;
+      updateComposerAvatar();
       if(!list) return;
       if(!normalized.length){
         list.innerHTML = '<div class="comment-empty">첫 댓글을 남겨보세요.</div>';
         return;
       }
       list.innerHTML = normalized.map(comment => {
-        const avatar = escapeHtml((comment.nickname || '가').trim().charAt(0) || '가');
+        const avatar = escapeHtml(commentAvatarUrl(comment.nickname));
         return `
           <article class="comment-item">
-            <div class="comment-avatar">${avatar}</div>
+            <div class="comment-avatar"><img src="${avatar}" alt="" aria-hidden="true"></div>
             <div class="comment-main">
               <div class="comment-meta"><span class="comment-name">${escapeHtml(comment.nickname)}</span><span>·</span><span>${escapeHtml(formatCommentTime(comment.createdAt))}</span></div>
               <div class="comment-body">${escapeHtml(comment.body)}</div>
@@ -639,7 +667,8 @@
         }
         return currentUser;
       }catch(_){
-        return null;
+        currentUser = window.GajiIdentity?.getUser?.() || null;
+        return currentUser;
       }
     }
 
@@ -808,8 +837,7 @@
         await loadMe();
       }
       if(!currentUser){
-        showToast('로그인한 사용자만 찜할 수 있어요.');
-        return;
+        currentUser = window.GajiIdentity?.getUser?.() || null;
       }
       const next = !isFavorited(currentItem);
       setFavorited(currentItem, next);

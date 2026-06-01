@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { readSession } = require('./_lib/auth');
+const { getActor, getActorId } = require('./_lib/anonymous');
 const { readFeedItems, normalizeUserRow, parseUserId, supabaseRequest, mapPayload } = require('./_lib/deals');
 const ingestHandler = require('./push/ingest');
 
@@ -100,8 +101,8 @@ async function handleCommentRequest(req, res) {
 }
 
 async function handleFavoriteRequest(req, res) {
-  const sessionUser = readSession(req);
-  const userId = getSessionUserId(sessionUser);
+  const actor = getActor(req, req.body || {}, readSession(req));
+  const userId = getActorId(actor) || getSessionUserId(actor);
   if (!userId) return json(res, 401, { error: 'login required' });
 
   if (req.method === 'GET') {
@@ -238,8 +239,8 @@ module.exports = async (req, res) => {
       if (action === 'favorite') return handleFavoriteRequest(req, res);
       if (action === 'comments') return handleCommentRequest(req, res);
 
-      const sessionUser = readSession(req);
-      if (!sessionUser) return json(res, 401, { error: 'login required' });
+      const actor = getActor(req, req.body || {}, readSession(req));
+      if (!actor) return json(res, 401, { error: 'identity required' });
 
       const payload = mapPayload(req.body || {});
       if (!payload.title) return json(res, 400, { error: 'title is required' });

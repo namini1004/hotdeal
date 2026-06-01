@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gaji-shell-v1';
+const CACHE_NAME = 'gaji-shell-v2';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
@@ -11,7 +11,8 @@ const SHELL_ASSETS = [
   '/assets/gaji-eggplant.jpg',
   '/assets/gaji-eggplant-transparent.png',
   '/assets/time-format.js',
-  '/assets/text-format.js'
+  '/assets/text-format.js',
+  '/assets/anonymous-identity.js'
 ];
 
 self.addEventListener('install', (event) => {

@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { json, readSession } = require('../_lib/auth');
+const { getActor } = require('../_lib/anonymous');
 const { firestore, firebaseDebugInfo } = require('../_lib/firebase-admin');
 
 function normalizeTerm(term) {
@@ -15,8 +16,10 @@ function makeIndexId(uid, termNormalized) {
 }
 
 module.exports = async (req, res) => {
-  const user = readSession(req);
-  if (!user || !user.provider || !user.providerId) return json(res, 401, { error: 'Unauthorized' });
+  const user = getActor(req, req.body || {}, readSession(req));
+  if (!user || !user.provider || !user.providerId || user.anonymous || user.provider !== 'google') {
+    return json(res, 401, { error: 'Google login required' });
+  }
 
   const uid = `${user.provider}:${user.providerId}`;
   const db = firestore();

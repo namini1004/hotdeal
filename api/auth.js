@@ -15,6 +15,7 @@ const {
   readSession,
 } = require('./_lib/auth');
 const { getNicknameProfile, assignUniqueAutoNickname } = require('./_lib/nickname');
+const { getAnonymousUser } = require('./_lib/anonymous');
 
 function actionFrom(req) {
   const url = new URL(req.url, getBaseUrl(req));
@@ -122,17 +123,21 @@ module.exports = async (req, res) => {
 
     if (action === 'me' && req.method === 'GET') {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-      const user = readSession(req);
+      const user = readSession(req) || getAnonymousUser(req);
       if (!user) return json(res, 200, { user: null });
       let nickname = '';
       try {
-        const profile = await getNicknameProfile(user);
-        nickname = profile?.nickname || '';
-        if (!nickname) {
+        if (user.anonymous) {
+          nickname = user.nickname || user.name || '';
+        } else {
+          const profile = await getNicknameProfile(user);
+          nickname = profile?.nickname || '';
+        }
+        if (!nickname && !user.anonymous) {
           nickname = await assignUniqueAutoNickname(user);
         }
       } catch (_) {
-        nickname = '';
+        nickname = user.nickname || '';
       }
       return json(res, 200, { user: { ...user, nickname } });
     }

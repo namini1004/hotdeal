@@ -26,10 +26,6 @@
     .desktop-nav a{height:38px;display:flex;align-items:center;gap:7px;padding:0 14px;border-radius:999px;color:#667085;text-decoration:none;font-size:13px;font-weight:850;letter-spacing:-.01em}
     .desktop-nav a.active{background:var(--brand);color:#fff;box-shadow:0 10px 24px rgba(124,58,237,.22)}
     .nav-ico{font-size:16px;line-height:1}.nav-eggplant{width:17px;height:17px;display:block}
-    .hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:30px;background:radial-gradient(circle at 78% 10%,rgba(124,58,237,.18),transparent 32%),linear-gradient(135deg,#fff 0%,#fbf9ff 52%,#f3edff 100%);box-shadow:var(--shadow);padding:26px;margin-bottom:14px}
-    .eyebrow{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:#fff;color:var(--brand-deep);font-size:12px;font-weight:950;box-shadow:0 8px 24px rgba(42,25,82,.08)}
-    .hero-content{position:relative;z-index:1}.hero h1{position:relative;margin:16px 0 8px;font-size:32px;line-height:1.15;letter-spacing:-.055em;max-width:620px}
-    .hero p{position:relative;margin:0;color:#596173;font-size:15px;line-height:1.62;letter-spacing:-.01em;max-width:620px}.hero-preview{display:none;background:rgba(255,255,255,.8);border:1px solid #eadfff;border-radius:24px;padding:16px;box-shadow:0 18px 42px rgba(42,25,82,.12);backdrop-filter:blur(10px)}.preview-title{font-size:13px;font-weight:950;color:var(--brand-deep);letter-spacing:-.01em}.preview-stat{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:13px;border-radius:18px;background:#fff}.preview-label{font-size:12px;color:var(--muted);font-weight:800}.preview-value{margin-top:3px;font-size:15px;font-weight:950}.preview-pill{padding:7px 10px;border-radius:999px;background:var(--brand-soft);color:var(--brand-deep);font-size:11px;font-weight:950;white-space:nowrap}
     .layout{display:grid;gap:14px}
     .account-card,.menu-card,.setting-card{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:0 12px 34px rgba(42,25,82,.055)}
     .account-card{min-height:242px;padding:24px;background:linear-gradient(135deg,#7c3aed 0%,#4c1d95 100%);color:#fff;border:none;box-shadow:0 22px 54px rgba(76,29,149,.28);display:flex;flex-direction:column;justify-content:center}
@@ -54,8 +50,8 @@
     .menu-left{display:flex;align-items:center;gap:12px;min-width:0}.menu-icon{width:44px;height:44px;border-radius:16px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-deep);font-size:20px;font-weight:950;flex:0 0 auto}.menu-copy{min-width:0}
     .fav-card-title,.nickname-card-name{font-size:16px;font-weight:950;letter-spacing:-.02em}.nickname-card-label{font-size:11px;color:#9aa2b1;font-weight:850;letter-spacing:-.01em}.fav-card-desc,.nickname-card-help{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.42}.fav-card-arrow{font-size:24px;color:#a6adba;font-weight:900}
     .setting-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px}.read-toggle-label{font-size:14px;font-weight:900;color:#374151;letter-spacing:-.01em}.read-toggle-help{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.42}.switch{position:relative;width:48px;height:30px;display:inline-block;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:999px;transition:.2s}.slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.switch input:checked + .slider{background:var(--brand)}.switch input:checked + .slider:before{transform:translateX(18px)}
-    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:68px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.96);border-top:1px solid #ececf1;box-shadow:0 -12px 28px rgba(17,24,39,.06);z-index:20}.bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(4,1fr)}.nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:750}.nav-tab.active{color:#111827;font-weight:950}.nav-tab .nav-ico{font-size:22px}.nav-tab .nav-eggplant{width:23px;height:23px}
-    @media (min-width:768px){.shell{padding:28px 28px 56px}.desktop-nav{display:flex}.bottom-nav{display:none}.topbar{margin-bottom:22px}.hero{display:grid;grid-template-columns:minmax(0,1.2fr) 330px;gap:26px;align-items:center;padding:38px;margin-bottom:18px}.hero h1{font-size:44px}.hero-preview{display:block}.layout{grid-template-columns:minmax(340px,420px) minmax(0,1fr);align-items:start}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-card,.menu-card,.setting-card{border-radius:26px}.account-card{position:sticky;top:28px;min-height:242px;padding:28px}.menu-card,.setting-card{min-height:116px;padding:18px}}
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:68px;padding-bottom:env(safe-area-inset-bottom);background:rgba(255,255,255,.96);border-top:1px solid #ececf1;box-shadow:0 -12px 28px rgba(17,24,39,.06);z-index:20}.bottom-nav-row{height:100%;display:grid;grid-template-columns:repeat(3,1fr)}.nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9ca3af;text-decoration:none;font-size:12px;font-weight:750}.nav-tab.active{color:#111827;font-weight:950}.nav-tab .nav-ico{font-size:22px}.nav-tab .nav-eggplant{width:23px;height:23px}
+    @media (min-width:768px){.shell{padding:28px 28px 56px}.desktop-nav{display:flex}.bottom-nav{display:none}.topbar{margin-bottom:22px}.layout{grid-template-columns:minmax(340px,420px) minmax(0,1fr);align-items:start}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-card,.menu-card,.setting-card{border-radius:26px}.account-card{position:sticky;top:28px;min-height:242px;padding:28px}.menu-card,.setting-card{min-height:116px;padding:18px}}
   </style>
 </head>
 <body>
@@ -68,30 +64,15 @@
       <nav class="desktop-nav" aria-label="주요 메뉴">
         <a href="index.html"><span class="nav-ico">⌂</span><span>홈</span></a>
         <a href="gajigaji.html"><img class="nav-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
-        <a class="active" href="my-gaji.html" aria-current="page"><span class="nav-ico">●</span><span>내 가지</span></a>
       </nav>
     </header>
-
-    <section class="hero" aria-label="내 가지 소개">
-      <div class="hero-content">
-        <span class="eyebrow">🍆 MY GAJI</span>
-        <h1>로그인하고<br>여러<span class="brand-word">가지</span>를 해보세요.</h1>
-        <p>계정을 연결하면 찜한 딜, 키워드 알림, 닉네임과 읽은 글 표시를 한 화면에서 관리할 수 있어요.</p>
-      </div>
-      <aside class="hero-preview" aria-label="내 가지 기능 미리보기">
-        <div class="preview-title">계정 연결 후 열리는 기능</div>
-        <div class="preview-stat"><div><div class="preview-label">키워드 알림</div><div class="preview-value">놓치지 않는 딜</div></div><span class="preview-pill">푸시</span></div>
-        <div class="preview-stat"><div><div class="preview-label">찜한 가지</div><div class="preview-value">저장한 딜 모아보기</div></div><span class="preview-pill">MY</span></div>
-        <div class="preview-stat"><div><div class="preview-label">읽은 글 표시</div><div class="preview-value">목록 피로도 낮추기</div></div><span class="preview-pill">설정</span></div>
-      </aside>
-    </section>
 
     <main class="layout">
       <section class="account-card panel loading" id="accountPanel" aria-label="Google 로그인">
         <div class="card-head">
           <div>
-            <div class="card-title">로그인</div>
-            <div class="card-sub">로그인하면 작성·저장·알림 기능이 열려요.</div>
+            <div class="card-title">계정</div>
+            <div class="card-sub">게스트 닉네임으로 바로 활동하거나 Google 계정을 연결할 수 있어요.</div>
           </div>
         </div>
         <div id="loggedOut">
@@ -175,11 +156,11 @@
     <div class="bottom-nav-row">
       <a class="nav-tab" href="index.html"><span class="nav-ico">⌂</span><span>홈</span></a>
       <a class="nav-tab" href="gajigaji.html"><img class="nav-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
-      <a class="nav-tab" href="chat.html"><span class="nav-ico">◔</span><span>채팅</span></a>
       <a class="nav-tab active" href="my-gaji.html" aria-current="page"><span class="nav-ico">●</span><span>내 가지</span></a>
     </div>
   </nav>
 
+  <script src="assets/anonymous-identity.js"></script>
   <script>
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const READ_HIGHLIGHT_TOGGLE_KEY = 'hotdeal_read_highlight_enabled_v1';
@@ -205,6 +186,23 @@
       });
     }
 
+    function goGoogleLogin(returnTo = 'keywords.html'){
+      const target = `/api/auth?action=start&provider=google&returnTo=${encodeURIComponent(returnTo)}`;
+      location.href = target;
+    }
+
+    function bindKeywordLoginGate(){
+      const card = document.getElementById('keywordCard');
+      if(!card) return;
+      card.addEventListener('click', (event) => {
+        const user = loadCachedUser() || window.GajiIdentity?.getUser?.();
+        if(user && !user.anonymous && user.provider === 'google') return;
+        event.preventDefault();
+        showStatus('관심 키워드 알림은 푸시 발송을 위해 Google 로그인이 필요합니다.');
+        setTimeout(() => goGoogleLogin('keywords.html'), 450);
+      });
+    }
+
     function setLoading(loading){
       if(loading){ accountPanel.classList.add('loading'); return; }
       accountPanel.classList.remove('loading');
@@ -227,12 +225,12 @@
 
     function renderLoggedIn(user){
       if(!user) return renderLoggedOut();
-      loggedOut.style.display = 'none';
+      loggedOut.style.display = user.anonymous ? 'block' : 'none';
       loggedIn.style.display = 'flex';
-      accountActions.style.display = 'grid';
+      accountActions.style.display = user.anonymous ? 'none' : 'grid';
       document.getElementById('userName').textContent = user.name || '사용자';
       document.getElementById('userEmail').textContent = user.email || '';
-      document.getElementById('userProvider').textContent = user.provider === 'google' ? 'Google 로그인' : '로그인됨';
+      document.getElementById('userProvider').textContent = user.anonymous ? '익명 기기 인증' : (user.provider === 'google' ? 'Google 로그인' : '로그인됨');
       const fallbackText = (user.name || user.email || '가').trim().charAt(0) || '가';
       document.getElementById('avatarFallback').textContent = fallbackText;
       if(user.avatar){
@@ -317,6 +315,7 @@
 
     loadConfig();
     initReadHighlightToggle();
+    bindKeywordLoginGate();
     loadMe();
   </script>
 
