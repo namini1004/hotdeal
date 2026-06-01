@@ -432,7 +432,7 @@
 
     function getCurrentTabItems(){
       if(state.activeTab === 'popular') return state.allItems.filter(item => Number(item.temperature || 0) >= 70);
-      if(state.activeTab === 'latest') return state.allItems.filter(item => isWithinHours(item, 3));
+      if(state.activeTab === 'latest') return state.allItems.filter(item => isWithinHours(item, 10));
       if(state.activeTab === 'pick') return state.userItems;
       return state.allItems;
     }
@@ -497,7 +497,7 @@
         list.innerHTML = state.activeTab === 'popular'
           ? '<div class="empty">70°C 이상 인기 딜이 아직 없습니다.</div>'
           : state.activeTab === 'latest'
-            ? '<div class="empty">최근 3시간 이내 올라온 딜이 아직 없습니다.</div>'
+            ? '<div class="empty">최근 10시간 이내 올라온 딜이 아직 없습니다.</div>'
             : state.activeTab === 'pick'
               ? '<div class="empty">가지픽이 아직 없습니다.</div>'
               : '<div class="empty">딜이 아직 없습니다.</div>';
