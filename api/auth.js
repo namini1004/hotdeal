@@ -17,6 +17,18 @@ const {
 const { getNicknameProfile, assignUniqueAutoNickname } = require('./_lib/nickname');
 const { getAnonymousUser } = require('./_lib/anonymous');
 
+function getGoogleRedirectUri(req) {
+  return (process.env.GOOGLE_REDIRECT_URI || process.env.AUTH_REDIRECT_URI || 'https://hotdeal-omega.vercel.app/api/auth').trim()
+    || `${getBaseUrl(req)}/api/auth`;
+}
+
+function normalizeReturnTo(returnTo = '') {
+  const value = String(returnTo || '').trim();
+  if (value === 'app') return 'app';
+  if (/^[a-z0-9_-]+\.html(?:\?[a-z0-9_=&%.-]*)?$/i.test(value)) return value;
+  return '';
+}
+
 function actionFrom(req) {
   const url = new URL(req.url, getBaseUrl(req));
   const stateProvider = String(url.searchParams.get('state') || '').split(':')[0];
@@ -28,7 +40,7 @@ function actionFrom(req) {
 }
 
 async function fetchGoogleUser(req, code) {
-  const baseUrl = getBaseUrl(req);
+  const redirectUri = getGoogleRedirectUri(req);
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -36,7 +48,7 @@ async function fetchGoogleUser(req, code) {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID,
       client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: `${baseUrl}/api/auth`,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     }),
   });
@@ -61,15 +73,15 @@ async function fetchGoogleUser(req, code) {
 function startLogin(req, res, provider, returnTo = '') {
   if (provider !== 'google') throw new Error('Unsupported provider');
   ensureProviderReady(provider);
-  const baseUrl = getBaseUrl(req);
-  const normalizedReturnTo = returnTo === 'app' ? 'app' : '';
+  const redirectUri = getGoogleRedirectUri(req);
+  const normalizedReturnTo = normalizeReturnTo(returnTo);
   const state = randomState(provider, normalizedReturnTo);
   setCookie(req, res, OAUTH_STATE_COOKIE, state, 600);
 
   if (provider === 'google') {
     const params = new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID,
-      redirect_uri: `${baseUrl}/api/auth`,
+      redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid email profile',
       state,
@@ -91,7 +103,7 @@ async function finishLogin(req, res, url, provider) {
   const stateSignedValid = Boolean(code && parsedState.valid);
   if (!stateMatchesCookie && !stateSignedValid) throw new Error('Invalid OAuth state');
 
-  const returnTo = parsedState.returnTo === 'app' ? 'app' : '';
+  const returnTo = normalizeReturnTo(parsedState.returnTo);
 
   if (provider !== 'google') throw new Error('Unsupported provider');
   const user = await fetchGoogleUser(req, code);
@@ -104,6 +116,7 @@ async function finishLogin(req, res, url, provider) {
     const deepLink = `gaji://auth?login=success&session=${encodeURIComponent(sessionToken)}`;
     return redirect(res, deepLink);
   }
+  if (returnTo) return redirect(res, `/${returnTo}`);
 
   return redirect(res, '/my-gaji.html?login=success');
 }

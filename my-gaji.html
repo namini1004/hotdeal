@@ -207,7 +207,7 @@
     }
 
     function goGoogleLogin(returnTo = 'keywords.html'){
-      const target = `/api/auth?action=start&provider=google&returnTo=${encodeURIComponent(returnTo)}`;
+      const target = `/api/auth?action=start&provider=google&return_to=${encodeURIComponent(returnTo)}`;
       location.href = target;
     }
 

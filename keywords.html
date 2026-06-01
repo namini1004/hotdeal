@@ -68,7 +68,7 @@
     }
 
     function goGoogleLogin(){
-      location.href = `/api/auth?action=start&provider=google&returnTo=${encodeURIComponent('keywords.html')}`;
+      location.href = `/api/auth?action=start&provider=google&return_to=${encodeURIComponent('keywords.html')}`;
     }
 
     async function ensureGoogleLogin(){
