@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gaji-shell-v2';
+const CACHE_NAME = 'gaji-shell-v3';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
@@ -53,9 +53,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (req.destination === 'script') {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => undefined);
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-      if (res.ok && ['script', 'style', 'image', 'font'].includes(req.destination)) {
+      if (res.ok && ['style', 'image', 'font'].includes(req.destination)) {
         const copy = res.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => undefined);
       }

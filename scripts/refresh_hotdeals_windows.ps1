@@ -27,9 +27,31 @@ try {
     Write-Log "repo: $RepoPath"
 
     # 1) Feed update
-    $updateOut = & $PythonCmd "scripts/update_ppomppu_feed.py" 2>&1
-    $updateText = ($updateOut | Out-String).Trim()
-    Write-Log "update: $updateText"
+    $feedScripts = @(
+        "scripts/update_ppomppu_feed.py",
+        "scripts/update_quasar_feed.py",
+        "scripts/update_fmkorea_feed.py",
+        "scripts/update_ruliweb_feed.py"
+    )
+    $failed = 0
+    $changed = $false
+    foreach ($script in $feedScripts) {
+        try {
+            $updateOut = & $PythonCmd $script 2>&1
+            $updateText = ($updateOut | Out-String).Trim()
+            Write-Log "update ${script}: $updateText"
+            if ($updateText -notlike "NO_CHANGE*") {
+                $changed = $true
+            }
+        }
+        catch {
+            $failed += 1
+            Write-Log "update failed ${script}: $_"
+        }
+    }
+    if ($failed -ge $feedScripts.Count) {
+        throw "all feed updates failed"
+    }
 
     # 1-1) Supabase sync + push ingest
     $serviceAccountPath = Join-Path $RepoPath "secrets\firebase-service-account.json"
@@ -63,17 +85,24 @@ try {
         Write-Log "sync: $syncText"
     }
 
-    if ($updateText -like "NO_CHANGE*") {
+    if (-not $changed) {
         Write-Log "no update changes"
         exit 0
     }
 
     # 2) Stage changed files
-    $targetA = "assets/ppomppu_hotdeals_2days.json"
-    $targetB = "assets/ppomppu_thumbs"
+    $targets = @(
+        "assets/ppomppu_hotdeals_2days.json",
+        "assets/quasar_hotdeals_2days.json",
+        "assets/fmkorea_hotdeals_2days.json",
+        "assets/ruliweb_hotdeals_1day.json",
+        "assets/ppomppu_thumbs",
+        "assets/fmkorea_thumbs",
+        "assets/ruliweb_thumbs"
+    ) | Where-Object { Test-Path $_ }
 
-    & git add -- $targetA $targetB
-    $staged = (& git diff --cached --name-only -- $targetA $targetB | Out-String).Trim()
+    & git add -- $targets
+    $staged = (& git diff --cached --name-only -- $targets | Out-String).Trim()
 
     if ([string]::IsNullOrWhiteSpace($staged)) {
         Write-Log "nothing staged"
