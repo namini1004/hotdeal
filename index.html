@@ -78,6 +78,10 @@
     .fav-badge{position:absolute;right:6px;bottom:6px;width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.92);display:grid;place-items:center;color:#ef4444;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .item-title{font-size:15px;font-weight:500;line-height:1.4;letter-spacing:-.015em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .meta{margin-top:4px;color:var(--muted);font-size:12px}
+    .item-body{min-width:0}
+    .item-main-row{min-width:0}
+    .meta-list-time,.temp-inline{display:none}
+    .meta span + span::before{content:' · '}
     .stats-row{margin-top:5px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
     .stats{color:#6b7280;font-size:12px;font-weight:500}
     .temperature{font-size:11px;font-weight:700;color:#ef4444;white-space:nowrap}
@@ -116,9 +120,19 @@
       .search-input{height:46px;background:#fafafa}
       .feed-controls{padding-top:14px}
       .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0}
-      .list.view-list{grid-template-columns:minmax(0,860px);justify-content:center;gap:10px}
-      .list.view-list .item{grid-template-columns:118px 1fr;gap:16px}
-      .list.view-list .thumb{width:118px;height:118px}
+      .list.view-list{grid-template-columns:minmax(0,900px);justify-content:center;gap:6px}
+      .list.view-list .item{grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:center;min-height:52px;padding:7px 12px;border-radius:10px;box-shadow:none}
+      .list.view-list .thumb-wrap{width:34px;height:34px}
+      .list.view-list .thumb{width:34px;height:34px;border-radius:7px}
+      .list.view-list .fav-badge{display:none}
+      .list.view-list .item-body{display:grid;grid-template-rows:auto auto;gap:2px;min-width:0}
+      .list.view-list .item-main-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;min-width:0}
+      .list.view-list .item-title{display:block;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-size:14px;font-weight:500;line-height:1.22;-webkit-line-clamp:unset;-webkit-box-orient:initial}
+      .list.view-list .meta{display:none}
+      .list.view-list .meta-list-time{display:block;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;line-height:1}
+      .list.view-list .stats-row{display:none}
+      .list.view-list .temp-inline{display:block;font-size:12px;font-weight:800;line-height:1;justify-self:end}
+      .list.view-list .price{margin-top:0;color:#111827;font-size:13px;font-weight:750;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .item{grid-template-columns:132px 1fr;gap:16px;padding:14px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(17,24,39,.04);transition:transform .15s ease,box-shadow .15s ease}
       .item:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(17,24,39,.08)}
       .thumb{width:132px;height:132px;border-radius:14px}
@@ -449,12 +463,16 @@
             <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="${imageLoading}" decoding="async" fetchpriority="${imageFetchPriority}" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
             ${favBadge}
           </div>
-          <div>
-            <div class="item-title">${item.title}</div>
-            <div class="meta">${item.area} · ${item.dist} · ${(item.relativeTime || item.time || '')}</div>
+          <div class="item-body">
+            <div class="item-main-row">
+              <div class="item-title">${item.title}</div>
+              <div class="meta-list-time">${(item.relativeTime || item.time || '')}</div>
+              <div class="temperature temp-inline" style="color:${temperatureColor(item.temperature)}">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</div>
+            </div>
+            <div class="meta"><span>${item.area}</span><span>${item.dist}</span><span>${(item.relativeTime || item.time || '')}</span></div>
             <div class="stats-row">
               <div class="stats">조회 ${formatCount(item.views)} · 댓글 ${formatCount(item.comments)}</div>
-              <div class="temperature" style="color:${temperatureColor(item.temperature)}">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</div>
+              <div class="temperature temp-stats" style="color:${temperatureColor(item.temperature)}">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</div>
             </div>
             <div class="price">${item.price}</div>
           </div>
