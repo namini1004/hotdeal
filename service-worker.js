@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gaji-shell-v12';
+const CACHE_NAME = 'gaji-shell-v13';
 const SHELL_ASSETS = [
   '/',
   '/index.html',

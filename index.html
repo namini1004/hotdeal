@@ -148,7 +148,7 @@
       .list.view-list .item{grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:center;min-height:64px;padding:9px 14px;border-radius:12px;box-shadow:none}
       .list.view-list .thumb-wrap{width:44px;height:44px}
       .list.view-list .thumb{width:44px;height:44px;border-radius:9px}
-      .list.view-list .fav-badge{display:none}
+      .list.view-list .fav-badge{display:grid;width:18px;height:18px;right:-4px;bottom:-4px;font-size:11px}
       .list.view-list .item-body{display:grid;grid-template-rows:auto auto;gap:4px;min-width:0}
       .list.view-list .item-main-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;min-width:0}
       .list.view-list .item-title{display:block;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-size:15px;font-weight:550;line-height:1.28;-webkit-line-clamp:unset;-webkit-box-orient:initial}
@@ -385,12 +385,41 @@
       return `hotdeal_favorites_${getCurrentUserId()}`;
     }
 
+    function getFavoriteStorageKeys(){
+      const current = getFavoriteStorageKey();
+      const legacyGuest = 'hotdeal_favorites_guest';
+      return current === legacyGuest ? [current] : [current, legacyGuest];
+    }
+
     function getFavoriteKeys(){
-      try{ return new Set(JSON.parse(localStorage.getItem(getFavoriteStorageKey()) || '[]')); }catch(_){ return new Set(); }
+      const keys = new Set();
+      getFavoriteStorageKeys().forEach(storageKey => {
+        try{
+          JSON.parse(localStorage.getItem(storageKey) || '[]').forEach(key => keys.add(key));
+        }catch(_){ }
+      });
+      return keys;
     }
 
     function isFavorited(item){
       return getFavoriteKeys().has(getDealKey(item));
+    }
+
+    function setFavoriteKeys(keys){
+      localStorage.setItem(getFavoriteStorageKey(), JSON.stringify([...(keys || [])]));
+    }
+
+    async function loadRemoteFavorites(){
+      try{
+        const res = await fetch(`${DEALS_API}?action=favorites&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(!res.ok) return false;
+        const data = await res.json();
+        if(Array.isArray(data.keys) && !data.remoteDisabled){
+          setFavoriteKeys(data.keys);
+          return true;
+        }
+      }catch(_){ }
+      return false;
     }
 
     function formatCount(value){
@@ -1006,6 +1035,11 @@
       applyItems(cached);
       render();
       restoreListScrollState();
+
+      if(await loadRemoteFavorites()){
+        render();
+        restoreListScrollState();
+      }
 
       await refreshFeed({ silent: true });
       refreshNaminDealsBackground();
