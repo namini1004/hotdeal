@@ -90,11 +90,12 @@
     .meta span + span::before{content:' · '}
     .stats-row{margin-top:5px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
     .stats{color:#6b7280;font-size:12px;font-weight:500}
-    .temperature{font-size:11px;font-weight:700;color:#ef4444;white-space:nowrap}
+    .temperature{font-size:11px;font-weight:700;color:#7c3aed;white-space:nowrap}
+    .temp-info-btn{display:inline-flex;align-items:center;border:0;background:transparent;padding:2px 0;color:inherit;font:inherit;font-weight:850;cursor:pointer;white-space:nowrap}
+    .temp-info-btn:focus-visible{outline:2px solid rgba(var(--brand-rgb),.45);outline-offset:3px;border-radius:6px}
     .price{margin-top:6px;font-size:15px;font-weight:700;letter-spacing:-.015em}
     .empty{padding:40px 8px;color:#6b7280;font-size:14px}
     .sync-stamp{grid-column:1/-1;padding:8px 0 0;margin:0;color:#9ca3af;font-size:10px;line-height:1.35;text-align:left;letter-spacing:-.01em}
-
     .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:16px;min-width:86px;height:47px;display:flex;align-items:center;justify-content:center;gap:5px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:0 14px;font-size:13px;font-weight:700;box-shadow:0 10px 24px rgba(var(--brand-rgb),.34);cursor:pointer;transition:width .2s ease,min-width .2s ease,height .2s ease,padding .2s ease,border-radius .2s ease,box-shadow .2s ease,transform .2s ease}
     .fab-plus{font-size:19px;line-height:1;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
     .fab-text{white-space:nowrap;transition:opacity .15s ease;font-size:13px;font-weight:700;letter-spacing:-.01em}
@@ -105,6 +106,13 @@
     .sort-sheet-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
     .sort-sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(calc(100% + 48px));padding:10px 14px calc(env(safe-area-inset-bottom) + 14px);background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease,visibility 0s linear .22s;z-index:41}
     .sort-sheet.show{visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);transition:transform .22s ease}
+    .temp-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:50}
+    .temp-modal-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
+    .temp-modal{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(calc(100% + 48px));padding:12px 26px calc(env(safe-area-inset-bottom) + 22px);background:#fff;border-radius:28px 28px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease,visibility 0s linear .22s;z-index:51;text-align:center}
+    .temp-modal.show{visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);transition:transform .22s ease}
+    .temp-handle{width:42px;height:4px;border-radius:999px;background:#e5e7eb;margin:0 auto 22px}.temp-face{width:116px;height:116px;margin:0 auto 18px;border-radius:32px;background:linear-gradient(145deg,#f5f0ff,#ede9fe);display:grid;place-items:center;box-shadow:0 14px 30px rgba(var(--brand-rgb),.18)}.temp-face img{width:82px;height:82px;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(var(--brand-rgb),.18))}
+    .temp-gauge{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto 28px}.temp-gauge-value{color:var(--brand);font-size:20px;font-weight:950}.temp-gauge-track{width:min(260px,52vw);height:11px;border-radius:999px;background:#edf0f4;overflow:hidden}.temp-gauge-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#a78bfa,#7c3aed)}
+    .temp-modal-title{margin:0 0 12px;font-size:27px;line-height:1.2;font-weight:950;letter-spacing:-.05em}.temp-modal-copy{margin:0 auto 28px;max-width:350px;color:#4b5563;font-size:16px;line-height:1.6;letter-spacing:-.015em}.temp-modal-confirm{width:100%;height:56px;border:0;border-radius:16px;background:#1f2933;color:#fff;font-size:18px;font-weight:950;cursor:pointer}
     .sheet-btn{width:100%;height:52px;border:none;border-radius:12px;background:#f4f6f8;color:#111827;font-size:16px;font-weight:800;cursor:pointer}
     .sheet-btn + .sheet-btn{margin-top:8px}
     .sheet-btn.active{background:#ede9fe;color:#5b21b6}
@@ -192,11 +200,10 @@
       </div>
       <div class="feed-controls">
         <div class="chips" id="tabs">
-          <button class="chip active" type="button" data-tab="today">뽐딜</button>
-          <button class="chip" type="button" data-tab="quasar">퀘딜</button>
-          <button class="chip" type="button" data-tab="fmkorea">펨딜</button>
-          <button class="chip" type="button" data-tab="ruliweb">루딜</button>
-          <button class="chip" type="button" data-tab="namin">가지딜</button>
+          <button class="chip active" type="button" data-tab="all">전체</button>
+          <button class="chip" type="button" data-tab="popular">인기</button>
+          <button class="chip" type="button" data-tab="latest">최신</button>
+          <button class="chip" type="button" data-tab="pick">가지픽</button>
         </div>
         <div class="view-toggle" role="group" aria-label="보기 방식">
           <button class="view-btn active" id="viewGridBtn" type="button" data-view="grid" aria-label="바둑판 보기">
@@ -225,6 +232,19 @@
     <button class="sheet-btn" id="sortCloseBtn" type="button">닫기</button>
   </div>
 
+  <div class="temp-modal-backdrop" id="tempModalBackdrop"></div>
+  <div class="temp-modal" id="tempModal" role="dialog" aria-modal="true" aria-labelledby="tempModalTitle">
+    <div class="temp-handle" aria-hidden="true"></div>
+    <div class="temp-face" aria-hidden="true"><img src="assets/gaji-eggplant-transparent.png" alt=""></div>
+    <div class="temp-gauge" aria-label="가지온도">
+      <span class="temp-gauge-value" id="tempModalValue">0°C</span>
+      <span class="temp-gauge-track"><span class="temp-gauge-fill" id="tempModalFill"></span></span>
+    </div>
+    <h2 class="temp-modal-title" id="tempModalTitle">가지온도란?</h2>
+    <p class="temp-modal-copy">핫딜의 조회수, 추천 반응, 댓글 수와 댓글 내용, 상품성, 가격 매력도, 신선도 등을 AI가 종합해 온도로 보여주는 점수예요.</p>
+    <button class="temp-modal-confirm" id="tempModalClose" type="button">확인</button>
+  </div>
+
   <script src="assets/time-format.js"></script>
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
@@ -239,7 +259,7 @@
     const SCROLL_RESTORE_PENDING_KEY = 'hotdeal_list_scroll_restore_pending_v1';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const VIEW_MODE_KEY = 'hotdeal_web_view_mode_v1';
-    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'today', sortMode: 'latest', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '' };
+    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'all', sortMode: 'latest', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '' };
     let isRefreshing = false;
 
     function normalizeItems(items){
@@ -379,12 +399,17 @@
       saveItems(cleaned);
     }
 
+    function isWithinHours(item, hours){
+      const ms = Date.parse(item.registeredAt || item.date || '');
+      if(!Number.isFinite(ms)) return false;
+      return Date.now() - ms <= hours * 60 * 60 * 1000;
+    }
+
     function getCurrentTabItems(){
-      if(state.activeTab === 'namin') return state.userItems;
-      if(state.activeTab === 'quasar') return state.quasarItems;
-      if(state.activeTab === 'fmkorea') return state.fmkoreaItems;
-      if(state.activeTab === 'ruliweb') return state.ruliwebItems;
-      return state.ppomppuItems;
+      if(state.activeTab === 'popular') return state.allItems.filter(item => Number(item.temperature || 0) >= 70);
+      if(state.activeTab === 'latest') return state.allItems.filter(item => isWithinHours(item, 3));
+      if(state.activeTab === 'pick') return state.userItems;
+      return state.allItems;
     }
 
     function getFilteredItems(){
@@ -436,22 +461,21 @@
     function temperatureColor(value){
       const t = Math.max(0, Math.min(100, Number(value || 0)));
       if(t <= 50) return mixColor('#9ca3af', '#7dd3fc', t / 50);       // 0도 회색 -> 50도 하늘색
-      return mixColor('#7dd3fc', '#7c3aed', (t - 50) / 50);            // 50도 하늘색 -> 100도 보라
+      if(t <= 70) return mixColor('#7dd3fc', '#7c3aed', (t - 50) / 20); // 70도부터 보라색
+      return mixColor('#7c3aed', '#5b21b6', (t - 70) / 30);            // 고온은 더 진한 보라
     }
 
     function render(){
       const list = document.getElementById('list');
       const items = getFilteredItems();
       if(!items.length){
-        list.innerHTML = state.activeTab === 'namin'
-          ? '<div class="empty">가지딜이 아직 없습니다.</div>'
-          : state.activeTab === 'quasar'
-            ? '<div class="empty">퀘딜이 아직 없습니다.</div>'
-            : state.activeTab === 'fmkorea'
-              ? '<div class="empty">펨딜이 아직 없습니다.</div>'
-              : state.activeTab === 'ruliweb'
-                ? '<div class="empty">루딜이 아직 없습니다.</div>'
-                : '<div class="empty">뽐딜이 아직 없습니다.</div>';
+        list.innerHTML = state.activeTab === 'popular'
+          ? '<div class="empty">70°C 이상 인기 딜이 아직 없습니다.</div>'
+          : state.activeTab === 'latest'
+            ? '<div class="empty">최근 3시간 이내 올라온 딜이 아직 없습니다.</div>'
+            : state.activeTab === 'pick'
+              ? '<div class="empty">가지픽이 아직 없습니다.</div>'
+              : '<div class="empty">딜이 아직 없습니다.</div>';
         list.insertAdjacentHTML('beforeend', renderSyncStamp());
         return;
       }
@@ -473,12 +497,12 @@
             <div class="item-main-row">
               <div class="item-title">${item.title}</div>
               <div class="meta-list-time">${(item.relativeTime || item.time || '')}</div>
-              <div class="temperature temp-inline" style="color:${temperatureColor(item.temperature)}">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</div>
+              <div class="temperature temp-inline" style="color:${temperatureColor(item.temperature)}"><span class="temp-info-btn" role="button" tabindex="0" data-temp="${Math.max(0, Math.min(100, Number(item.temperature || 0)))}" aria-label="가지온도 설명 보기">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</span></div>
             </div>
             <div class="meta"><span>${item.area}</span><span>${item.dist}</span><span>${(item.relativeTime || item.time || '')}</span></div>
             <div class="stats-row">
               <div class="stats">조회 ${formatCount(item.views)} · 댓글 ${formatCount(item.comments)}</div>
-              <div class="temperature temp-stats" style="color:${temperatureColor(item.temperature)}">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</div>
+              <div class="temperature temp-stats" style="color:${temperatureColor(item.temperature)}"><span class="temp-info-btn" role="button" tabindex="0" data-temp="${Math.max(0, Math.min(100, Number(item.temperature || 0)))}" aria-label="가지온도 설명 보기">${Math.max(0, Math.min(100, Number(item.temperature || 0)))}°C</span></div>
             </div>
             <div class="price">${item.price}</div>
           </div>
@@ -493,17 +517,17 @@
     }
 
     function restoreLastTab(){
-      const allowed = new Set(['today','quasar','fmkorea','ruliweb','namin']);
+      const allowed = new Set(['all','popular','latest','pick']);
       const saved = localStorage.getItem(LAST_TAB_KEY);
-      if(saved && allowed.has(saved)) state.activeTab = saved;
+      if(saved && allowed.has(saved)) state.activeTab = saved; else state.activeTab = 'all';
       setActiveTabUI();
     }
 
     function persistLastTab(){
-      localStorage.setItem(LAST_TAB_KEY, state.activeTab || 'today');
+      localStorage.setItem(LAST_TAB_KEY, state.activeTab || 'all');
     }
 
-    const TAB_ORDER = ['today','quasar','fmkorea','ruliweb','namin'];
+    const TAB_ORDER = ['all','popular','latest','pick'];
 
     function switchTab(nextTab){
       if(!TAB_ORDER.includes(nextTab) || state.activeTab === nextTab) return false;
@@ -878,6 +902,46 @@
       });
     }
 
+    function openTempModal(rawTemp){
+      const temp = Math.max(0, Math.min(100, Number(rawTemp || 0)));
+      const value = document.getElementById('tempModalValue');
+      const fill = document.getElementById('tempModalFill');
+      const modal = document.getElementById('tempModal');
+      const backdrop = document.getElementById('tempModalBackdrop');
+      if(value) value.textContent = `${temp}°C`;
+      if(fill) fill.style.width = `${temp}%`;
+      backdrop?.classList.add('show');
+      modal?.classList.add('show');
+    }
+
+    function closeTempModal(){
+      document.getElementById('tempModalBackdrop')?.classList.remove('show');
+      document.getElementById('tempModal')?.classList.remove('show');
+    }
+
+    function bindTemperatureModal(){
+      const list = document.getElementById('list');
+      list.addEventListener('click', (event) => {
+        const target = event.target.closest('.temp-info-btn');
+        if(!target) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openTempModal(target.dataset.temp);
+      });
+      list.addEventListener('keydown', (event) => {
+        if(event.key !== 'Enter' && event.key !== ' ') return;
+        const target = event.target.closest('.temp-info-btn');
+        if(!target) return;
+        event.preventDefault();
+        openTempModal(target.dataset.temp);
+      });
+      document.getElementById('tempModalClose')?.addEventListener('click', closeTempModal);
+      document.getElementById('tempModalBackdrop')?.addEventListener('click', closeTempModal);
+      document.addEventListener('keydown', (event) => {
+        if(event.key === 'Escape') closeTempModal();
+      });
+    }
+
     async function init(){
       restoreLastTab();
       restoreLastSort();
@@ -891,6 +955,7 @@
       bindScrollChrome();
       bindPullToRefresh();
       bindAutoSync();
+      bindTemperatureModal();
 
       const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
       applyItems(cached);
