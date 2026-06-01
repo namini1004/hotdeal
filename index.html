@@ -19,6 +19,11 @@
   <meta property="og:image" content="https://gaji.run/assets/gaji-eggplant.jpg" />
   <meta property="og:url" content="https://gaji.run/" />
   <meta name="twitter:card" content="summary_large_image" />
+  <script>
+    if(window.HotdealAndroid || /GajiRunApp|; wv\)/i.test(navigator.userAgent || '')){
+      document.documentElement.classList.add('app-webview');
+    }
+  </script>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
     :root{--bg:#fff;--page:#f7f4ff;--text:#171325;--muted:#8b95a1;--line:#eee9f8;--chip:#f3edff;--chip-active:#5b21b6;--brand:#7c3aed;--brand-rgb:124,58,237}
@@ -29,6 +34,7 @@
     .top.is-hidden{transform:translateY(calc(-100% - 12px));opacity:0;pointer-events:none}
     .row{display:flex;align-items:center;justify-content:space-between}
     .top-actions{display:flex;align-items:center;gap:1px}
+    .app-webview .web-tabs{display:none!important}
     .web-toolbar{display:none}
     .web-tabs{display:none;align-items:center;gap:6px}
     .web-tab{height:38px;display:flex;align-items:center;gap:6px;padding:0 13px;border-radius:999px;color:#667085;text-decoration:none;font-size:13px;font-weight:850;letter-spacing:-.01em}
@@ -108,6 +114,7 @@
       .app{max-width:1120px;padding:0 28px 48px}
       .top{top:16px;margin:16px 0 18px;padding:16px 20px 14px;border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 34px rgba(17,24,39,.055)}
       .row{display:grid;grid-template-columns:minmax(190px,1fr) auto minmax(190px,1fr);gap:18px;align-items:center}
+      .app-webview .row{display:flex;justify-content:space-between;gap:12px}
       .title-app{font-size:28px}
       .web-tabs{display:flex;justify-content:center;padding:5px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 10px 28px rgba(42,25,82,.045)}
       .web-tab{height:34px;padding:0 14px;font-size:13px;color:#697386}
