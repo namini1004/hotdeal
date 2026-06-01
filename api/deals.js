@@ -50,6 +50,55 @@ function normalizeDealKey(raw = '') {
   return String(raw || '').trim().slice(0, 512);
 }
 
+function cleanCommentString(value = '', max = 500) {
+  return String(value || '').trim().slice(0, max);
+}
+
+function normalizeCommentRow(row = {}) {
+  return {
+    id: String(row.id || ''),
+    dealKey: row.deal_key || row.dealKey || '',
+    nickname: row.nickname || '익명 가지',
+    body: row.body || '',
+    guestKey: row.guest_key || row.guestKey || '',
+    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+  };
+}
+
+async function handleCommentRequest(req, res) {
+  if (req.method === 'GET') {
+    const dealKey = cleanCommentString(req.query?.dealKey || req.query?.deal_key || '', 800);
+    if (!dealKey) return json(res, 400, { error: 'dealKey is required' });
+    const rows = await supabaseRequest(`deal_comments?deal_key=eq.${encodeURIComponent(dealKey)}&select=id,deal_key,nickname,body,guest_key,created_at&order=created_at.desc&limit=100`);
+    return json(res, 200, { items: (rows || []).map(normalizeCommentRow) });
+  }
+
+  if (req.method === 'POST') {
+    const body = req.body || {};
+    const dealKey = cleanCommentString(body.dealKey || body.deal_key || '', 800);
+    const nickname = cleanCommentString(body.nickname || '', 24) || '익명 가지';
+    const commentBody = cleanCommentString(body.body || body.comment || '', 500);
+    const guestKey = cleanCommentString(body.guestKey || body.guest_key || '', 120);
+    if (!dealKey || !commentBody) return json(res, 400, { error: 'dealKey and body are required' });
+
+    const payload = {
+      deal_key: dealKey,
+      nickname,
+      body: commentBody,
+      guest_key: guestKey,
+      created_at: new Date().toISOString(),
+    };
+    const rows = await supabaseRequest('deal_comments', {
+      method: 'POST',
+      body: JSON.stringify([payload]),
+    });
+    return json(res, 201, { item: normalizeCommentRow(rows?.[0] || payload) });
+  }
+
+  res.setHeader('Allow', 'GET, POST');
+  return json(res, 405, { error: 'Method not allowed' });
+}
+
 async function handleFavoriteRequest(req, res) {
   const sessionUser = readSession(req);
   const userId = getSessionUserId(sessionUser);
@@ -139,6 +188,7 @@ module.exports = async (req, res) => {
       const url = new URL(req.url, 'http://localhost');
       const action = url.searchParams.get('action') || req.query?.action || '';
       if (action === 'favorites') return handleFavoriteRequest(req, res);
+      if (action === 'comments') return handleCommentRequest(req, res);
       const id = url.searchParams.get('id') || req.query?.id || '';
       if (id) return handleItemRequest(req, res, id);
 
@@ -177,6 +227,7 @@ module.exports = async (req, res) => {
       const url = new URL(req.url, 'http://localhost');
       const action = url.searchParams.get('action') || req.query?.action || '';
       if (action === 'favorite') return handleFavoriteRequest(req, res);
+      if (action === 'comments') return handleCommentRequest(req, res);
       const id = url.searchParams.get('id') || req.query?.id || '';
       return handleItemRequest(req, res, id);
     }
@@ -185,6 +236,7 @@ module.exports = async (req, res) => {
       const url = new URL(req.url, 'http://localhost');
       const action = url.searchParams.get('action') || req.query?.action || '';
       if (action === 'favorite') return handleFavoriteRequest(req, res);
+      if (action === 'comments') return handleCommentRequest(req, res);
 
       const sessionUser = readSession(req);
       if (!sessionUser) return json(res, 401, { error: 'login required' });

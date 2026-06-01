@@ -66,3 +66,15 @@ create table if not exists public.read_marks (
   read_at timestamptz not null default now(),
   unique (user_id, deal_key)
 );
+
+create table if not exists public.deal_comments (
+  id uuid primary key default gen_random_uuid(),
+  deal_key text not null,
+  nickname text not null default '익명 가지',
+  body text not null,
+  guest_key text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_deal_comments_deal_key_created_at
+  on public.deal_comments (deal_key, created_at desc);

@@ -49,6 +49,10 @@
     .desc .md-table{width:100%;border-collapse:collapse;font-size:13px}
     .desc .md-table th,.desc .md-table td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:top}
     .desc .md-table th{background:#f8fafc;font-weight:800}
+    .comments-panel{padding:16px;background:#fff;border-top:1px solid var(--line)}
+    .comments-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .comments-title{font-size:18px;font-weight:950;letter-spacing:-.03em}.comments-count{color:var(--muted);font-size:13px;font-weight:850}
+    .comment-list{display:grid;gap:14px;padding-bottom:12px}.comment-item{display:grid;grid-template-columns:36px 1fr;gap:10px}.comment-avatar{width:36px;height:36px;border-radius:999px;background:#f3edff;color:#5b21b6;display:grid;place-items:center;font-size:13px;font-weight:950}.comment-main{min-width:0}.comment-meta{display:flex;align-items:center;gap:6px;color:#8b95a1;font-size:12px;font-weight:800}.comment-name{color:#4b5563;font-weight:950}.comment-body{margin-top:4px;color:#111827;font-size:14px;line-height:1.5;word-break:break-word;white-space:pre-wrap}.comment-empty{padding:20px 0;color:#8b95a1;font-size:14px;text-align:center}.comment-composer{position:sticky;bottom:78px;display:flex;align-items:center;gap:8px;padding:10px 0 0;background:#fff}.comment-input{flex:1;height:44px;border:1px solid #e5e7eb;border-radius:999px;background:#f4f4f5;padding:0 14px;font-size:14px;outline:none}.comment-input:focus{border-color:#d8c7ff;background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.08)}.comment-send{width:44px;height:44px;border:none;border-radius:999px;background:#ff0050;color:#fff;font-size:21px;font-weight:950;display:grid;place-items:center;cursor:pointer}.comment-send:disabled{opacity:.38;cursor:not-allowed}.comment-note{margin-top:8px;color:#9ca3af;font-size:11px;line-height:1.35}
     .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:30}
@@ -74,13 +78,15 @@
 
     @media (min-width:768px){
       body{background:#fff}
-      .app{max-width:1080px;display:grid;grid-template-columns:minmax(360px,520px) minmax(0,1fr);gap:0;height:100vh;min-height:100vh;margin:0 auto;padding:0 0 64px;background:#fff;border-left:1px solid var(--line);border-right:1px solid var(--line);overflow:hidden}
+      .app{max-width:1280px;display:grid;grid-template-columns:minmax(320px,460px) minmax(0,1fr) minmax(320px,360px);gap:0;height:100vh;min-height:100vh;margin:0 auto;padding:0 0 64px;background:#fff;border-left:1px solid var(--line);border-right:1px solid var(--line);overflow:hidden}
       .hero{height:calc(100vh - 64px);min-height:calc(100vh - 64px)}
       .hero img{height:100%;min-height:calc(100vh - 64px)}
       .topbtns{top:16px;left:16px;right:16px}
       .icon-link,.icon-btn{width:36px;height:36px}
       .material-symbols-outlined{font-size:24px}
       .content{border-top:none;border-left:1px solid var(--line);height:calc(100vh - 64px);min-height:calc(100vh - 64px);padding:42px 38px;background:#fff;overflow:auto}
+      .comments-panel{height:calc(100vh - 64px);min-height:calc(100vh - 64px);border-top:none;border-left:1px solid var(--line);padding:24px 20px;overflow:auto}
+      .comment-composer{bottom:0;padding-bottom:10px}
       h1{font-size:26px;line-height:1.35;font-weight:600}
       .price{font-size:30px;margin-top:14px}
       .meta{font-size:13px;margin:10px 0 18px}
@@ -94,7 +100,7 @@
     }
 
     @media (min-width:1180px){
-      .app{grid-template-columns:560px minmax(0,1fr)}
+      .app{grid-template-columns:520px minmax(0,1fr) 360px}
     }
   </style>
 </head>
@@ -119,6 +125,19 @@
       <div class="meta" id="meta"></div>
       <div class="desc" id="desc"></div>
     </section>
+
+    <aside class="comments-panel" id="commentsPanel" aria-label="댓글">
+      <div class="comments-head">
+        <div class="comments-title">댓글</div>
+        <div class="comments-count" id="commentsCount">0</div>
+      </div>
+      <div class="comment-list" id="commentList"></div>
+      <form class="comment-composer" id="commentForm">
+        <input class="comment-input" id="commentInput" maxlength="500" placeholder="댓글 올리기..." autocomplete="off" />
+        <button class="comment-send" id="commentSend" type="submit" aria-label="댓글 등록">›</button>
+      </form>
+      <div class="comment-note" id="commentNicknameNote"></div>
+    </aside>
   </div>
 
   <div class="bottom-cta" id="buyBottomWrap" style="display:none">
@@ -415,6 +434,8 @@
       sourceBottom.href = '#';
       buyBottom.href = '#';
 
+      loadComments(item);
+
       if(item.sourceLink || item.buyLink){
         const singleSourceCta = shouldUseSingleSourceCta(item);
         sourceBottom.href = item.sourceLink || item.buyLink || '#';
@@ -426,6 +447,155 @@
         }
         buyBottomWrap.style.display = 'block';
       }
+    }
+
+
+    const COMMENT_STORAGE_PREFIX = 'gaji_deal_comments_v1:';
+    const GUEST_NICKNAME_KEY = 'gaji_guest_nickname_v1';
+    const GUEST_KEY = 'gaji_guest_key_v1';
+    const COMMENT_API = '/api/deals?action=comments';
+
+    const NICK_ADJECTIVES = ['빠른','상냥한','반짝이는','차분한','야무진','든든한','귀여운','날카로운','포근한','신나는'];
+    const NICK_NOUNS = ['가지','딜냥이','알림이','장바구니','고래','펭귄','여우','별빛','구름','파도'];
+
+    function randomPick(list){ return list[Math.floor(Math.random() * list.length)]; }
+
+    function getGuestKey(){
+      let key = localStorage.getItem(GUEST_KEY);
+      if(!key){
+        key = `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+        localStorage.setItem(GUEST_KEY, key);
+      }
+      return key;
+    }
+
+    function getCommentNickname(){
+      const cachedUser = getCurrentUserFromCache();
+      if(cachedUser?.nickname) return cachedUser.nickname;
+      let nickname = localStorage.getItem(GUEST_NICKNAME_KEY);
+      if(!nickname){
+        nickname = `${randomPick(NICK_ADJECTIVES)} ${randomPick(NICK_NOUNS)}${Math.floor(10 + Math.random() * 90)}`;
+        localStorage.setItem(GUEST_NICKNAME_KEY, nickname);
+      }
+      return nickname;
+    }
+
+    function commentStorageKey(item = currentItem){
+      return COMMENT_STORAGE_PREFIX + encodeURIComponent(getDealKey(item));
+    }
+
+    function readLocalComments(item = currentItem){
+      try{
+        const parsed = JSON.parse(localStorage.getItem(commentStorageKey(item)) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      }catch(_){ return []; }
+    }
+
+    function saveLocalComments(comments, item = currentItem){
+      localStorage.setItem(commentStorageKey(item), JSON.stringify(comments));
+    }
+
+    function normalizeComments(comments){
+      return (comments || []).map((comment, idx) => ({
+        id: String(comment.id || `local-${idx}`),
+        dealKey: comment.dealKey || comment.deal_key || '',
+        nickname: comment.nickname || '익명 가지',
+        body: comment.body || comment.comment || '',
+        createdAt: comment.createdAt || comment.created_at || new Date().toISOString(),
+        guestKey: comment.guestKey || comment.guest_key || ''
+      })).filter(comment => comment.body.trim());
+    }
+
+    function escapeHtml(text){
+      return String(text || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
+    function formatCommentTime(value){
+      return window.TimeFormat?.toRelativeKorean(value) || '';
+    }
+
+    function renderComments(comments = readLocalComments()){
+      const normalized = normalizeComments(comments).sort((a,b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''));
+      const list = document.getElementById('commentList');
+      const count = document.getElementById('commentsCount');
+      const note = document.getElementById('commentNicknameNote');
+      if(count) count.textContent = normalized.length ? normalized.length.toLocaleString('ko-KR') : '0';
+      if(note) note.textContent = `${getCommentNickname()} 닉네임으로 댓글이 등록됩니다. 변경은 내 가지에서 로그인 후 가능합니다.`;
+      if(!list) return;
+      if(!normalized.length){
+        list.innerHTML = '<div class="comment-empty">첫 댓글을 남겨보세요.</div>';
+        return;
+      }
+      list.innerHTML = normalized.map(comment => {
+        const avatar = escapeHtml((comment.nickname || '가').trim().charAt(0) || '가');
+        return `
+          <article class="comment-item">
+            <div class="comment-avatar">${avatar}</div>
+            <div class="comment-main">
+              <div class="comment-meta"><span class="comment-name">${escapeHtml(comment.nickname)}</span><span>·</span><span>${escapeHtml(formatCommentTime(comment.createdAt))}</span></div>
+              <div class="comment-body">${escapeHtml(comment.body)}</div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadComments(item = currentItem){
+      const local = readLocalComments(item);
+      renderComments(local);
+      try{
+        const res = await fetch(`${COMMENT_API}?dealKey=${encodeURIComponent(getDealKey(item))}`, { cache:'no-store' });
+        if(!res.ok) return;
+        const data = await res.json();
+        const remote = normalizeComments(data.items || []);
+        if(remote.length){
+          saveLocalComments(remote, item);
+          renderComments(remote);
+        }
+      }catch(_){ }
+    }
+
+    async function postComment(body){
+      if(!currentItem || !body.trim()) return;
+      const comment = {
+        id:`local-${Date.now()}`,
+        dealKey:getDealKey(currentItem),
+        nickname:getCommentNickname(),
+        body:body.trim(),
+        createdAt:new Date().toISOString(),
+        guestKey:getGuestKey()
+      };
+      const next = [comment, ...readLocalComments(currentItem)];
+      saveLocalComments(next, currentItem);
+      renderComments(next);
+      try{
+        const res = await fetch(COMMENT_API, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(comment)
+        });
+        if(res.ok){
+          const data = await res.json();
+          if(data.item){
+            const merged = [normalizeComments([data.item])[0], ...next.filter(v => v.id !== comment.id)];
+            saveLocalComments(merged, currentItem);
+            renderComments(merged);
+          }
+        }
+      }catch(_){ }
+    }
+
+    function bindCommentForm(){
+      const form = document.getElementById('commentForm');
+      const input = document.getElementById('commentInput');
+      if(!form || !input) return;
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if(!text) return;
+        input.value = '';
+        await postComment(text);
+      });
     }
 
     function sameRenderableItem(a, b){
@@ -573,6 +743,7 @@
     }
 
     async function init(){
+      bindCommentForm();
       await loadMe();
       await loadRemoteFavorites();
       const id = new URLSearchParams(location.search).get('id');
