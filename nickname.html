@@ -36,13 +36,24 @@
     </section>
   </main>
 
-  <script src="assets/anonymous-identity.js?v=20260602"></script>
+  <script src="assets/anonymous-identity.js?v=20260604"></script>
   <script>
     const input = document.getElementById('nicknameInput');
     const current = document.getElementById('current');
     const msg = document.getElementById('msg');
 
     function setMsg(text){ msg.textContent = text || ''; }
+
+    function isGoogleUser(user){
+      return Boolean(user && user.anonymous === false);
+    }
+
+    function applyNickname(nickname, message){
+      const value = String(nickname || '').trim();
+      current.textContent = `현재 닉네임: ${value || '-'}`;
+      if(value) input.value = value;
+      if(message) setMsg(message);
+    }
 
     async function callApi(body, method='POST'){
       const res = await fetch('/api/profile-nickname', {
@@ -63,10 +74,16 @@
     }
 
     async function loadCurrent(){
+      const localUser = window.GajiIdentity?.getUser?.();
+      const localNickname = localUser?.nickname || window.GajiIdentity?.getNickname?.() || '';
+      if(localNickname) applyNickname(localNickname);
+      if(!isGoogleUser(localUser)) return;
       try{
         const data = await callApi(null, 'GET');
-        current.textContent = `현재 닉네임: ${data.nickname || '-'}`;
-        if(data.nickname) input.value = data.nickname;
+        if(data.nickname){
+          window.GajiIdentity?.setNickname?.(data.nickname);
+          applyNickname(data.nickname);
+        }
       }catch(err){
         setMsg(toFriendlyMessage(err));
       }
@@ -74,24 +91,36 @@
 
     document.getElementById('autoBtn').addEventListener('click', async () => {
       setMsg('자동 생성 중...');
+      const localUser = window.GajiIdentity?.getUser?.();
+      if(!isGoogleUser(localUser)){
+        const user = window.GajiIdentity?.regenerateNickname?.() || window.GajiIdentity?.setNickname?.(window.GajiIdentity?.generateNickname?.());
+        applyNickname(user?.nickname || input.value, '자동 생성 닉네임을 적용했어요.');
+        return;
+      }
       try{
         const data = await callApi({ mode:'auto' });
-        if(window.GajiIdentity) window.GajiIdentity.setNickname(data.nickname || input.value);
-        input.value = data.nickname || '';
-        current.textContent = `현재 닉네임: ${data.nickname || '-'}`;
-        setMsg('자동 생성 닉네임을 적용했어요.');
-      }catch(err){ setMsg(toFriendlyMessage(err)); }
+        window.GajiIdentity?.setNickname?.(data.nickname || input.value);
+        applyNickname(data.nickname || input.value, '자동 생성 닉네임을 적용했어요.');
+      }catch(err){
+        const user = window.GajiIdentity?.regenerateNickname?.();
+        applyNickname(user?.nickname || input.value, `${toFriendlyMessage(err)} 로컬 닉네임으로 적용했어요.`);
+      }
     });
 
     document.getElementById('saveBtn').addEventListener('click', async () => {
       const nickname = input.value.trim();
       if(!nickname){ setMsg('닉네임을 입력해 주세요.'); return; }
       setMsg('저장 중...');
+      const localUser = window.GajiIdentity?.getUser?.();
+      if(!isGoogleUser(localUser)){
+        const user = window.GajiIdentity?.setNickname?.(nickname);
+        applyNickname(user?.nickname || nickname, '이 기기 닉네임으로 저장되었습니다.');
+        return;
+      }
       try{
         const data = await callApi({ mode:'manual', nickname });
-        if(window.GajiIdentity) window.GajiIdentity.setNickname(data.nickname || nickname);
-        current.textContent = `현재 닉네임: ${data.nickname || nickname}`;
-        setMsg('저장되었습니다.');
+        window.GajiIdentity?.setNickname?.(data.nickname || nickname);
+        applyNickname(data.nickname || nickname, '저장되었습니다.');
       }catch(err){ setMsg(toFriendlyMessage(err)); }
     });
 

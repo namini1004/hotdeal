@@ -162,7 +162,7 @@
 
   <script src="assets/text-format.js"></script>
   <script src="assets/time-format.js"></script>
-  <script src="assets/anonymous-identity.js?v=20260603"></script>
+  <script src="assets/anonymous-identity.js?v=20260604"></script>
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
@@ -472,14 +472,8 @@
 
 
     const COMMENT_STORAGE_PREFIX = 'gaji_deal_comments_v1:';
-    const GUEST_NICKNAME_KEY = 'gaji_guest_nickname_v1';
     const GUEST_KEY = 'gaji_guest_key_v1';
     const COMMENT_API = '/api/deals?action=comments';
-
-    const NICK_ADJECTIVES = ['빠른','상냥한','반짝이는','차분한','야무진','든든한','귀여운','날카로운','포근한','신나는'];
-    const NICK_NOUNS = ['가지','딜냥이','알림이','장바구니','고래','펭귄','여우','별빛','구름','파도'];
-
-    function randomPick(list){ return list[Math.floor(Math.random() * list.length)]; }
 
     function getGuestKey(){
       let key = localStorage.getItem(GUEST_KEY);
@@ -491,14 +485,11 @@
     }
 
     function getCommentNickname(){
+      const identityUser = window.GajiIdentity?.getUser?.();
+      if(identityUser?.nickname) return identityUser.nickname;
       const cachedUser = getCurrentUserFromCache();
       if(cachedUser?.nickname) return cachedUser.nickname;
-      let nickname = localStorage.getItem(GUEST_NICKNAME_KEY);
-      if(!nickname){
-        nickname = `${randomPick(NICK_ADJECTIVES)} ${randomPick(NICK_NOUNS)}${Math.floor(10 + Math.random() * 90)}`;
-        localStorage.setItem(GUEST_NICKNAME_KEY, nickname);
-      }
-      return nickname;
+      return window.GajiIdentity?.getNickname?.() || '익명 가지';
     }
 
     function commentStorageKey(item = currentItem){
@@ -569,7 +560,7 @@
       const count = document.getElementById('commentsCount');
       const note = document.getElementById('commentNicknameNote');
       if(count) count.textContent = normalized.length ? normalized.length.toLocaleString('ko-KR') : '0';
-      if(note) note.textContent = `${getCommentNickname()} 닉네임으로 댓글이 등록됩니다. 변경은 내 가지에서 로그인 후 가능합니다.`;
+      if(note) note.textContent = `${getCommentNickname()} 닉네임으로 댓글이 등록됩니다. 변경은 닉네임 설정에서 가능합니다.`;
       updateComposerAvatar();
       if(!list) return;
       if(!normalized.length){

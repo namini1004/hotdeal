@@ -29,7 +29,11 @@
 
   function makeNickname(id){
     const h = hash(id);
-    return `${ADJECTIVES[h % ADJECTIVES.length]} ${NOUNS[Math.floor(h / 7) % NOUNS.length]}${String(h).slice(-2)}`;
+    return `${ADJECTIVES[h % ADJECTIVES.length]} ${NOUNS[Math.floor(h / 7) % NOUNS.length]}${String(h % 100).padStart(2, '0')}`;
+  }
+
+  function normalizeNickname(nickname){
+    return String(nickname || '').trim().replace(/\s+/g, ' ').slice(0, 24);
   }
 
   function getNickname(){
@@ -64,7 +68,19 @@
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
 
-  function getUser(){
+  function readCachedUser(){
+    try{
+      const parsed = JSON.parse(localStorage.getItem(USER_CACHE_KEY) || 'null');
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    }catch(_){ return null; }
+  }
+
+  function writeCachedUser(user){
+    try{ localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)); }catch(_){ }
+    return user;
+  }
+
+  function getAnonymousUser(){
     const deviceId = getDeviceId();
     const nickname = getNickname();
     return {
@@ -79,9 +95,29 @@
   }
 
   function cacheUser(){
-    const user = getUser();
-    try{ localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)); }catch(_){ }
-    return user;
+    const cached = readCachedUser();
+    if(cached && cached.anonymous === false) return cached;
+    return writeCachedUser(getAnonymousUser());
+  }
+
+  function setNickname(nickname){
+    const clean = normalizeNickname(nickname);
+    if(!clean) return cacheUser();
+    localStorage.setItem(NICK_KEY, clean);
+    const cached = readCachedUser();
+    if(cached && cached.anonymous === false){
+      return writeCachedUser({ ...cached, name: clean, nickname: clean });
+    }
+    return writeCachedUser(getAnonymousUser());
+  }
+
+  function generateNickname(seed = randomId()){
+    return makeNickname(seed);
+  }
+
+  function regenerateNickname(){
+    const seed = `${getDeviceId()}:${Date.now()}:${Math.random()}`;
+    return setNickname(generateNickname(seed));
   }
 
   function decorateBody(body){
@@ -119,12 +155,10 @@
   window.GajiIdentity = {
     getDeviceId,
     getNickname,
+    generateNickname,
+    regenerateNickname,
     getAvatarUrl: avatarUrl,
-    setNickname(nickname){
-      const clean = String(nickname || '').trim().replace(/\s+/g, ' ').slice(0, 24);
-      if(clean) localStorage.setItem(NICK_KEY, clean);
-      return cacheUser();
-    },
+    setNickname,
     getUser: cacheUser,
   };
 
