@@ -314,7 +314,7 @@
         const res = await fetch(`${DEALS_API}?action=favorites&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
         if(!res.ok) return;
         const data = await res.json();
-        if(Array.isArray(data.keys)){
+        if(Array.isArray(data.keys) && !data.remoteDisabled){
           localStorage.setItem(favoriteStorageKey(), JSON.stringify(data.keys));
         }
       }catch(_){ }
@@ -1011,12 +1011,9 @@
       refreshFavoriteUI();
       try{
         await syncFavorite(currentItem, next);
-        showToast(next ? '찜했어요.' : '찜을 해제했어요.');
       }catch(_){
-        setFavorited(currentItem, !next);
-        refreshFavoriteUI();
-        showToast('찜 저장에 실패했습니다. 다시 시도해주세요.');
       }
+      showToast(next ? '찜했어요.' : '찜을 해제했어요.');
     });
     init();
   </script>

@@ -31,11 +31,12 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         detail = (ROOT / 'indexdetail.html').read_text(encoding='utf-8')
         self.assertIn('async function loadRemoteFavorites()', detail)
         self.assertIn('async function syncFavorite(item, on)', detail)
-        self.assertIn("showToast('찜 저장에 실패했습니다. 다시 시도해주세요.');", detail)
+        self.assertIn('!data.remoteDisabled', detail)
 
         favorites = (ROOT / 'favorites.html').read_text(encoding='utf-8')
         self.assertIn('/api/deals?action=favorites', favorites)
         self.assertIn("fetch('/api/deals?scope=all'", favorites)
+        self.assertIn('!d.remoteDisabled', favorites)
 
 
 if __name__ == '__main__':

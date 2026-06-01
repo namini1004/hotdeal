@@ -137,32 +137,48 @@ async function handleFavoriteRequest(req, res) {
   const actor = getActor(req, req.body || {}, readSession(req));
   const userId = getActorId(actor) || getSessionUserId(actor);
   if (!userId) return json(res, 401, { error: 'login required' });
+  const favoriteStoreMissing = (error) => /PGRST205|favorite_deals/i.test(String(error?.message || error || ''));
 
   if (req.method === 'GET') {
-    const rows = await supabaseRequest(
-      `favorite_deals?user_id=eq.${encodeURIComponent(userId)}&select=deal_key&order=created_at.desc`,
-    );
-    return json(res, 200, { keys: (rows || []).map((row) => row.deal_key).filter(Boolean) });
+    try {
+      const rows = await supabaseRequest(
+        `favorite_deals?user_id=eq.${encodeURIComponent(userId)}&select=deal_key&order=created_at.desc`,
+      );
+      return json(res, 200, { keys: (rows || []).map((row) => row.deal_key).filter(Boolean) });
+    } catch (error) {
+      if (favoriteStoreMissing(error)) return json(res, 200, { keys: [], remoteDisabled: true });
+      throw error;
+    }
   }
 
   const dealKey = normalizeDealKey(req.body?.dealKey || req.body?.deal_key || '');
   if (!dealKey) return json(res, 400, { error: 'dealKey is required' });
 
   if (req.method === 'POST') {
-    await supabaseRequest('favorite_deals?on_conflict=user_id,deal_key', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-      body: JSON.stringify([{ user_id: userId, deal_key: dealKey }]),
-    });
-    return json(res, 200, { ok: true, favorited: true });
+    try {
+      await supabaseRequest('favorite_deals?on_conflict=user_id,deal_key', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify([{ user_id: userId, deal_key: dealKey }]),
+      });
+      return json(res, 200, { ok: true, favorited: true });
+    } catch (error) {
+      if (favoriteStoreMissing(error)) return json(res, 200, { ok: true, favorited: true, remoteDisabled: true });
+      throw error;
+    }
   }
 
   if (req.method === 'DELETE') {
-    await supabaseRequest(
-      `favorite_deals?user_id=eq.${encodeURIComponent(userId)}&deal_key=eq.${encodeURIComponent(dealKey)}`,
-      { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
-    );
-    return json(res, 200, { ok: true, favorited: false });
+    try {
+      await supabaseRequest(
+        `favorite_deals?user_id=eq.${encodeURIComponent(userId)}&deal_key=eq.${encodeURIComponent(dealKey)}`,
+        { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
+      );
+      return json(res, 200, { ok: true, favorited: false });
+    } catch (error) {
+      if (favoriteStoreMissing(error)) return json(res, 200, { ok: true, favorited: false, remoteDisabled: true });
+      throw error;
+    }
   }
 
   res.setHeader('Allow', 'GET, POST, DELETE');

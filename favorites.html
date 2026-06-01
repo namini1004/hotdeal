@@ -43,7 +43,7 @@
     function getItems(){ try{ const p=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); return Array.isArray(p)?p:[]; }catch(_){ return []; } }
     async function fetchItems(){ try{ const r=await fetch('/api/deals?scope=all',{credentials:'include',cache:'no-store'}); if(!r.ok) return []; const d=await r.json(); if(Array.isArray(d.items)){ localStorage.setItem(STORAGE_KEY, JSON.stringify(d.items)); return d.items; } }catch(_){ } return []; }
     async function loadMe(){ try{const r=await fetch(`/api/auth?action=me&_ts=${Date.now()}`,{credentials:'include',cache:'no-store'}); if(!r.ok) return null; const d=await r.json(); if(d.user) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(d.user)); return d.user||null;}catch(_){return null;} }
-    async function loadFavoriteKeys(){ try{ const r=await fetch(`/api/deals?action=favorites&_ts=${Date.now()}`,{credentials:'include',cache:'no-store'}); if(!r.ok) return null; const d=await r.json(); if(Array.isArray(d.keys)){ setFavorites(d.keys); return new Set(d.keys); } }catch(_){ } return null; }
+    async function loadFavoriteKeys(){ try{ const r=await fetch(`/api/deals?action=favorites&_ts=${Date.now()}`,{credentials:'include',cache:'no-store'}); if(!r.ok) return null; const d=await r.json(); if(Array.isArray(d.keys) && !d.remoteDisabled){ setFavorites(d.keys); return new Set(d.keys); } }catch(_){ } return null; }
     function render(items){
       if(!items.length){ document.getElementById('list').innerHTML='<div class="empty">찜한 가지가 아직 없어요.</div>'; return; }
       document.getElementById('list').innerHTML = items.map(i => `
