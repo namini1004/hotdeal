@@ -55,14 +55,32 @@ function cleanCommentString(value = '', max = 500) {
   return String(value || '').trim().slice(0, max);
 }
 
+const REPLY_MARKER_RE = /^<!--gaji-reply:([^>]+)-->\n?/;
+
+function cleanParentCommentId(value = '') {
+  return String(value || '').trim().replace(/[^a-zA-Z0-9:_-]/g, '').slice(0, 120);
+}
+
+function splitReplyBody(body = '') {
+  const raw = String(body || '');
+  const match = raw.match(REPLY_MARKER_RE);
+  if (!match) return { parentId: '', body: raw };
+  return {
+    parentId: cleanParentCommentId(match[1]),
+    body: raw.replace(REPLY_MARKER_RE, ''),
+  };
+}
+
 function normalizeCommentRow(row = {}) {
+  const parsed = splitReplyBody(row.body || row.comment || '');
   return {
     id: String(row.id || ''),
     dealKey: row.deal_key || row.dealKey || '',
     nickname: row.nickname || '익명 가지',
-    body: row.body || '',
+    body: parsed.body,
     guestKey: row.guest_key || row.guestKey || '',
     createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+    parentId: cleanParentCommentId(row.parent_id || row.parentId || parsed.parentId || ''),
   };
 }
 
@@ -80,12 +98,13 @@ async function handleCommentRequest(req, res) {
     const nickname = cleanCommentString(body.nickname || '', 24) || '익명 가지';
     const commentBody = cleanCommentString(body.body || body.comment || '', 500);
     const guestKey = cleanCommentString(body.guestKey || body.guest_key || '', 120);
+    const parentId = cleanParentCommentId(body.parentId || body.parent_id || '');
     if (!dealKey || !commentBody) return json(res, 400, { error: 'dealKey and body are required' });
 
     const payload = {
       deal_key: dealKey,
       nickname,
-      body: commentBody,
+      body: parentId ? `<!--gaji-reply:${parentId}-->\n${commentBody}` : commentBody,
       guest_key: guestKey,
       created_at: new Date().toISOString(),
     };

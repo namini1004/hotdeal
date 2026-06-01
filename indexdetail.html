@@ -52,7 +52,7 @@
     .comments-panel{padding:16px;background:#fff;border-top:1px solid var(--line)}
     .comments-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
     .comments-title{font-size:18px;font-weight:950;letter-spacing:-.03em}.comments-count{color:var(--muted);font-size:13px;font-weight:850}
-    .comment-list{display:grid;gap:14px;padding-bottom:12px}.comment-item{display:grid;grid-template-columns:36px 1fr;gap:10px}.comment-avatar{width:36px;height:36px;border-radius:999px;background:#f3edff;color:#5b21b6;display:grid;place-items:center;font-size:13px;font-weight:950;overflow:hidden}.comment-avatar img{width:100%;height:100%;display:block;object-fit:cover}.comment-main{min-width:0}.comment-meta{display:flex;align-items:center;gap:6px;color:#8b95a1;font-size:12px;font-weight:800}.comment-name{color:#4b5563;font-weight:950}.comment-body{margin-top:4px;color:#111827;font-size:14px;line-height:1.5;word-break:break-word;white-space:pre-wrap}.comment-empty{padding:20px 0;color:#8b95a1;font-size:14px;text-align:center}.comment-composer{--composer-avatar:none;position:sticky;bottom:78px;display:flex;align-items:center;gap:8px;padding:10px 0 0;background:#fff}.comment-composer:before{content:"";width:38px;height:38px;border-radius:999px;flex:0 0 auto;background:#f3edff var(--composer-avatar) center/cover no-repeat}.comment-input{flex:1;height:44px;border:1px solid #e5e7eb;border-radius:999px;background:#f4f4f5;padding:0 14px;font-size:14px;outline:none}.comment-input:focus{border-color:#d8c7ff;background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.08)}.comment-send{width:44px;height:44px;border:1px solid #eadfff;border-radius:999px;background:#fff;color:transparent;font-size:0;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,58,237,.1);position:relative}.comment-send:before{content:"";width:25px;height:25px;background:url("assets/gaji-outline.svg") center/contain no-repeat;display:block}.comment-send:disabled{opacity:.38;cursor:not-allowed}.comment-note{margin-top:8px;color:#9ca3af;font-size:11px;line-height:1.35}
+    .comment-list{display:grid;gap:16px;padding-bottom:12px}.comment-item{display:grid;grid-template-columns:36px 1fr;gap:10px}.comment-item.reply{grid-template-columns:30px 1fr;margin-left:46px}.comment-avatar{width:36px;height:36px;border-radius:999px;background:#f3edff;color:#5b21b6;display:grid;place-items:center;font-size:13px;font-weight:950;overflow:hidden}.comment-item.reply .comment-avatar{width:30px;height:30px}.comment-avatar img{width:100%;height:100%;display:block;object-fit:cover}.comment-main{min-width:0}.comment-meta{display:flex;align-items:center;gap:6px;color:#8b95a1;font-size:12px;font-weight:800}.comment-name{color:#4b5563;font-weight:950}.comment-body{margin-top:4px;color:#111827;font-size:14px;line-height:1.5;word-break:break-word;white-space:pre-wrap}.comment-actions{margin-top:8px;display:flex;align-items:center;gap:12px}.reply-btn{border:none;background:transparent;color:#6b7280;font-size:12px;font-weight:900;padding:0;cursor:pointer}.comment-empty{padding:20px 0;color:#8b95a1;font-size:14px;text-align:center}.comment-composer{--composer-avatar:none;position:sticky;bottom:78px;display:flex;align-items:center;gap:8px;padding:10px 0 0;background:#fff}.comment-composer:before,.reply-composer:before{content:"";width:38px;height:38px;border-radius:999px;flex:0 0 auto;background:#f3edff var(--composer-avatar) center/cover no-repeat}.comment-input{flex:1;height:44px;border:1px solid #e5e7eb;border-radius:999px;background:#f4f4f5;padding:0 14px;font-size:14px;outline:none}.comment-input:focus{border-color:#d8c7ff;background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.08)}.comment-send{width:44px;height:44px;border:1px solid #eadfff;border-radius:999px;background:#fff;color:#7c3aed;font-size:0;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,58,237,.1);position:relative}.comment-send:before{content:"↵";font-size:23px;line-height:1;font-weight:950;display:block}.comment-send:disabled{opacity:.38;cursor:not-allowed}.reply-composer{--composer-avatar:none;display:flex;align-items:center;gap:8px;margin:10px 0 2px;padding-left:0}.reply-composer .comment-input{height:40px;border-radius:0;border-width:0 0 2px 0;background:#fff;padding:0 2px}.reply-actions{display:flex;align-items:center;gap:8px}.reply-cancel{height:40px;border:none;background:transparent;color:#374151;font-size:13px;font-weight:900;cursor:pointer}.reply-submit{height:40px;border:none;border-radius:999px;background:#f1f1f1;color:#9ca3af;padding:0 15px;font-size:13px;font-weight:900;cursor:pointer}.reply-submit.ready{background:#7c3aed;color:#fff}.comment-note{margin-top:8px;color:#9ca3af;font-size:11px;line-height:1.35}
     .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:30}
@@ -162,13 +162,14 @@
 
   <script src="assets/text-format.js"></script>
   <script src="assets/time-format.js"></script>
-  <script src="assets/anonymous-identity.js?v=20260602"></script>
+  <script src="assets/anonymous-identity.js?v=20260603"></script>
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
     const DELETED_KEY = 'hotdeal_deleted_keys_v1';
     const READ_KEY = 'hotdeal_read_keys_v1';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
+    const DETAIL_CACHE_PREFIX = 'gaji_deal_detail_v1:';
     const DEALS_API = '/api/deals';
     let currentItem = null;
     let currentUser = null;
@@ -401,6 +402,24 @@
       return dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]);
     }
 
+    function detailCacheKey(id){
+      return DETAIL_CACHE_PREFIX + encodeURIComponent(String(id || ''));
+    }
+
+    function readCachedDetail(id){
+      try{
+        const item = JSON.parse(localStorage.getItem(detailCacheKey(id)) || 'null');
+        return item ? normalizeItems([item])[0] : null;
+      }catch(_){
+        return null;
+      }
+    }
+
+    function saveCachedDetail(item){
+      if(!item?.id) return;
+      localStorage.setItem(detailCacheKey(item.id), JSON.stringify(item));
+    }
+
     function renderRichText(text){
       if(window.TextFormat?.markdownToHtml){
         return window.TextFormat.markdownToHtml(text || '');
@@ -416,6 +435,7 @@
     }
 
     function renderItem(item){
+      if(item?.id) saveCachedDetail(item);
       document.title = item?.title ? `${item.title} - 가지딜` : '가지딜 - 핫딜 상세';
       document.getElementById('title').textContent = item.title;
       document.getElementById('price').textContent = item.price;
@@ -503,7 +523,8 @@
         nickname: comment.nickname || '익명 가지',
         body: comment.body || comment.comment || '',
         createdAt: comment.createdAt || comment.created_at || new Date().toISOString(),
-        guestKey: comment.guestKey || comment.guest_key || ''
+        guestKey: comment.guestKey || comment.guest_key || '',
+        parentId: String(comment.parentId || comment.parent_id || '').trim()
       })).filter(comment => comment.body.trim());
     }
 
@@ -512,6 +533,7 @@
     }
 
     function commentAvatarUrl(nickname){
+      if(window.GajiIdentity?.getAvatarUrl) return window.GajiIdentity.getAvatarUrl(nickname);
       const name = String(nickname || '가지').trim() || '가지';
       let hash = 0;
       for(let i = 0; i < name.length; i += 1){
@@ -554,17 +576,29 @@
         list.innerHTML = '<div class="comment-empty">첫 댓글을 남겨보세요.</div>';
         return;
       }
-      list.innerHTML = normalized.map(comment => {
+      const byParent = new Map();
+      normalized.forEach(comment => {
+        const key = comment.parentId || '';
+        if(!byParent.has(key)) byParent.set(key, []);
+        byParent.get(key).push(comment);
+      });
+      const topLevel = (byParent.get('') || []).sort((a,b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''));
+      const renderOne = (comment, isReply = false) => {
         const avatar = escapeHtml(commentAvatarUrl(comment.nickname));
         return `
-          <article class="comment-item">
+          <article class="comment-item${isReply ? ' reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
             <div class="comment-avatar"><img src="${avatar}" alt="" aria-hidden="true"></div>
             <div class="comment-main">
-              <div class="comment-meta"><span class="comment-name">${escapeHtml(comment.nickname)}</span><span>·</span><span>${escapeHtml(formatCommentTime(comment.createdAt))}</span></div>
+              <div class="comment-meta"><span class="comment-name">${escapeHtml(comment.nickname)}</span><span>${escapeHtml(formatCommentTime(comment.createdAt))}</span></div>
               <div class="comment-body">${escapeHtml(comment.body)}</div>
+              ${isReply ? '' : `<div class="comment-actions"><button class="reply-btn" type="button" data-reply-to="${escapeHtml(comment.id)}" data-reply-name="${escapeHtml(comment.nickname)}">답글</button></div><div class="reply-slot" id="replySlot-${escapeHtml(comment.id)}"></div>`}
             </div>
           </article>
         `;
+      };
+      list.innerHTML = topLevel.map(comment => {
+        const replies = (byParent.get(comment.id) || []).sort((a,b) => Date.parse(a.createdAt || '') - Date.parse(b.createdAt || ''));
+        return renderOne(comment) + replies.map(reply => renderOne(reply, true)).join('');
       }).join('');
     }
 
@@ -583,7 +617,7 @@
       }catch(_){ }
     }
 
-    async function postComment(body){
+    async function postComment(body, parentId = ''){
       if(!currentItem || !body.trim()) return;
       const comment = {
         id:`local-${Date.now()}`,
@@ -591,7 +625,8 @@
         nickname:getCommentNickname(),
         body:body.trim(),
         createdAt:new Date().toISOString(),
-        guestKey:getGuestKey()
+        guestKey:getGuestKey(),
+        parentId:String(parentId || '')
       };
       const next = [comment, ...readLocalComments(currentItem)];
       saveLocalComments(next, currentItem);
@@ -616,6 +651,7 @@
     function bindCommentForm(){
       const form = document.getElementById('commentForm');
       const input = document.getElementById('commentInput');
+      const list = document.getElementById('commentList');
       if(!form || !input) return;
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -624,6 +660,43 @@
         input.value = '';
         await postComment(text);
       });
+      list?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.reply-btn');
+        if(!btn) return;
+        openReplyComposer(btn.dataset.replyTo || '', btn.dataset.replyName || '');
+      });
+    }
+
+    function openReplyComposer(parentId, parentName){
+      document.querySelectorAll('.reply-slot').forEach(slot => { slot.innerHTML = ''; });
+      const slot = document.getElementById(`replySlot-${parentId}`);
+      if(!slot) return;
+      slot.innerHTML = `
+        <form class="reply-composer" id="replyForm" style="--composer-avatar:url('${commentAvatarUrl(getCommentNickname())}')">
+          <input class="comment-input" id="replyInput" maxlength="500" placeholder="${escapeHtml(parentName)}에게 답글 추가..." autocomplete="off" />
+          <div class="reply-actions">
+            <button class="reply-cancel" type="button">취소</button>
+            <button class="reply-submit" type="submit" disabled>답글</button>
+          </div>
+        </form>
+      `;
+      const form = slot.querySelector('form');
+      const input = slot.querySelector('input');
+      const submit = slot.querySelector('.reply-submit');
+      slot.querySelector('.reply-cancel')?.addEventListener('click', () => { slot.innerHTML = ''; });
+      input?.addEventListener('input', () => {
+        const ready = Boolean(input.value.trim());
+        submit.disabled = !ready;
+        submit.classList.toggle('ready', ready);
+      });
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if(!text) return;
+        slot.innerHTML = '';
+        await postComment(text, parentId);
+      });
+      input?.focus();
     }
 
     function sameRenderableItem(a, b){
@@ -650,7 +723,7 @@
     }
 
     async function fetchItemById(id){
-      const res = await fetch(`${DEALS_API}/${encodeURIComponent(id)}`, { cache: 'no-store' });
+      const res = await fetch(`${DEALS_API}?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
       if(!res.ok) throw new Error('fetch failed');
       const data = await res.json();
       return data.item;
@@ -777,7 +850,7 @@
       await loadRemoteFavorites();
       const id = new URLSearchParams(location.search).get('id');
       const cachedItems = getCachedItems();
-      let item = cachedItems.find(v => String(v.id) === String(id)) || null;
+      let item = readCachedDetail(id) || cachedItems.find(v => String(v.id) === String(id)) || null;
 
       if(item && isDeleted(item)){
         location.replace('index.html');
@@ -800,6 +873,10 @@
           currentItem = first;
           renderItem(first);
         }
+        return;
+      }
+
+      if(item){
         return;
       }
 

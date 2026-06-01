@@ -46,6 +46,24 @@
     return encodeURIComponent(String(value || ''));
   }
 
+  function avatarUrl(nickname = getNickname()){
+    const name = String(nickname || '가지').trim() || '가지';
+    const h = hash(name);
+    const palettes = [
+      ['#f3edff','#7c3aed','#4c1d95'],
+      ['#eef2ff','#6366f1','#312e81'],
+      ['#ecfeff','#0891b2','#164e63'],
+      ['#f0fdf4','#16a34a','#14532d'],
+      ['#fff7ed','#ea580c','#7c2d12'],
+      ['#fdf2f8','#db2777','#831843']
+    ];
+    const [bg, mid, ink] = palettes[h % palettes.length];
+    const initial = name.charAt(0).replace(/[&<>"']/g, '');
+    const tilt = (h % 17) - 8;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><circle cx="66" cy="28" r="18" fill="${mid}" opacity=".18"/><circle cx="29" cy="72" r="24" fill="${mid}" opacity=".12"/><g transform="translate(48 49) rotate(${tilt})"><ellipse cx="0" cy="6" rx="16" ry="22" fill="${mid}"/><path d="M6-16c8-6 16-6 22-1-7 1-14 5-18 12" fill="${ink}"/></g><text x="48" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#fff">${initial}</text></svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  }
+
   function getUser(){
     const deviceId = getDeviceId();
     const nickname = getNickname();
@@ -101,6 +119,7 @@
   window.GajiIdentity = {
     getDeviceId,
     getNickname,
+    getAvatarUrl: avatarUrl,
     setNickname(nickname){
       const clean = String(nickname || '').trim().replace(/\s+/g, ' ').slice(0, 24);
       if(clean) localStorage.setItem(NICK_KEY, clean);

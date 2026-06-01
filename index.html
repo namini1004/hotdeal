@@ -54,6 +54,9 @@
     .icon-btn{width:34px;height:34px;display:grid;place-items:center;border:none;border-radius:999px;background:transparent;color:#374151;line-height:1;cursor:pointer;text-decoration:none}
     .top-icon{width:22px;height:22px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     .icon-btn:active{background:#f4f6f8}
+    .profile-chip{height:34px;max-width:128px;display:flex;align-items:center;gap:7px;border:none;border-radius:999px;background:#f7f4ff;color:#2d2438;padding:0 9px 0 4px;cursor:pointer}
+    .profile-avatar{width:26px;height:26px;border-radius:999px;display:block;object-fit:cover;flex:0 0 auto}.profile-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:900;letter-spacing:-.02em}
+    .nick-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);display:none;place-items:center;z-index:80;padding:18px}.nick-modal-backdrop.show{display:grid}.nick-modal{width:min(320px,100%);background:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 18px 60px rgba(17,24,39,.24);text-align:center}.nick-modal-title{font-size:17px;font-weight:950;letter-spacing:-.03em}.nick-modal-body{margin-top:8px;color:#667085;font-size:14px;line-height:1.45}.nick-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.nick-modal-btn{height:44px;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer}.nick-modal-btn.cancel{background:#f4f6f8;color:#374151}.nick-modal-btn.confirm{background:var(--brand);color:#fff}
 
     .search-wrap{display:none;margin-top:10px}
     .search-wrap.show{display:block}
@@ -136,6 +139,7 @@
       .view-toggle{display:flex}
       .icon-btn{width:36px;height:36px;background:#f4f6f8}
       .top-icon{width:23px;height:23px}
+      .profile-chip{height:36px;max-width:154px;background:#fff;border:1px solid var(--line);padding-right:11px}.profile-avatar{width:28px;height:28px}
       .search-wrap{max-width:520px;margin-left:auto;margin-right:0}
       .search-input{height:46px;background:#fafafa}
       .feed-controls{padding-top:14px}
@@ -188,6 +192,10 @@
           <a class="web-tab" href="gajigaji.html"><img class="web-tab-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
         </nav>
         <div class="top-actions">
+          <button class="profile-chip" id="profileChip" type="button" aria-label="닉네임 변경">
+            <img class="profile-avatar" id="profileAvatar" alt="" aria-hidden="true">
+            <span class="profile-name" id="profileName"></span>
+          </button>
           <button class="icon-btn" id="sortToggle" aria-label="정렬">
             <span id="sortIconWrap" aria-hidden="true">
               <svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
@@ -252,7 +260,17 @@
   </div>
 
   <script src="assets/time-format.js"></script>
-  <script src="assets/anonymous-identity.js?v=20260602"></script>
+  <script src="assets/anonymous-identity.js?v=20260603"></script>
+  <div class="nick-modal-backdrop" id="nickModal" role="dialog" aria-modal="true" aria-labelledby="nickModalTitle">
+    <div class="nick-modal">
+      <div class="nick-modal-title" id="nickModalTitle">닉네임을 변경할까요?</div>
+      <div class="nick-modal-body">내 가지의 닉네임 설정 화면으로 이동합니다.</div>
+      <div class="nick-modal-actions">
+        <button class="nick-modal-btn cancel" id="nickCancel" type="button">취소</button>
+        <button class="nick-modal-btn confirm" id="nickConfirm" type="button">확인</button>
+      </div>
+    </div>
+  </div>
   <script>
     const STORAGE_KEY = 'hotdeal_items_v3';
     const LEGACY_STORAGE_KEY = 'hotdeal_items_v2';
@@ -656,6 +674,23 @@
       });
     }
 
+    function bindProfileChip(){
+      const chip = document.getElementById('profileChip');
+      const avatar = document.getElementById('profileAvatar');
+      const name = document.getElementById('profileName');
+      const modal = document.getElementById('nickModal');
+      const cancel = document.getElementById('nickCancel');
+      const confirm = document.getElementById('nickConfirm');
+      const user = window.GajiIdentity?.getUser?.();
+      const nickname = user?.nickname || window.GajiIdentity?.getNickname?.() || '익명 가지';
+      if(name) name.textContent = nickname;
+      if(avatar) avatar.src = window.GajiIdentity?.getAvatarUrl?.(nickname) || '';
+      chip?.addEventListener('click', () => modal?.classList.add('show'));
+      cancel?.addEventListener('click', () => modal?.classList.remove('show'));
+      modal?.addEventListener('click', (e) => { if(e.target === modal) modal.classList.remove('show'); });
+      confirm?.addEventListener('click', () => { location.href = 'nickname.html'; });
+    }
+
     function renderSortIcon(){
       const wrap = document.getElementById('sortIconWrap');
       const icon = state.sortMode === 'temperature'
@@ -952,6 +987,7 @@
     async function init(){
       restoreLastTab();
       restoreLastSort();
+      bindProfileChip();
       bindTabs();
       bindListSwipeTabs();
       bindSearch();
