@@ -42,6 +42,10 @@
     return nickname;
   }
 
+  function headerSafe(value){
+    return encodeURIComponent(String(value || ''));
+  }
+
   function getUser(){
     const deviceId = getDeviceId();
     const nickname = getNickname();
@@ -86,7 +90,7 @@
       if(isApi){
         const headers = new Headers(nextInit.headers || (typeof input !== 'string' ? input.headers : undefined) || {});
         headers.set('X-Gaji-Device-Id', getDeviceId());
-        headers.set('X-Gaji-Nickname', getNickname());
+        headers.set('X-Gaji-Nickname', headerSafe(getNickname()));
         nextInit.headers = headers;
         nextInit.body = decorateBody(nextInit.body);
       }

@@ -21,8 +21,16 @@ function cleanDeviceId(value = '') {
   return String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
 }
 
+function decodeMaybe(value = '') {
+  try {
+    return decodeURIComponent(String(value || ''));
+  } catch (_) {
+    return String(value || '');
+  }
+}
+
 function cleanNickname(value = '') {
-  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 24);
+  return decodeMaybe(value).trim().replace(/\s+/g, ' ').slice(0, 24);
 }
 
 function getAnonymousUser(req, body = {}) {
