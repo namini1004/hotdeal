@@ -9,8 +9,8 @@
   <style>
     body{margin:0;font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111827}
     .app{max-width:430px;margin:0 auto;padding:16px}
-    .top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-    .back{width:36px;height:36px;border:1px solid #e5e7eb;border-radius:999px;display:grid;place-items:center;text-decoration:none;color:#111827}
+    .top{display:flex;align-items:center;gap:10px;margin:10px 0 14px}
+    .back{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;border:1px solid #eee9f8;text-decoration:none;color:#374151;font-size:22px;font-weight:800;line-height:1}
     .title{font-size:20px;font-weight:700;letter-spacing:-.02em}
     .card{border:1px solid #e5e7eb;border-radius:14px;padding:14px}
     .current{font-size:14px;color:#374151;margin-bottom:10px}
@@ -24,7 +24,7 @@
 </head>
 <body>
   <main class="app">
-    <div class="top"><a class="back" href="my-gaji.html">←</a><div class="title">닉네임 설정</div></div>
+    <div class="top"><a class="back" href="my-gaji.html" aria-label="뒤로가기">‹</a><div class="title">닉네임 설정</div></div>
     <section class="card">
       <div class="current" id="current">현재 닉네임: -</div>
       <input id="nicknameInput" maxlength="24" placeholder="예) 반짝이는 보라 가지" />
@@ -36,7 +36,7 @@
     </section>
   </main>
 
-  <script src="assets/anonymous-identity.js?v=20260605"></script>
+  <script src="assets/anonymous-identity.js?v=20260606"></script>
   <script>
     const input = document.getElementById('nicknameInput');
     const current = document.getElementById('current');

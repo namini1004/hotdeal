@@ -17,10 +17,20 @@
     return Math.abs(n);
   }
 
+  function readCookie(name){
+    const key = `${name}=`;
+    return String(document.cookie || '').split(';').map(v => v.trim()).find(v => v.startsWith(key))?.slice(key.length) || '';
+  }
+
   function getDeviceId(){
     let id = localStorage.getItem(DEVICE_KEY);
     if(!id){
-      id = randomId();
+      const cookieId = readCookie(DEVICE_COOKIE);
+      if(cookieId){
+        try{ id = decodeURIComponent(cookieId); }catch(_){ id = cookieId; }
+      }else{
+        id = randomId();
+      }
       localStorage.setItem(DEVICE_KEY, id);
     }
     document.cookie = `${DEVICE_COOKIE}=${encodeURIComponent(id)}; Max-Age=31536000; Path=/; SameSite=Lax`;

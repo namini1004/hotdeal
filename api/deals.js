@@ -115,7 +115,21 @@ async function handleCommentRequest(req, res) {
     return json(res, 201, { item: normalizeCommentRow(rows?.[0] || payload) });
   }
 
-  res.setHeader('Allow', 'GET, POST');
+  if (req.method === 'DELETE') {
+    const body = req.body || {};
+    const url = new URL(req.url, 'http://localhost');
+    const id = cleanParentCommentId(body.id || url.searchParams.get('id') || '');
+    const dealKey = cleanCommentString(body.dealKey || body.deal_key || url.searchParams.get('dealKey') || url.searchParams.get('deal_key') || '', 800);
+    const guestKey = cleanCommentString(body.guestKey || body.guest_key || url.searchParams.get('guestKey') || url.searchParams.get('guest_key') || '', 120);
+    if (!id || !dealKey || !guestKey) return json(res, 400, { error: 'id, dealKey and guestKey are required' });
+    await supabaseRequest(
+      `deal_comments?id=eq.${encodeURIComponent(id)}&deal_key=eq.${encodeURIComponent(dealKey)}&guest_key=eq.${encodeURIComponent(guestKey)}`,
+      { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
+    );
+    return json(res, 200, { ok: true });
+  }
+
+  res.setHeader('Allow', 'GET, POST, DELETE');
   return json(res, 405, { error: 'Method not allowed' });
 }
 
