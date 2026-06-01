@@ -73,17 +73,18 @@
     const name = String(nickname || '가지').trim() || '가지';
     const h = hash(name);
     const palettes = [
-      ['#f3edff','#7c3aed','#4c1d95'],
-      ['#eef2ff','#6366f1','#312e81'],
-      ['#ecfeff','#0891b2','#164e63'],
-      ['#f0fdf4','#16a34a','#14532d'],
-      ['#fff7ed','#ea580c','#7c2d12'],
-      ['#fdf2f8','#db2777','#831843']
+      ['#4c1d95','#7c3aed'],
+      ['#312e81','#6366f1'],
+      ['#164e63','#0891b2'],
+      ['#14532d','#16a34a'],
+      ['#7c2d12','#ea580c'],
+      ['#831843','#db2777'],
+      ['#111827','#6d28d9'],
+      ['#1f2937','#0f766e']
     ];
-    const [bg, mid, ink] = palettes[h % palettes.length];
+    const [bg, mid] = palettes[h % palettes.length];
     const initial = nicknameInitials(name);
-    const tilt = (h % 17) - 8;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><circle cx="66" cy="28" r="18" fill="${mid}" opacity=".18"/><circle cx="29" cy="72" r="24" fill="${mid}" opacity=".12"/><g transform="translate(48 49) rotate(${tilt})"><ellipse cx="0" cy="6" rx="16" ry="22" fill="${mid}"/><path d="M6-16c8-6 16-6 22-1-7 1-14 5-18 12" fill="${ink}"/></g><text x="48" y="59" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="800" fill="#fff">${initial}</text></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><path d="M0 96C25 60 54 43 96 35v61H0Z" fill="${mid}" opacity=".88"/><circle cx="74" cy="20" r="28" fill="${mid}" opacity=".34"/><text x="48" y="58" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="900" fill="#fff" stroke="rgba(0,0,0,.18)" stroke-width="1" paint-order="stroke">${initial}</text></svg>`;
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
 
