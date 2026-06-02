@@ -77,10 +77,12 @@ class DetailConversionUxTests(unittest.TestCase):
 
         self.assertIn('async function loadSessionUser()', nickname_html)
         self.assertIn("/api/auth?action=me", nickname_html)
-        self.assertIn('hasPendingLocalNickname(localNickname, remoteNickname)', nickname_html)
+        self.assertIn('hasPendingLocalNickname(sessionUser, localNickname, remoteNickname)', nickname_html)
+        self.assertIn('gaji_profile_pending_nickname_v1', nickname_html)
         self.assertIn("const saved = await callApi({ mode:'manual', nickname:localNickname });", nickname_html)
 
         self.assertIn('async function reconcilePendingNickname(user)', my_gaji_html)
+        self.assertIn('hasPendingLocalNickname(user, localNickname, remoteNickname)', my_gaji_html)
         self.assertIn("/api/profile-nickname", my_gaji_html)
         self.assertIn('const user = await reconcilePendingNickname(data.user);', my_gaji_html)
 

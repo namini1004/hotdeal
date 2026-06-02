@@ -48,17 +48,33 @@
       return Boolean(user && user.anonymous === false);
     }
 
-    function syncSavedNickname(nickname){
+    function userAccountKey(user){
+      if(!user || user.anonymous) return '';
+      if(user.provider && user.providerId) return `${user.provider}:${user.providerId}`;
+      if(user.email) return `email:${String(user.email).trim().toLowerCase()}`;
+      return '';
+    }
+
+    function syncSavedNickname(nickname, options = {}){
       const value = String(nickname || '').trim();
       const user = window.GajiIdentity?.setNickname?.(value);
       try{
         const cached = JSON.parse(localStorage.getItem('gaji_auth_user_cache_v1') || 'null');
         if(cached && typeof cached === 'object'){
-          localStorage.setItem('gaji_auth_user_cache_v1', JSON.stringify({ ...cached, nickname:value, name:value, avatar:'' }));
+          localStorage.setItem('gaji_auth_user_cache_v1', JSON.stringify({ ...cached, nickname:value }));
         }else if(user){
-          localStorage.setItem('gaji_auth_user_cache_v1', JSON.stringify({ ...user, nickname:value, name:value, avatar:'' }));
+          localStorage.setItem('gaji_auth_user_cache_v1', JSON.stringify({ ...user, nickname:value }));
         }
-        localStorage.setItem('gaji_profile_updated_at_v1', String(Date.now()));
+        if(options.remoteSaved){
+          localStorage.removeItem('gaji_profile_pending_nickname_v1');
+          localStorage.removeItem('gaji_profile_updated_at_v1');
+        }else if(options.markPending && options.user){
+          localStorage.setItem('gaji_profile_pending_nickname_v1', JSON.stringify({
+            accountKey:userAccountKey(options.user),
+            nickname:value,
+            at:Date.now()
+          }));
+        }
       }catch(_){ }
       window.dispatchEvent(new CustomEvent('gaji:nickname-updated', { detail:{ nickname:value } }));
       return user;
@@ -102,9 +118,12 @@
       return window.GajiIdentity?.getUser?.();
     }
 
-    function hasPendingLocalNickname(localNickname, remoteNickname){
+    function hasPendingLocalNickname(user, localNickname, remoteNickname){
       if(!localNickname || localNickname === remoteNickname) return false;
-      return Boolean(localStorage.getItem('gaji_profile_updated_at_v1'));
+      try{
+        const pending = JSON.parse(localStorage.getItem('gaji_profile_pending_nickname_v1') || 'null');
+        return Boolean(pending?.accountKey === userAccountKey(user) && pending?.nickname === localNickname);
+      }catch(_){ return false; }
     }
 
     async function loadCurrent(){
@@ -115,14 +134,14 @@
       try{
         const data = await callApi(null, 'GET');
         const remoteNickname = data.nickname || '';
-        if(hasPendingLocalNickname(localNickname, remoteNickname)){
+        if(hasPendingLocalNickname(sessionUser, localNickname, remoteNickname)){
           const saved = await callApi({ mode:'manual', nickname:localNickname });
-          syncSavedNickname(saved.nickname || localNickname);
+          syncSavedNickname(saved.nickname || localNickname, { remoteSaved:true, user:sessionUser });
           applyNickname(saved.nickname || localNickname);
           return;
         }
         if(remoteNickname){
-          syncSavedNickname(remoteNickname);
+          syncSavedNickname(remoteNickname, { remoteSaved:true, user:sessionUser });
           applyNickname(remoteNickname);
         }
       }catch(err){
@@ -140,11 +159,11 @@
       }
       try{
         const data = await callApi({ mode:'auto' });
-        syncSavedNickname(data.nickname || input.value);
+        syncSavedNickname(data.nickname || input.value, { remoteSaved:true, user:localUser });
         applyNickname(data.nickname || input.value, '자동 생성 닉네임을 적용했어요.');
       }catch(err){
         const user = window.GajiIdentity?.regenerateNickname?.();
-        syncSavedNickname(user?.nickname || input.value);
+        syncSavedNickname(user?.nickname || input.value, { markPending:true, user:localUser });
         applyNickname(user?.nickname || input.value, `${toFriendlyMessage(err)} 로컬 닉네임으로 적용했어요.`);
       }
     });
@@ -162,7 +181,7 @@
       }
       try{
         const data = await callApi({ mode:'manual', nickname });
-        syncSavedNickname(data.nickname || nickname);
+        syncSavedNickname(data.nickname || nickname, { remoteSaved:true, user:localUser });
         applyNickname(data.nickname || nickname, '저장되었습니다.');
         setTimeout(() => { location.href = 'my-gaji.html?profile=updated'; }, 450);
       }catch(err){ setMsg(toFriendlyMessage(err)); }
