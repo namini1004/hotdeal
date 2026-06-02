@@ -268,10 +268,9 @@
     }
 
     function accountDisplayName(user){
-      if(!user || user.anonymous) return 'Google 계정';
-      const nickname = String(user.nickname || '').trim();
-      const name = String(user.name || '').trim();
-      if(name && name !== nickname) return name;
+      const nickname = String(user?.nickname || window.GajiIdentity?.getNickname?.() || '').trim();
+      if(nickname) return nickname;
+      if(!user || user.anonymous) return '익명 가지';
       const emailName = String(user.email || '').split('@')[0].trim();
       return emailName || 'Google 사용자';
     }
@@ -297,9 +296,10 @@
       document.getElementById('userProvider').textContent = user.anonymous ? '익명 기기 인증' : (user.provider === 'google' ? 'Google 로그인' : '로그인됨');
       const fallbackText = (displayName || user.email || 'G').trim().charAt(0) || 'G';
       document.getElementById('avatarFallback').textContent = fallbackText;
-      if(user.avatar){
+      const nicknameAvatar = window.GajiIdentity?.getAvatarUrl?.(displayName) || '';
+      if(nicknameAvatar){
         const img = document.getElementById('avatarImg');
-        img.src = user.avatar;
+        img.src = nicknameAvatar;
         img.style.display = 'block';
         document.getElementById('avatarFallback').style.display = 'none';
       }else{
@@ -396,6 +396,8 @@
     bindProfileChip();
     bindKeywordLoginGate();
     loadMe();
+    window.addEventListener('pageshow', () => loadMe());
+    window.addEventListener('focus', () => loadMe());
   </script>
 
   <script>

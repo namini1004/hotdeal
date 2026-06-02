@@ -29,6 +29,15 @@ class DetailConversionUxTests(unittest.TestCase):
             r'<img id="img" alt="상품 이미지" decoding="async" fetchpriority="high">',
         )
 
+    def test_detail_comments_use_remote_api_not_local_fallback(self):
+        html = DETAIL_HTML.read_text(encoding='utf-8')
+
+        self.assertIn("const COMMENT_API = '/api/deals?action=comments';", html)
+        self.assertIn('fetch(`${COMMENT_API}&dealKey=${encodeURIComponent(key)}`', html)
+        self.assertNotIn('function readLocalComments', html)
+        self.assertNotIn('function saveLocalComments', html)
+        self.assertNotIn('localStorage.setItem(commentStorageKey', html)
+
     def test_list_first_view_images_are_eager_and_rest_lazy(self):
         html = INDEX_HTML.read_text(encoding='utf-8')
 

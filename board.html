@@ -95,6 +95,10 @@
     .body .md-table th,.body .md-table td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:top}
     .body .md-table th{background:#f8fafc;font-weight:800}
 
+    @media (max-width:767px){
+      html:not(.app-webview) .fab{bottom:calc(env(safe-area-inset-bottom) + 78px)}
+    }
+
     @media (min-width:768px){
       body{background:var(--page)}
       .app{max-width:1120px;padding:0 28px 96px}
