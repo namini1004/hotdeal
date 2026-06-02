@@ -239,9 +239,52 @@ def load_previous_items() -> List[Dict]:
         return []
 
 
+def extract_document_id_from_link(link: str) -> str:
+    raw = link or ""
+    m = re.search(r"[?&]document_srl=(\d+)", raw)
+    return m.group(1) if m else ""
+
+
+def has_reusable_detail_fields(item: Dict) -> bool:
+    return bool((item.get("buyLink") or "").strip() and (item.get("desc") or "").strip())
+
+
+def build_previous_detail_lookup(items: List[Dict]) -> Dict[str, Dict]:
+    lookup: Dict[str, Dict] = {}
+    for item in items or []:
+        if not has_reusable_detail_fields(item):
+            continue
+        item_id = str(item.get("id") or "").strip()
+        source_link = str(item.get("sourceLink") or "").strip()
+        doc_id = item_id or extract_document_id_from_link(source_link)
+        if doc_id:
+            lookup[f"id:{doc_id}"] = item
+        if source_link:
+            lookup[f"source:{canonical_fmkorea_source_link(source_link)}"] = item
+    return lookup
+
+
+def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
+    doc_id = extract_document_id_from_link(row.get("href") or "")
+    source_link = canonical_fmkorea_source_link(row.get("href") or "")
+    cached = lookup.get(f"id:{doc_id}") if doc_id else None
+    if not cached and source_link:
+        cached = lookup.get(f"source:{source_link}")
+    if not cached or not has_reusable_detail_fields(cached):
+        return False
+
+    for key in ("img", "buyLink", "desc"):
+        value = (cached.get(key) or "").strip()
+        if value:
+            row[key] = value
+    row["_detailCached"] = True
+    return True
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
+    previous_lookup = build_previous_detail_lookup(load_previous_items())
 
     all_rows = []
     seen = set()
@@ -267,6 +310,8 @@ def main():
 
         detail_page = context.new_page()
         for r in all_rows:
+            if apply_cached_detail_fields(r, previous_lookup):
+                continue
             try:
                 bundle = extract_detail_bundle_in_page(detail_page, r["href"])
 
@@ -361,7 +406,7 @@ def main():
         doc_id = id_m.group(1)
 
         img = (r.get("img") or "").strip()
-        if not img:
+        if not img and not r.get("_detailCached"):
             try:
                 detail_html = s.get(r["href"], timeout=20).text
                 img = extract_primary_image(detail_html)

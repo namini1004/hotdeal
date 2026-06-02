@@ -4,6 +4,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Dict, List
 from urllib.parse import urljoin, urlsplit
 
 import requests
@@ -510,9 +511,65 @@ def parse_jina_list_items(markdown_text: str, seen=None):
     return items
 
 
+def load_previous_items() -> List[Dict]:
+    if not JSON_PATH.exists():
+        return []
+    try:
+        data = json.loads(JSON_PATH.read_text(encoding="utf-8"))
+        return list(data.get("items") or [])
+    except Exception:
+        return []
+
+
+def extract_post_id_from_link(link: str) -> str:
+    m = re.search(r"/bbs/qb_saleinfo/views/(\d+)", link or "")
+    return m.group(1) if m else ""
+
+
+def has_reusable_detail_fields(item: Dict) -> bool:
+    return bool(
+        (item.get("buyLink") or "").strip()
+        and (item.get("desc") or "").strip()
+        and (item.get("registeredAt") or "").strip()
+    )
+
+
+def build_previous_detail_lookup(items: List[Dict]) -> Dict[str, Dict]:
+    lookup: Dict[str, Dict] = {}
+    for item in items or []:
+        if not has_reusable_detail_fields(item):
+            continue
+        item_id = str(item.get("id") or "").strip()
+        source_link = str(item.get("sourceLink") or "").strip()
+        post_id = item_id or extract_post_id_from_link(source_link)
+        if post_id:
+            lookup[f"id:{post_id}"] = item
+        if source_link:
+            lookup[f"source:{normalize_source_link(source_link)}"] = item
+    return lookup
+
+
+def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
+    post_id = str(row.get("id") or "").strip() or extract_post_id_from_link(row.get("sourceLink") or "")
+    source_link = normalize_source_link(row.get("sourceLink") or "")
+    cached = lookup.get(f"id:{post_id}") if post_id else None
+    if not cached and source_link:
+        cached = lookup.get(f"source:{source_link}")
+    if not cached or not has_reusable_detail_fields(cached):
+        return False
+
+    for key in ("img", "buyLink", "desc", "registeredAt", "date"):
+        value = (cached.get(key) or "").strip()
+        if value:
+            row[key] = value
+    row["_detailCached"] = True
+    return True
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
+    previous_lookup = build_previous_detail_lookup(load_previous_items())
     sess = requests.Session()
     sess.headers.update(HEADERS)
 
@@ -536,6 +593,20 @@ def main():
             # MM-DD만 있는 경계일은 상세 작성시각을 봐야 48시간 포함 여부를 정확히 알 수 있다.
             if dt < since and dt.date() != since.date():
                 old_count += 1
+                continue
+
+            if apply_cached_detail_fields(row, previous_lookup):
+                try:
+                    registered_dt = datetime.fromisoformat(row["registeredAt"])
+                except Exception:
+                    registered_dt = dt
+                if registered_dt < since:
+                    old_count += 1
+                    continue
+                row["date"] = registered_dt.strftime("%Y-%m-%d")
+                row.pop("_detailViaJina", None)
+                row.pop("_detailCached", None)
+                filtered.append(row)
                 continue
 
             # 사이트별 룰: 상세에서 실제 구매처 링크/작성시각 추출
