@@ -16,6 +16,7 @@ const {
 } = require('./_lib/auth');
 const { getNicknameProfile, assignUniqueAutoNickname } = require('./_lib/nickname');
 const { getAnonymousUser } = require('./_lib/anonymous');
+const handleAdmin = require('./_lib/admin');
 
 function getGoogleRedirectUri(req) {
   return (process.env.GOOGLE_REDIRECT_URI || process.env.AUTH_REDIRECT_URI || 'https://hotdeal-omega.vercel.app/api/auth').trim()
@@ -125,6 +126,10 @@ module.exports = async (req, res) => {
   const { url, action, provider } = actionFrom(req);
 
   try {
+    if (action === 'admin') {
+      return await handleAdmin(req, res);
+    }
+
     if (action === 'config' && req.method === 'GET') {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       const providers = providerStatus();

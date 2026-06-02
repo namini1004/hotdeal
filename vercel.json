@@ -8,6 +8,10 @@
       "destination": "/api/deals?id=:id"
     },
     {
+      "source": "/api/admin",
+      "destination": "/api/auth?action=admin"
+    },
+    {
       "source": "/d/:id",
       "destination": "/api/share?id=:id"
     }

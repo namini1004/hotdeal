@@ -35,5 +35,17 @@ class VercelFunctionBudgetTests(unittest.TestCase):
         )
 
 
+    def test_admin_api_is_folded_into_auth_function(self):
+        functions = production_function_files()
+        self.assertNotIn('api/admin.js', functions)
+        self.assertIn('api/auth.js', functions)
+
+        vercel = json.loads((ROOT / 'vercel.json').read_text(encoding='utf-8'))
+        self.assertIn(
+            {'source': '/api/admin', 'destination': '/api/auth?action=admin'},
+            vercel.get('rewrites', []),
+        )
+
+
 if __name__ == '__main__':
     unittest.main()

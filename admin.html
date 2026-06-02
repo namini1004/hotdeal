@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+  <title>가지가지 관리자</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    :root{--bg:#f6f7fb;--panel:#fff;--text:#171827;--muted:#667085;--line:#e6e8ef;--brand:#5b21b6;--brand2:#0f766e;--danger:#dc2626;--warn:#b45309;--ok:#15803d}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .login{min-height:100vh;display:grid;place-items:center;padding:24px}
+    .login-card{width:min(420px,100%);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:28px;box-shadow:0 18px 50px rgba(16,24,40,.08)}
+    .brand{font-size:26px;font-weight:950;letter-spacing:-.04em}
+    .brand span{color:var(--brand)}
+    .hint{margin:8px 0 20px;color:var(--muted);line-height:1.5;font-size:14px}
+    .field{display:grid;gap:7px;margin-bottom:12px}
+    label{font-size:13px;font-weight:850;color:#344054}
+    input,select,textarea{width:100%;border:1px solid #d0d5dd;border-radius:8px;background:#fff;color:var(--text);padding:10px 12px;outline:none}
+    textarea{min-height:96px;resize:vertical;line-height:1.5}
+    input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(91,33,182,.12)}
+    .btn{height:40px;border:0;border-radius:8px;padding:0 14px;font-weight:900;background:#111827;color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+    .btn.primary{background:var(--brand)}
+    .btn.secondary{background:#eef2f6;color:#344054}
+    .btn.danger{background:#fee2e2;color:#b91c1c}
+    .btn.ghost{background:transparent;color:#344054;border:1px solid var(--line)}
+    .btn.small{height:32px;padding:0 10px;font-size:12px}
+    .app{display:none;min-height:100vh}
+    .shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+    .side{position:sticky;top:0;height:100vh;background:#111827;color:#fff;padding:20px 14px;display:flex;flex-direction:column}
+    .side .brand{font-size:22px;margin:0 8px 22px}
+    .nav{display:grid;gap:6px}
+    .nav button{height:42px;border:0;border-radius:8px;background:transparent;color:#d0d5dd;text-align:left;padding:0 12px;font-weight:850}
+    .nav button.active{background:#fff;color:#111827}
+    .side-foot{margin-top:auto;padding:12px 8px;color:#98a2b3;font-size:12px;line-height:1.45}
+    .main{min-width:0;padding:24px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
+    h1{margin:0;font-size:28px;letter-spacing:-.04em}
+    .admin-name{color:var(--muted);font-size:13px}
+    .grid{display:grid;gap:14px}
+    .stats{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:18px}
+    .stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+    .stat b{display:block;font-size:25px;letter-spacing:-.03em}
+    .stat span{display:block;margin-top:5px;color:var(--muted);font-size:13px;font-weight:800}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+    .panel-title{font-size:16px;font-weight:950}
+    .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .toolbar input,.toolbar select{height:38px;width:auto;min-width:180px}
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+    th{background:#f8fafc;color:#475467;font-size:12px;white-space:nowrap}
+    td{line-height:1.45}
+    .truncate{max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .muted{color:var(--muted)}
+    .badge{display:inline-flex;align-items:center;height:24px;border-radius:999px;padding:0 9px;font-size:12px;font-weight:900;background:#eef2ff;color:#3730a3;white-space:nowrap}
+    .badge.ok{background:#dcfce7;color:var(--ok)}
+    .badge.warn{background:#fef3c7;color:var(--warn)}
+    .badge.danger{background:#fee2e2;color:var(--danger)}
+    .row-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,380px);gap:14px}
+    .form{padding:16px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .empty{padding:28px;text-align:center;color:var(--muted)}
+    .toast{position:fixed;right:18px;bottom:18px;max-width:360px;background:#111827;color:#fff;border-radius:8px;padding:12px 14px;font-size:14px;font-weight:800;opacity:0;transform:translateY(8px);pointer-events:none;transition:.18s;z-index:20}
+    .toast.show{opacity:1;transform:translateY(0)}
+    .setup{border:1px solid #fbbf24;background:#fffbeb;color:#92400e;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.5}
+    .mobile-menu{display:none}
+    @media(max-width:900px){
+      .shell{grid-template-columns:1fr}
+      .side{position:static;height:auto}
+      .nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .main{padding:16px}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .split{grid-template-columns:1fr}
+      .topbar{align-items:flex-start;flex-direction:column}
+    }
+    @media(max-width:560px){
+      .stats,.form-row{grid-template-columns:1fr}
+      .nav{grid-template-columns:1fr}
+      .toolbar input,.toolbar select{width:100%;min-width:0}
+    }
+  </style>
+</head>
+<body>
+  <section class="login" id="loginView">
+    <div class="login-card">
+      <div class="brand"><span>가지가지</span> 관리자</div>
+      <p class="hint">관리자 권한이 있는 구글 계정으로 로그인하거나, 서버에 설정된 관리자 비밀번호를 입력하세요.</p>
+      <div class="setup" id="setupBox" hidden>구글 관리자 로그인에는 `AUTH_SESSION_SECRET`이 필요합니다. 비밀번호 로그인을 쓰려면 `ADMIN_PASSWORD`도 설정하세요.</div>
+      <form id="loginForm">
+        <div class="field">
+          <label for="adminPassword">관리자 비밀번호</label>
+          <input id="adminPassword" type="password" autocomplete="current-password" placeholder="ADMIN_PASSWORD" />
+        </div>
+        <button class="btn primary" type="submit" style="width:100%">로그인</button>
+      </form>
+      <div style="display:grid;gap:8px;margin-top:10px">
+        <a class="btn secondary" href="/api/auth?action=start&provider=google&return_to=admin.html">구글 계정으로 로그인</a>
+        <a class="btn ghost" href="/">사이트로 돌아가기</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="app" id="appView">
+    <div class="shell">
+      <aside class="side">
+        <div class="brand"><span>가지가지</span> Admin</div>
+        <nav class="nav" id="nav">
+          <button data-page="dashboard" class="active">대시보드</button>
+          <button data-page="deals">핫딜 관리</button>
+          <button data-page="users">사용자 관리</button>
+          <button data-page="comments">댓글 관리</button>
+          <button data-page="reports">신고 관리</button>
+          <button data-page="notices">공지사항</button>
+          <button data-page="board">게시판 관리</button>
+        </nav>
+        <div class="side-foot">
+          <div id="adminInfo">관리자</div>
+          <button class="btn ghost small" id="logoutBtn" type="button" style="margin-top:10px;color:#fff;border-color:#344054">로그아웃</button>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <h1 id="pageTitle">대시보드</h1>
+            <div class="admin-name" id="pageDesc">운영 현황을 확인합니다.</div>
+          </div>
+          <div class="toolbar">
+            <button class="btn secondary" id="refreshBtn" type="button">새로고침</button>
+            <a class="btn ghost" href="/" target="_blank">사이트 보기</a>
+          </div>
+        </div>
+        <div id="content"></div>
+      </main>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const API = '/api/admin';
+    const state = { page:'dashboard', data:{}, admin:null, search:'' };
+    const pageMeta = {
+      dashboard:['대시보드','운영 현황을 확인합니다.'],
+      deals:['핫딜 게시글 관리','핫딜을 등록, 수정, 삭제하고 노출 상태를 관리합니다.'],
+      users:['사용자 관리','회원 상태, 권한, 운영 메모를 관리합니다.'],
+      comments:['댓글 관리','댓글을 검수하고 수정 또는 삭제합니다.'],
+      reports:['신고 관리','신고 접수와 처리 상태를 관리합니다.'],
+      notices:['공지사항 관리','공지 등록, 수정, 공개 상태를 관리합니다.'],
+      board:['게시판 관리','자유게시판 글을 검수하고 삭제합니다.'],
+    };
+
+    function $(id){ return document.getElementById(id); }
+    function escapeHtml(v){ return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+    function fmt(v){ if(!v) return '-'; const d = new Date(v); return Number.isFinite(d.getTime()) ? d.toLocaleString('ko-KR') : String(v); }
+    function short(v,n=80){ const s=String(v||''); return s.length>n ? `${s.slice(0,n)}...` : s; }
+    function toast(msg){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),1800); }
+    function badge(text,type=''){ return `<span class="badge ${type}">${escapeHtml(text)}</span>`; }
+
+    async function request(resource, options={}){
+      const url = `${API}?resource=${encodeURIComponent(resource)}${options.query || ''}`;
+      const res = await fetch(url, {
+        method: options.method || 'GET',
+        headers: {'Content-Type':'application/json'},
+        body: options.body ? JSON.stringify(options.body) : undefined,
+        cache:'no-store',
+      });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.error || '요청에 실패했습니다.');
+      return data;
+    }
+
+    async function checkAuth(){
+      const data = await request('status');
+      $('setupBox').hidden = data.configured !== false;
+      if(data.admin){
+        state.admin = data.admin;
+        $('loginView').style.display='none';
+        $('appView').style.display='block';
+        $('adminInfo').textContent = data.admin.email || data.admin.name || '관리자';
+        await loadPage('dashboard');
+      }else{
+        $('loginView').style.display='grid';
+        $('appView').style.display='none';
+      }
+    }
+
+    async function loadPage(page=state.page){
+      state.page = page;
+      const [title, desc] = pageMeta[page] || pageMeta.dashboard;
+      $('pageTitle').textContent = title;
+      $('pageDesc').textContent = desc;
+      document.querySelectorAll('#nav button').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page));
+      $('content').innerHTML = '<div class="panel"><div class="empty">불러오는 중...</div></div>';
+      try{
+        if(page === 'dashboard') state.data.dashboard = await request('dashboard');
+        else state.data[page] = await request(page);
+        render();
+      }catch(err){
+        $('content').innerHTML = `<div class="panel"><div class="empty">${escapeHtml(err.message)}</div></div>`;
+      }
+    }
+
+    function render(){
+      if(state.page === 'dashboard') return renderDashboard();
+      if(state.page === 'deals') return renderDeals();
+      if(state.page === 'users') return renderUsers();
+      if(state.page === 'comments') return renderComments();
+      if(state.page === 'reports') return renderReports();
+      if(state.page === 'notices') return renderNotices();
+      if(state.page === 'board') return renderBoard();
+    }
+
+    function renderDashboard(){
+      const d = state.data.dashboard || {};
+      const s = d.summary || {};
+      $('content').innerHTML = `
+        <div class="grid stats">
+          ${stat(s.totalDeals,'전체 핫딜')}
+          ${stat(s.todayDeals,'오늘 등록')}
+          ${stat(s.pendingReports,'대기 신고')}
+          ${stat(s.activeNotices,'공개 공지')}
+          ${stat(s.users,'사용자')}
+          ${stat(s.comments,'댓글')}
+          ${stat(s.boardPosts,'게시판 글')}
+          ${stat(new Date().toLocaleDateString('ko-KR'),'기준일')}
+        </div>
+        <div class="split">
+          ${tablePanel('인기 핫딜 TOP 10', ['제목','가격','온도/조회','출처'], (d.hotDeals||[]).map(v=>[
+            `<div class="truncate">${escapeHtml(v.title)}</div>`, escapeHtml(v.price||'-'), `${escapeHtml(v.temperature ?? v.views ?? '-')}`, escapeHtml(v.source||'-')
+          ]))}
+          ${tablePanel('최근 신고/댓글', ['구분','내용','상태'], [
+            ...(d.recent?.reports||[]).map(v=>['신고', escapeHtml(short(v.reason || v.memo, 42)), badge(v.status || 'pending','warn')]),
+            ...(d.recent?.comments||[]).map(v=>['댓글', escapeHtml(short(v.body, 42)), escapeHtml(v.nickname||'-')]),
+          ])}
+        </div>`;
+    }
+
+    function stat(value,label){ return `<div class="stat"><b>${escapeHtml(value ?? 0)}</b><span>${escapeHtml(label)}</span></div>`; }
+    function tablePanel(title, headers, rows){
+      return `<section class="panel"><div class="panel-head"><div class="panel-title">${escapeHtml(title)}</div></div><div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${headers.length}" class="empty">데이터가 없습니다.</td></tr>`}</tbody></table></div></section>`;
+    }
+
+    function filtered(items, fields){
+      const q = state.search.trim().toLowerCase();
+      if(!q) return items;
+      return items.filter(item => fields.some(f => String(item[f] || '').toLowerCase().includes(q)));
+    }
+
+    function renderDeals(){
+      const items = filtered(state.data.deals?.items || [], ['title','category','price','source']);
+      $('content').innerHTML = `
+        <div class="split">
+          <section class="panel">
+            <div class="panel-head"><div class="panel-title">핫딜 목록</div><div class="toolbar"><input id="searchBox" placeholder="제목, 가격, 카테고리 검색" value="${escapeHtml(state.search)}"></div></div>
+            <div class="table-wrap"><table><thead><tr><th>제목</th><th>가격</th><th>카테고리</th><th>출처</th><th>등록일</th><th>작업</th></tr></thead><tbody>
+              ${items.map(v=>`<tr><td><div class="truncate">${escapeHtml(v.title)}</div></td><td>${escapeHtml(v.price||'-')}</td><td>${escapeHtml(v.category||'-')}</td><td>${badge(v.source||'user')}</td><td>${fmt(v.registeredAt||v.date)}</td><td><div class="row-actions"><button class="btn small secondary" data-edit-deal="${escapeHtml(v.id)}">수정</button><button class="btn small danger" data-delete-deal="${escapeHtml(v.id)}">삭제</button></div></td></tr>`).join('') || '<tr><td colspan="6" class="empty">핫딜이 없습니다.</td></tr>'}
+            </tbody></table></div>
+          </section>
+          <section class="panel"><div class="panel-head"><div class="panel-title" id="dealFormTitle">핫딜 등록</div></div>${dealForm()}</section>
+        </div>`;
+      bindSearch();
+    }
+
+    function dealForm(item={}){
+      return `<form class="form" id="dealForm">
+        <input type="hidden" name="id" value="${escapeHtml(item.id||'')}">
+        <div class="field"><label>제목</label><input name="title" value="${escapeHtml(item.title||'')}" required></div>
+        <div class="form-row"><div class="field"><label>가격</label><input name="price" value="${escapeHtml(item.price||'')}"></div><div class="field"><label>카테고리</label><input name="category" value="${escapeHtml(item.category||'')}"></div></div>
+        <div class="field"><label>구매 링크</label><input name="buyLink" value="${escapeHtml(item.buyLink||item.sourceLink||'')}"></div>
+        <div class="field"><label>이미지 URL</label><input name="img" value="${escapeHtml(item.img||'')}"></div>
+        <div class="field"><label>설명</label><textarea name="desc">${escapeHtml(item.desc||'')}</textarea></div>
+        <button class="btn primary" type="submit">저장</button>
+        <button class="btn secondary" type="button" id="resetDealForm">새 글</button>
+      </form>`;
+    }
+
+    function renderUsers(){
+      const items = filtered(state.data.users?.items || [], ['email','nickname','userKey','status']);
+      $('content').innerHTML = `<section class="panel"><div class="panel-head"><div class="panel-title">사용자 목록</div><div class="toolbar"><input id="searchBox" placeholder="이메일, 닉네임 검색" value="${escapeHtml(state.search)}"></div></div><div class="table-wrap"><table><thead><tr><th>닉네임</th><th>이메일</th><th>상태</th><th>권한</th><th>메모</th><th>작업</th></tr></thead><tbody>${items.map(v=>`<tr><td>${escapeHtml(v.nickname||'-')}</td><td>${escapeHtml(v.email||v.userKey||'-')}</td><td>${badge(v.status, v.status==='blocked'?'danger':'ok')}</td><td>${escapeHtml(v.role||'user')}</td><td>${escapeHtml(short(v.memo,40))}</td><td><div class="row-actions"><button class="btn small secondary" data-user="${escapeHtml(v.userKey)}" data-status="active">해제</button><button class="btn small danger" data-user="${escapeHtml(v.userKey)}" data-status="blocked">정지</button></div></td></tr>`).join('') || '<tr><td colspan="6" class="empty">사용자 데이터가 없습니다.</td></tr>'}</tbody></table></div></section>`;
+      bindSearch();
+    }
+
+    function renderComments(){
+      const items = filtered(state.data.comments?.items || [], ['nickname','body','dealKey']);
+      $('content').innerHTML = `<section class="panel"><div class="panel-head"><div class="panel-title">댓글 목록</div><div class="toolbar"><input id="searchBox" placeholder="닉네임, 댓글 검색" value="${escapeHtml(state.search)}"></div></div><div class="table-wrap"><table><thead><tr><th>닉네임</th><th>댓글</th><th>핫딜 키</th><th>작성일</th><th>작업</th></tr></thead><tbody>${items.map(v=>`<tr><td>${escapeHtml(v.nickname)}</td><td><div class="truncate">${escapeHtml(v.body)}</div></td><td>${escapeHtml(short(v.dealKey,28))}</td><td>${fmt(v.createdAt)}</td><td><button class="btn small danger" data-delete-comment="${escapeHtml(v.id)}">삭제</button></td></tr>`).join('') || '<tr><td colspan="5" class="empty">댓글이 없습니다.</td></tr>'}</tbody></table></div></section>`;
+      bindSearch();
+    }
+
+    function renderReports(){
+      const items = filtered(state.data.reports?.items || [], ['targetId','reason','memo','status']);
+      $('content').innerHTML = `<div class="split"><section class="panel"><div class="panel-head"><div class="panel-title">신고 목록</div><div class="toolbar"><input id="searchBox" placeholder="대상, 사유 검색" value="${escapeHtml(state.search)}"></div></div><div class="table-wrap"><table><thead><tr><th>대상</th><th>사유</th><th>상태</th><th>접수일</th><th>작업</th></tr></thead><tbody>${items.map(v=>`<tr><td>${escapeHtml(v.targetType)} / ${escapeHtml(short(v.targetId,26))}</td><td>${escapeHtml(short(v.reason||v.memo,44))}</td><td>${badge(v.status, v.status==='done'?'ok':'warn')}</td><td>${fmt(v.createdAt)}</td><td><div class="row-actions"><button class="btn small secondary" data-report="${escapeHtml(v.id)}" data-status="done">완료</button><button class="btn small danger" data-delete-report="${escapeHtml(v.id)}">삭제</button></div></td></tr>`).join('') || '<tr><td colspan="5" class="empty">신고가 없습니다.</td></tr>'}</tbody></table></div></section><section class="panel"><div class="panel-head"><div class="panel-title">신고 수동 등록</div></div><form class="form" id="reportForm"><div class="form-row"><div class="field"><label>대상 유형</label><select name="targetType"><option value="deal">핫딜</option><option value="comment">댓글</option><option value="user">사용자</option></select></div><div class="field"><label>대상 ID</label><input name="targetId"></div></div><div class="field"><label>사유</label><input name="reason" required></div><div class="field"><label>메모</label><textarea name="memo"></textarea></div><button class="btn primary">등록</button></form></section></div>`;
+      bindSearch();
+    }
+
+    function renderNotices(){
+      const items = filtered(state.data.notices?.items || [], ['title','body']);
+      $('content').innerHTML = `<div class="split"><section class="panel"><div class="panel-head"><div class="panel-title">공지 목록</div><div class="toolbar"><input id="searchBox" placeholder="공지 검색" value="${escapeHtml(state.search)}"></div></div><div class="table-wrap"><table><thead><tr><th>제목</th><th>상태</th><th>고정</th><th>작성일</th><th>작업</th></tr></thead><tbody>${items.map(v=>`<tr><td><div class="truncate">${escapeHtml(v.title)}</div></td><td>${badge(v.published?'공개':'비공개', v.published?'ok':'warn')}</td><td>${v.pinned?'고정':'-'}</td><td>${fmt(v.createdAt)}</td><td><div class="row-actions"><button class="btn small secondary" data-edit-notice="${escapeHtml(v.id)}">수정</button><button class="btn small danger" data-delete-notice="${escapeHtml(v.id)}">삭제</button></div></td></tr>`).join('') || '<tr><td colspan="5" class="empty">공지가 없습니다.</td></tr>'}</tbody></table></div></section><section class="panel"><div class="panel-head"><div class="panel-title" id="noticeFormTitle">공지 등록</div></div>${noticeForm()}</section></div>`;
+      bindSearch();
+    }
+
+    function noticeForm(item={}){
+      return `<form class="form" id="noticeForm"><input type="hidden" name="id" value="${escapeHtml(item.id||'')}"><div class="field"><label>제목</label><input name="title" value="${escapeHtml(item.title||'')}" required></div><div class="field"><label>내용</label><textarea name="body">${escapeHtml(item.body||'')}</textarea></div><div class="form-row"><div class="field"><label>공개</label><select name="published"><option value="true" ${item.published!==false?'selected':''}>공개</option><option value="false" ${item.published===false?'selected':''}>비공개</option></select></div><div class="field"><label>상단 고정</label><select name="pinned"><option value="false" ${!item.pinned?'selected':''}>아니오</option><option value="true" ${item.pinned?'selected':''}>예</option></select></div></div><button class="btn primary">저장</button><button class="btn secondary" type="button" id="resetNoticeForm">새 공지</button></form>`;
+    }
+
+    function renderBoard(){
+      const items = filtered(state.data.board?.items || [], ['title','author','body']);
+      $('content').innerHTML = `<section class="panel"><div class="panel-head"><div class="panel-title">게시판 글</div><div class="toolbar"><input id="searchBox" placeholder="제목, 작성자 검색" value="${escapeHtml(state.search)}"></div></div><div class="table-wrap"><table><thead><tr><th>제목</th><th>작성자</th><th>카테고리</th><th>작성일</th><th>작업</th></tr></thead><tbody>${items.map(v=>`<tr><td><div class="truncate">${escapeHtml(v.title)}</div></td><td>${escapeHtml(v.author||'-')}</td><td>${escapeHtml(v.category||'-')}</td><td>${fmt(v.createdAt)}</td><td><button class="btn small danger" data-delete-board="${escapeHtml(v.id)}">삭제</button></td></tr>`).join('') || '<tr><td colspan="5" class="empty">게시글이 없습니다.</td></tr>'}</tbody></table></div></section>`;
+      bindSearch();
+    }
+
+    function bindSearch(){
+      const input = $('searchBox');
+      if(!input) return;
+      input.addEventListener('input', () => { state.search = input.value; render(); });
+    }
+
+    function formData(form){
+      return Object.fromEntries(new FormData(form).entries());
+    }
+
+    document.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      try{
+        if(e.target.id === 'loginForm'){
+          const password = $('adminPassword').value;
+          const data = await request('login',{method:'POST',body:{password}});
+          state.admin = data.admin;
+          toast('로그인되었습니다.');
+          return checkAuth();
+        }
+        if(e.target.id === 'dealForm'){
+          const body = formData(e.target);
+          const id = body.id; delete body.id;
+          await request('deals',{method:id?'PATCH':'POST',query:id?`&id=${encodeURIComponent(id)}`:'',body});
+          toast('핫딜을 저장했습니다.');
+          return loadPage('deals');
+        }
+        if(e.target.id === 'reportForm'){
+          await request('reports',{method:'POST',body:formData(e.target)});
+          toast('신고를 등록했습니다.');
+          return loadPage('reports');
+        }
+        if(e.target.id === 'noticeForm'){
+          const body = formData(e.target);
+          const id = body.id; delete body.id;
+          body.pinned = body.pinned === 'true';
+          body.published = body.published === 'true';
+          await request('notices',{method:id?'PATCH':'POST',query:id?`&id=${encodeURIComponent(id)}`:'',body});
+          toast('공지사항을 저장했습니다.');
+          return loadPage('notices');
+        }
+      }catch(err){ toast(err.message); }
+    });
+
+    document.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('button');
+      if(!btn) return;
+      try{
+        if(btn.dataset.page){ state.search=''; return loadPage(btn.dataset.page); }
+        if(btn.id === 'refreshBtn') return loadPage(state.page);
+        if(btn.id === 'logoutBtn'){ await request('logout',{method:'POST'}); location.href='/admin.html'; return; }
+        if(btn.id === 'resetDealForm'){ renderDeals(); return; }
+        if(btn.id === 'resetNoticeForm'){ renderNotices(); return; }
+        if(btn.dataset.editDeal){
+          const item = (state.data.deals?.items||[]).find(v=>String(v.id)===String(btn.dataset.editDeal));
+          document.querySelector('#dealForm').outerHTML = dealForm(item||{});
+          $('dealFormTitle').textContent = '핫딜 수정';
+          return;
+        }
+        if(btn.dataset.deleteDeal && confirm('이 핫딜을 삭제할까요?')){ await request('deals',{method:'DELETE',query:`&id=${encodeURIComponent(btn.dataset.deleteDeal)}`}); toast('삭제했습니다.'); return loadPage('deals'); }
+        if(btn.dataset.user){ await request('users',{method:'PATCH',body:{userKey:btn.dataset.user,status:btn.dataset.status,role:'user'}}); toast('사용자 상태를 변경했습니다.'); return loadPage('users'); }
+        if(btn.dataset.deleteComment && confirm('이 댓글을 삭제할까요?')){ await request('comments',{method:'DELETE',query:`&id=${encodeURIComponent(btn.dataset.deleteComment)}`}); toast('댓글을 삭제했습니다.'); return loadPage('comments'); }
+        if(btn.dataset.report){ await request('reports',{method:'PATCH',query:`&id=${encodeURIComponent(btn.dataset.report)}`,body:{status:btn.dataset.status,memo:''}}); toast('신고를 처리했습니다.'); return loadPage('reports'); }
+        if(btn.dataset.deleteReport && confirm('이 신고를 삭제할까요?')){ await request('reports',{method:'DELETE',query:`&id=${encodeURIComponent(btn.dataset.deleteReport)}`}); toast('삭제했습니다.'); return loadPage('reports'); }
+        if(btn.dataset.editNotice){
+          const item = (state.data.notices?.items||[]).find(v=>String(v.id)===String(btn.dataset.editNotice));
+          document.querySelector('#noticeForm').outerHTML = noticeForm(item||{});
+          $('noticeFormTitle').textContent = '공지 수정';
+          return;
+        }
+        if(btn.dataset.deleteNotice && confirm('이 공지를 삭제할까요?')){ await request('notices',{method:'DELETE',query:`&id=${encodeURIComponent(btn.dataset.deleteNotice)}`}); toast('삭제했습니다.'); return loadPage('notices'); }
+        if(btn.dataset.deleteBoard && confirm('이 게시글을 삭제할까요?')){ await request('board',{method:'DELETE',query:`&id=${encodeURIComponent(btn.dataset.deleteBoard)}`}); toast('게시글을 삭제했습니다.'); return loadPage('board'); }
+      }catch(err){ toast(err.message); }
+    });
+
+    checkAuth().catch(err => {
+      $('loginView').style.display='grid';
+      $('appView').style.display='none';
+      toast(err.message);
+    });
+  </script>
+</body>
+</html>

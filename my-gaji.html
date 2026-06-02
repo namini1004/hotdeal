@@ -51,6 +51,8 @@
     .panel.loading #loggedIn,.panel.loading #accountActions{display:none!important}
     .menu-grid{display:grid;gap:10px}
     .menu-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px;text-decoration:none;color:inherit}
+    .admin-menu-card{display:none}
+    .admin-menu-card.show{display:flex}
     .menu-left{display:flex;align-items:center;gap:12px;min-width:0}.menu-icon{width:44px;height:44px;border-radius:16px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-deep);font-size:20px;font-weight:950;flex:0 0 auto}.menu-icon.profile-menu-avatar{object-fit:cover;background:#fff}.menu-copy{min-width:0}
     .fav-card-title,.nickname-card-name{font-size:16px;font-weight:950;letter-spacing:-.02em}.nickname-card-label{font-size:11px;color:#9aa2b1;font-weight:850;letter-spacing:-.01em}.fav-card-desc,.nickname-card-help{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.42}.fav-card-arrow{font-size:24px;color:#a6adba;font-weight:900}
     .setting-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px}.read-toggle-label{font-size:14px;font-weight:900;color:#374151;letter-spacing:-.01em}.read-toggle-help{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.42}.switch{position:relative;width:48px;height:30px;display:inline-block;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:999px;transition:.2s}.slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.switch input:checked + .slider{background:var(--brand)}.switch input:checked + .slider:before{transform:translateX(18px)}
@@ -157,6 +159,17 @@
             <span class="slider"></span>
           </label>
         </div>
+
+        <a class="menu-card admin-menu-card" id="adminCard" href="admin.html" aria-label="관리자 페이지로 이동">
+          <div class="menu-left">
+            <span class="menu-icon">⚙</span>
+            <div class="menu-copy">
+              <div class="fav-card-title">관리자 메뉴</div>
+              <div class="fav-card-desc">게시글, 회원, 댓글, 신고, 공지를 관리합니다.</div>
+            </div>
+          </div>
+          <span class="fav-card-arrow">›</span>
+        </a>
       </section>
     </main>
   </div>
@@ -175,6 +188,7 @@
   <script>
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const READ_HIGHLIGHT_TOGGLE_KEY = 'hotdeal_read_highlight_enabled_v1';
+    const ADMIN_EMAIL = 'namini1004@gmail.com';
     const statusBox = document.getElementById('statusBox');
     const accountPanel = document.getElementById('accountPanel');
     const googleLogin = document.getElementById('googleLogin');
@@ -243,6 +257,16 @@
       if(nicknameAvatar) nicknameAvatar.src = avatarUrl;
     }
 
+    function isAdminUser(user){
+      return String(user?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
+    }
+
+    function updateAdminMenu(user){
+      const card = document.getElementById('adminCard');
+      if(!card) return;
+      card.classList.toggle('show', isAdminUser(user));
+    }
+
     function accountDisplayName(user){
       if(!user || user.anonymous) return 'Google 계정';
       const nickname = String(user.nickname || '').trim();
@@ -259,6 +283,7 @@
       clearAvatar();
       try{ localStorage.removeItem(USER_CACHE_KEY); }catch(_){ }
       updateNicknameSurfaces(window.GajiIdentity?.getUser?.());
+      updateAdminMenu(null);
     }
 
     function renderLoggedIn(user){
@@ -282,6 +307,7 @@
       }
       try{ localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)); }catch(_){ }
       updateNicknameSurfaces(user);
+      updateAdminMenu(user);
     }
 
     function loadCachedUser(){

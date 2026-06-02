@@ -27,6 +27,7 @@ const mimeTypes = new Map([
 
 const apiRewrites = [
   [/^\/api\/deals\/([^/]+)\/?$/, '/api/deals.js'],
+  [/^\/api\/board-posts\/([^/]+)\/?$/, '/api/board-posts/[id].js'],
   [/^\/d\/([^/]+)\/?$/, '/api/share.js'],
 ];
 
@@ -81,7 +82,7 @@ async function handleApi(req, res, url) {
     }
   }
 
-  const modulePath = path.join(root, apiPath);
+  const modulePath = path.join(root, apiPath.replace(/^\/+/, ''));
   try {
     const moduleUrl = pathToFileURL(modulePath);
     moduleUrl.searchParams.set('t', String(Date.now()));
