@@ -58,6 +58,19 @@ class DetailConversionUxTests(unittest.TestCase):
         self.assertNotIn('min-height:calc(100vh - 64px)', html)
         self.assertNotIn('margin-top:auto', html)
 
+    def test_reply_connector_keeps_profile_to_profile_line_without_downward_tail(self):
+        html = DETAIL_HTML.read_text(encoding='utf-8')
+
+        self.assertIn('.comment-thread.has-replies::before', html)
+        self.assertIn('top:var(--thread-line-top,36px);bottom:var(--thread-line-bottom,15px);border-left:1px solid #d8d5df', html)
+        self.assertIn('.comment-item.reply::before{content:"";position:absolute;left:-28px;top:15px;width:27px;height:0;border-bottom:1px solid #d8d5df}', html)
+        self.assertIn('requestAnimationFrame(updateReplyConnectors);', html)
+        self.assertIn('function updateReplyConnectors()', html)
+        self.assertIn('parentRect.bottom - threadRect.top - 1', html)
+        self.assertIn('replyRect.top + (replyRect.height / 2) - threadRect.top', html)
+        self.assertNotIn('border-bottom-left-radius:10px', html)
+        self.assertNotIn('height:18px;border-left:1px solid #d8d5df;border-bottom', html)
+
     def test_nickname_pages_reconcile_pending_local_google_nickname(self):
         nickname_html = NICKNAME_HTML.read_text(encoding='utf-8')
         my_gaji_html = MY_GAJI_HTML.read_text(encoding='utf-8')
