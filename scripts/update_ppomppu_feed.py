@@ -16,6 +16,7 @@ except ModuleNotFoundError:
 
 LIST_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"
 BASE = "https://www.ppomppu.co.kr"
+MAX_PAGES = 10
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "ppomppu_hotdeals_2days.json"
 HIDDEN_PATH = ROOT / "assets" / "hidden_hotdeals.json"
@@ -207,6 +208,55 @@ def bbs_no_from_url(url: str) -> str:
     return (q.get("no", [""])[0] or "").strip()
 
 
+def load_previous_items():
+    if not JSON_PATH.exists():
+        return []
+    try:
+        data = json.loads(JSON_PATH.read_text(encoding='utf-8'))
+        return list(data.get('items') or [])
+    except Exception:
+        return []
+
+
+def has_reusable_detail_fields(item: dict) -> bool:
+    return bool(
+        (item.get('title') or '').strip()
+        and (item.get('registeredAt') or '').strip()
+        and (item.get('desc') or '').strip()
+    )
+
+
+def build_previous_detail_lookup(items):
+    lookup = {}
+    for item in items or []:
+        if not has_reusable_detail_fields(item):
+            continue
+        source_link = (item.get('sourceLink') or '').strip()
+        no = bbs_no_from_url(source_link)
+        if no:
+            lookup[f'no:{no}'] = item
+        if source_link:
+            lookup[f'source:{source_link}'] = item
+    return lookup
+
+
+def apply_cached_detail_fields(row: dict, lookup: dict) -> bool:
+    href = row.get('href') or ''
+    cached = lookup.get(f"no:{bbs_no_from_url(href)}") or lookup.get(f"source:{href}")
+    if not cached or not has_reusable_detail_fields(cached):
+        return False
+    for key in (
+        'title', 'registeredAt', 'date', 'time', 'price', 'likes', 'dislikes',
+        'views', 'comments', 'commentSignalScore', 'positiveCommentSignals',
+        'negativeCommentSignals', 'desc', 'img', 'buyLink'
+    ):
+        value = cached.get(key)
+        if value not in (None, ''):
+            row[key] = value
+    row['_detailCached'] = True
+    return True
+
+
 def strip_tags(value: str) -> str:
     value = re.sub(r'<[^>]+>', '', value or '')
     return html.unescape(value).strip()
@@ -284,11 +334,12 @@ def parse_list_rows(list_html: str):
 def parse_items():
     s = requests.Session()
     s.headers.update(HEADERS)
+    previous_lookup = build_previous_detail_lookup(load_previous_items())
 
     # 페이지를 순회해서(더보기 포함) 링크를 충분히 수집
     link_rows = []
     seen_links = set()
-    for page in range(1, 6):
+    for page in range(1, MAX_PAGES + 1):
         page_url = LIST_URL if page == 1 else f"{LIST_URL}&page={page}"
         list_html = s.get(page_url, timeout=20).text
         rows = parse_list_rows(list_html)
@@ -313,6 +364,32 @@ def parse_items():
         raw_title = row['raw_title']
         img = row['img']
         category = row['category']
+
+        if apply_cached_detail_fields(row, previous_lookup):
+            items.append({
+                "id": str(len(items) + 1),
+                "title": row.get('title') or raw_title,
+                "area": "뽐뿌 핫딜",
+                "dist": category,
+                "time": row.get('date') or '',
+                "registeredAt": row.get('registeredAt') or '',
+                "price": row.get('price') or '',
+                "likes": int(row.get('likes') or 0),
+                "dislikes": int(row.get('dislikes') or 0),
+                "views": int(row.get('views') or 0),
+                "comments": int(row.get('comments') or 0),
+                "commentSignalScore": int(row.get('commentSignalScore') or 0),
+                "positiveCommentSignals": int(row.get('positiveCommentSignals') or 0),
+                "negativeCommentSignals": int(row.get('negativeCommentSignals') or 0),
+                "category": category,
+                "desc": row.get('desc') or '',
+                "img": row.get('img') or img,
+                "buyLink": row.get('buyLink') or '',
+                "sourceLink": href,
+                "source": "ppomppu",
+                "date": row.get('date') or '',
+            })
+            continue
 
         detail = s.get(href, timeout=20).text
         og_title = pick(r'<meta property="og:title" content="([^"]*)"', detail) or raw_title

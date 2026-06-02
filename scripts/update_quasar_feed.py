@@ -319,21 +319,34 @@ def extract_body_text_from_detail(detail_html: str) -> str:
     return html.unescape(og_desc_m.group(1)).strip() if og_desc_m else ''
 
 
-def extract_registered_at_from_detail(detail_html: str, fallback_date_label: str) -> str:
+def extract_registered_at_from_detail(detail_html: str, fallback_date_label: str, now: datetime | None = None) -> str:
+    """상세 작성시각을 추출하되, 상품 행사일/배송일 같은 미래 날짜 오검출은 버린다."""
+    try:
+        fallback_dt = datetime.strptime(fallback_date_label, '%Y-%m-%d').replace(tzinfo=KST)
+    except Exception:
+        fallback_dt = None
+    now = now or datetime.now(KST)
+
     patterns = [
         r'(20\d{2})[./-](\d{2})[./-](\d{2})\s+(\d{2}):(\d{2})',
         r'(20\d{2})\.(\d{2})\.(\d{2})\s+(\d{2}):(\d{2})(?::\d{2})?',
     ]
+    candidates = []
     for p in patterns:
-        m = re.search(p, detail_html)
-        if not m:
-            continue
-        try:
-            y, mm, dd, hh, mi = map(int, m.groups()[:5])
-            return datetime(y, mm, dd, hh, mi, tzinfo=KST).isoformat()
-        except Exception:
-            pass
+        for m in re.finditer(p, detail_html):
+            try:
+                y, mm, dd, hh, mi = map(int, m.groups()[:5])
+                candidate = datetime(y, mm, dd, hh, mi, tzinfo=KST)
+                if candidate > now + timedelta(minutes=5):
+                    continue
+                if fallback_dt and candidate.date() != fallback_dt.date():
+                    continue
+                candidates.append(candidate)
+            except Exception:
+                pass
 
+    if candidates:
+        return candidates[0].isoformat()
     return f"{fallback_date_label}T00:00:00+09:00"
 
 
@@ -522,10 +535,17 @@ def extract_post_id_from_link(link: str) -> str:
 
 
 def has_reusable_detail_fields(item: Dict) -> bool:
+    registered_at = (item.get("registeredAt") or "").strip()
+    if not registered_at:
+        return False
+    try:
+        if datetime.fromisoformat(registered_at) > datetime.now(KST) + timedelta(minutes=5):
+            return False
+    except Exception:
+        return False
     return bool(
         (item.get("buyLink") or "").strip()
         and (item.get("desc") or "").strip()
-        and (item.get("registeredAt") or "").strip()
     )
 
 
@@ -630,7 +650,7 @@ def main():
 
             row["date"] = date_label
             try:
-                row["registeredAt"] = extract_registered_at_from_detail(detail_html, date_label)
+                row["registeredAt"] = extract_registered_at_from_detail(detail_html, date_label, now=now)
             except Exception:
                 row["registeredAt"] = f"{date_label}T00:00:00+09:00"
 

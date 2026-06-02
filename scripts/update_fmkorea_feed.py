@@ -14,6 +14,7 @@ except ModuleNotFoundError:
     from scripts.hotdeal_quality_signals import analyze_comment_quality
 
 LIST_URL = "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine"
+MAX_PAGES = 10
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "fmkorea_hotdeals_2days.json"
 KST = timezone(timedelta(hours=9))
@@ -22,9 +23,15 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 def parse_time_token(token: str, now: datetime):
     token = (token or "").strip()
+    ymd = re.match(r"^(20\d{2})\.(\d{2})\.(\d{2})$", token)
+    if ymd:
+        return datetime(int(ymd.group(1)), int(ymd.group(2)), int(ymd.group(3)), 0, 0, tzinfo=KST)
     hm = re.match(r"^(\d{2}):(\d{2})$", token)
     if hm:
-        return now.replace(hour=int(hm.group(1)), minute=int(hm.group(2)), second=0, microsecond=0)
+        candidate = now.replace(hour=int(hm.group(1)), minute=int(hm.group(2)), second=0, microsecond=0)
+        if candidate > now + timedelta(minutes=5):
+            candidate = candidate - timedelta(days=1)
+        return candidate
     md = re.match(r"^(\d{2})\.(\d{2})$", token)
     if md:
         mm, dd = int(md.group(1)), int(md.group(2))
@@ -321,7 +328,7 @@ def main():
         )
         page = context.new_page()
 
-        for pg in range(1, 4):
+        for pg in range(1, MAX_PAGES + 1):
             url = f"{LIST_URL}&page={pg}"
             rows = run_page_extract(page, url)
             for r in rows:
@@ -377,17 +384,18 @@ def main():
         # 예: 먹거리 / 12:01 / 작성자 / 추천 24
         time_token = ""
         category = "기타"
-        m_meta = re.search(r'^(.*?)\s*/\s*(\d{2}:\d{2}|\d{2}\.\d{2})\s*/', line_meta)
+        time_pattern = r'(?:\d{2}:\d{2}|20\d{2}\.\d{2}\.\d{2}|\d{2}\.\d{2})'
+        m_meta = re.search(rf'^(.*?)\s*/\s*({time_pattern})\s*/', line_meta)
         if m_meta:
             category = m_meta.group(1).strip() or "기타"
             time_token = m_meta.group(2).strip()
         else:
-            tm = re.search(r'(\d{2}:\d{2}|\d{2}\.\d{2})', line_meta or r["raw"])
+            tm = re.search(time_pattern, line_meta or r["raw"])
             if tm:
-                time_token = tm.group(1)
+                time_token = tm.group(0)
 
         dt = parse_time_token(time_token, now)
-        if dt < since:
+        if dt < since and dt.date() != since.date():
             continue
 
         shop = ""
