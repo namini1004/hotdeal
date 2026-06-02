@@ -275,6 +275,33 @@
       return emailName || 'Google 사용자';
     }
 
+    function hasPendingLocalNickname(localNickname, remoteNickname){
+      if(!localNickname || localNickname === remoteNickname) return false;
+      return Boolean(localStorage.getItem('gaji_profile_updated_at_v1'));
+    }
+
+    async function reconcilePendingNickname(user){
+      if(!user || user.anonymous) return user;
+      const localNickname = String(window.GajiIdentity?.getNickname?.() || '').trim();
+      const remoteNickname = String(user.nickname || '').trim();
+      if(!hasPendingLocalNickname(localNickname, remoteNickname)) return user;
+      try{
+        const res = await fetch('/api/profile-nickname', {
+          method:'POST',
+          credentials:'include',
+          cache:'no-store',
+          headers:{ 'Content-Type':'application/json' },
+          body:JSON.stringify({ mode:'manual', nickname:localNickname })
+        });
+        const data = await res.json().catch(() => ({}));
+        if(res.ok && data.nickname){
+          window.GajiIdentity?.setNickname?.(data.nickname);
+          return { ...user, nickname:data.nickname, name:data.nickname, avatar:'' };
+        }
+      }catch(_){ }
+      return { ...user, nickname:localNickname, name:localNickname, avatar:'' };
+    }
+
     function renderLoggedOut(){
       loggedOut.style.display = 'block';
       loggedIn.style.display = 'none';
@@ -340,7 +367,8 @@
         if(!res.ok) return false;
         const data = await res.json();
         if(data.user){
-          renderLoggedIn(data.user);
+          const user = await reconcilePendingNickname(data.user);
+          renderLoggedIn(user);
           return true;
         }
         renderLoggedOut();

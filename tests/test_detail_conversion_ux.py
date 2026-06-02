@@ -5,6 +5,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DETAIL_HTML = ROOT / 'indexdetail.html'
 INDEX_HTML = ROOT / 'index.html'
+MY_GAJI_HTML = ROOT / 'my-gaji.html'
+NICKNAME_HTML = ROOT / 'nickname.html'
 
 
 class DetailConversionUxTests(unittest.TestCase):
@@ -46,6 +48,28 @@ class DetailConversionUxTests(unittest.TestCase):
         self.assertIn("const imageFetchPriority = idx === 0 ? 'high' : 'auto';", html)
         self.assertIn('loading="${imageLoading}"', html)
         self.assertIn('fetchpriority="${imageFetchPriority}"', html)
+
+    def test_mobile_empty_comments_do_not_force_viewport_height(self):
+        html = DETAIL_HTML.read_text(encoding='utf-8')
+
+        self.assertIn('@media (max-width:767px)', html)
+        self.assertIn('.comments-panel{display:block;min-height:0;', html)
+        self.assertIn('.comment-composer{position:relative;bottom:auto;margin-top:8px;', html)
+        self.assertNotIn('min-height:calc(100vh - 64px)', html)
+        self.assertNotIn('margin-top:auto', html)
+
+    def test_nickname_pages_reconcile_pending_local_google_nickname(self):
+        nickname_html = NICKNAME_HTML.read_text(encoding='utf-8')
+        my_gaji_html = MY_GAJI_HTML.read_text(encoding='utf-8')
+
+        self.assertIn('async function loadSessionUser()', nickname_html)
+        self.assertIn("/api/auth?action=me", nickname_html)
+        self.assertIn('hasPendingLocalNickname(localNickname, remoteNickname)', nickname_html)
+        self.assertIn("const saved = await callApi({ mode:'manual', nickname:localNickname });", nickname_html)
+
+        self.assertIn('async function reconcilePendingNickname(user)', my_gaji_html)
+        self.assertIn("/api/profile-nickname", my_gaji_html)
+        self.assertIn('const user = await reconcilePendingNickname(data.user);', my_gaji_html)
 
 
 if __name__ == '__main__':

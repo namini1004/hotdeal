@@ -89,16 +89,41 @@
       return text || '요청 실패';
     }
 
+    async function loadSessionUser(){
+      try{
+        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(!res.ok) return window.GajiIdentity?.getUser?.();
+        const data = await res.json();
+        if(data.user){
+          localStorage.setItem('gaji_auth_user_cache_v1', JSON.stringify(data.user));
+          return data.user;
+        }
+      }catch(_){ }
+      return window.GajiIdentity?.getUser?.();
+    }
+
+    function hasPendingLocalNickname(localNickname, remoteNickname){
+      if(!localNickname || localNickname === remoteNickname) return false;
+      return Boolean(localStorage.getItem('gaji_profile_updated_at_v1'));
+    }
+
     async function loadCurrent(){
-      const localUser = window.GajiIdentity?.getUser?.();
-      const localNickname = localUser?.nickname || window.GajiIdentity?.getNickname?.() || '';
+      const localNickname = window.GajiIdentity?.getNickname?.() || '';
       if(localNickname) applyNickname(localNickname);
-      if(!isGoogleUser(localUser)) return;
+      const sessionUser = await loadSessionUser();
+      if(!isGoogleUser(sessionUser)) return;
       try{
         const data = await callApi(null, 'GET');
-        if(data.nickname){
-          window.GajiIdentity?.setNickname?.(data.nickname);
-          applyNickname(data.nickname);
+        const remoteNickname = data.nickname || '';
+        if(hasPendingLocalNickname(localNickname, remoteNickname)){
+          const saved = await callApi({ mode:'manual', nickname:localNickname });
+          syncSavedNickname(saved.nickname || localNickname);
+          applyNickname(saved.nickname || localNickname);
+          return;
+        }
+        if(remoteNickname){
+          syncSavedNickname(remoteNickname);
+          applyNickname(remoteNickname);
         }
       }catch(err){
         setMsg(toFriendlyMessage(err));
