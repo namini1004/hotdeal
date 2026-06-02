@@ -29,18 +29,19 @@
     :root{--bg:#fff;--page:#f7f4ff;--text:#171325;--muted:#8b95a1;--line:#eee9f8;--chip:#f3edff;--chip-active:#5b21b6;--brand:#7c3aed;--brand-rgb:124,58,237}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:24px}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:96px}
     .top{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5;transition:transform .24s ease,opacity .2s ease,box-shadow .2s ease}
     .top.is-hidden{transform:translateY(calc(-100% - 12px));opacity:0;pointer-events:none}
     .row{display:flex;align-items:center;justify-content:space-between}
     .top-actions{display:flex;align-items:center;gap:1px}
-    .app-webview .web-tabs{display:none!important}
+    .app-webview .web-tabs,.app-webview .mobile-tabs{display:none!important}
+    .app-webview .app{padding-bottom:24px}
     .web-toolbar{display:none}
     .web-tabs{display:none;align-items:center;gap:6px}
     .web-tab{height:38px;display:flex;align-items:center;gap:6px;padding:0 13px;border-radius:999px;color:#667085;text-decoration:none;font-size:13px;font-weight:850;letter-spacing:-.01em}
     .web-tab.active{background:var(--brand);color:#fff;box-shadow:0 10px 24px rgba(var(--brand-rgb),.2)}
     .web-tab-eggplant{width:17px;height:17px;display:block}
-    .mobile-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:12px;padding:4px;border:1px solid var(--line);border-radius:16px;background:#f8f5ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
+    .mobile-tabs{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);width:calc(100% - 28px);max-width:402px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.94);box-shadow:0 14px 34px rgba(42,25,82,.18);backdrop-filter:blur(14px);z-index:30}
     .mobile-tab{height:38px;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;color:#697386;text-decoration:none;font-size:13px;font-weight:900;letter-spacing:-.01em;transition:background .18s ease,color .18s ease,box-shadow .18s ease}
     .mobile-tab.active{background:#fff;color:var(--brand);box-shadow:0 8px 18px rgba(var(--brand-rgb),.14)}
     .mobile-tab.active::before{content:"";width:6px;height:6px;border-radius:999px;background:var(--brand);box-shadow:0 0 0 3px rgba(var(--brand-rgb),.12)}
@@ -54,8 +55,8 @@
     .icon-btn{width:34px;height:34px;display:grid;place-items:center;border:none;border-radius:999px;background:transparent;color:#374151;line-height:1;cursor:pointer;text-decoration:none}
     .top-icon{width:22px;height:22px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     .icon-btn:active{background:#f4f6f8}
-    .profile-chip{height:34px;max-width:128px;display:flex;align-items:center;gap:7px;border:none;border-radius:999px;background:#f7f4ff;color:#2d2438;padding:0 9px 0 4px;cursor:pointer}
-    .profile-avatar{width:26px;height:26px;border-radius:999px;display:block;object-fit:cover;flex:0 0 auto}.profile-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:900;letter-spacing:-.02em}
+    .profile-chip{width:38px;height:38px;display:grid;place-items:center;border:none;border-radius:999px;background:#f7f4ff;color:#2d2438;padding:0;cursor:pointer}
+    .profile-avatar{width:32px;height:32px;border-radius:999px;display:block;object-fit:cover;flex:0 0 auto}.profile-name{display:none}
     .nick-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);display:none;place-items:center;z-index:80;padding:18px}.nick-modal-backdrop.show{display:grid}.nick-modal{width:min(320px,100%);background:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 18px 60px rgba(17,24,39,.24);text-align:center}.nick-modal-title{font-size:17px;font-weight:950;letter-spacing:-.03em}.nick-modal-body{margin-top:8px;color:#667085;font-size:14px;line-height:1.45}.nick-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.nick-modal-btn{height:44px;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer}.nick-modal-btn.cancel{background:#f4f6f8;color:#374151}.nick-modal-btn.confirm{background:var(--brand);color:#fff}
 
     .search-wrap{display:none;margin-top:10px}
@@ -139,7 +140,7 @@
       .view-toggle{display:flex}
       .icon-btn{width:36px;height:36px;background:#f4f6f8}
       .top-icon{width:23px;height:23px}
-      .profile-chip{height:36px;max-width:154px;background:#fff;border:1px solid var(--line);padding-right:11px}.profile-avatar{width:28px;height:28px}
+      .profile-chip{width:40px;height:40px;background:#fff;border:1px solid var(--line);padding:0}.profile-avatar{width:32px;height:32px}
       .search-wrap{max-width:520px;margin-left:auto;margin-right:0}
       .search-input{height:46px;background:#fafafa}
       .feed-controls{padding-top:14px}
@@ -260,7 +261,7 @@
   </div>
 
   <script src="assets/time-format.js"></script>
-  <script src="assets/anonymous-identity.js?v=20260607"></script>
+  <script src="assets/anonymous-identity.js?v=20260602-ui"></script>
   <div class="nick-modal-backdrop" id="nickModal" role="dialog" aria-modal="true" aria-labelledby="nickModalTitle">
     <div class="nick-modal">
       <div class="nick-modal-title" id="nickModalTitle">닉네임을 변경할까요?</div>

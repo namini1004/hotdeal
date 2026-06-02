@@ -82,9 +82,9 @@
       ['#111827','#6d28d9'],
       ['#1f2937','#0f766e']
     ];
-    const [bg, mid] = palettes[h % palettes.length];
+    const [bg] = palettes[h % palettes.length];
     const initial = nicknameInitials(name);
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><path d="M0 96C25 60 54 43 96 35v61H0Z" fill="${mid}" opacity=".88"/><circle cx="74" cy="20" r="28" fill="${mid}" opacity=".34"/><text x="48" y="58" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="26" font-weight="900" fill="#fff" stroke="rgba(0,0,0,.18)" stroke-width="1" paint-order="stroke">${initial}</text></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><text x="48" y="48" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="34" font-weight="900" fill="#fff">${initial}</text></svg>`;
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }
 
