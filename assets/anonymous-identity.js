@@ -46,7 +46,17 @@
     return String(nickname || '').trim().replace(/\s+/g, ' ').slice(0, 24);
   }
 
+  function readAccountNickname(){
+    const cached = readCachedUser();
+    if(cached && cached.anonymous === false){
+      return normalizeNickname(cached.nickname || '');
+    }
+    return '';
+  }
+
   function getNickname(){
+    const accountNickname = readAccountNickname();
+    if(accountNickname) return accountNickname;
     const id = getDeviceId();
     let nickname = localStorage.getItem(NICK_KEY);
     if(!nickname){
