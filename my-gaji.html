@@ -80,7 +80,7 @@
 
     <main class="layout">
       <section class="account-card panel loading" id="accountPanel" aria-label="Google 로그인">
-        <div class="card-head">
+        <div class="card-head" id="accountIntro">
           <div>
             <div class="card-title">계정</div>
             <div class="card-sub">게스트 닉네임으로 바로 활동하거나 Google 계정을 연결할 수 있어요.</div>
@@ -195,6 +195,7 @@
     const loggedOut = document.getElementById('loggedOut');
     const loggedIn = document.getElementById('loggedIn');
     const accountActions = document.getElementById('accountActions');
+    const accountIntro = document.getElementById('accountIntro');
     const logoutBtn = document.getElementById('logoutBtn');
 
     function showStatus(message){
@@ -283,6 +284,7 @@
       loggedOut.style.display = 'block';
       loggedIn.style.display = 'none';
       accountActions.style.display = 'none';
+      if(accountIntro) accountIntro.style.display = 'block';
       clearAvatar();
       try{ localStorage.removeItem(USER_CACHE_KEY); }catch(_){ }
       updateNicknameSurfaces(window.GajiIdentity?.getUser?.());
@@ -294,6 +296,10 @@
       loggedOut.style.display = user.anonymous ? 'block' : 'none';
       loggedIn.style.display = user.anonymous ? 'none' : 'flex';
       accountActions.style.display = user.anonymous ? 'none' : 'grid';
+      if(accountIntro){
+        accountIntro.style.display = user.anonymous ? 'block' : 'none';
+        if(!user.anonymous) accountIntro.style.display = 'none';
+      }
       const displayName = accountDisplayName(user);
       document.getElementById('userName').textContent = displayName;
       document.getElementById('userEmail').textContent = user.email || '';
@@ -366,12 +372,24 @@
     if(params.get('login_error')) showStatus(`로그인 실패: ${params.get('login_error')}`);
     if(params.get('login') === 'success') showStatus('로그인되었습니다.');
 
+    function notifyReadHighlightPreferenceChanged(){
+      try{
+        const channel = new BroadcastChannel('gaji_read_highlight_pref_v1');
+        channel.postMessage({ enabled: localStorage.getItem(READ_HIGHLIGHT_TOGGLE_KEY) === '1' });
+        channel.close();
+      }catch(_){ }
+      try{
+        window.dispatchEvent(new CustomEvent('gaji:read-highlight-pref', { detail:{ enabled: localStorage.getItem(READ_HIGHLIGHT_TOGGLE_KEY) === '1' } }));
+      }catch(_){ }
+    }
+
     function initReadHighlightToggle(){
       const toggle = document.getElementById('readHighlightToggle');
       if(!toggle) return;
       toggle.checked = localStorage.getItem(READ_HIGHLIGHT_TOGGLE_KEY) === '1';
       toggle.addEventListener('change', () => {
         localStorage.setItem(READ_HIGHLIGHT_TOGGLE_KEY, toggle.checked ? '1' : '0');
+        notifyReadHighlightPreferenceChanged();
       });
     }
 

@@ -781,6 +781,17 @@
       sessionStorage.removeItem(SCROLL_RESTORE_PENDING_KEY);
     }
 
+    function bindReadHighlightPreferenceSync(){
+      try{
+        const channel = new BroadcastChannel('gaji_read_highlight_pref_v1');
+        channel.addEventListener('message', () => render());
+      }catch(_){ }
+      window.addEventListener('storage', (event) => {
+        if(event.key === READ_HIGHLIGHT_TOGGLE_KEY) render();
+      });
+      window.addEventListener('pageshow', () => render());
+    }
+
     function bindReadTracking(){
       const list = document.getElementById('list');
       list.addEventListener('click', (e) => {
@@ -1028,6 +1039,7 @@
       bindViewToggle();
       restoreViewMode();
       bindReadTracking();
+      bindReadHighlightPreferenceSync();
       bindScrollChrome();
       bindPullToRefresh();
       bindAutoSync();

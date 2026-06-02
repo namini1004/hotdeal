@@ -56,6 +56,7 @@
     const inputEl = document.getElementById('termInput');
     const addBtn = document.getElementById('addBtn');
     const statusBox = document.getElementById('statusBox');
+    const KEYWORD_CACHE_KEY = 'gaji_keyword_cache_v1';
 
     function showStatus(msg){
       if(!msg){ statusBox.style.display='none'; return; }
@@ -65,6 +66,17 @@
 
     function escapeHtml(v){
       return String(v||'').replace(/[&<>'"]/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[m]));
+    }
+
+    function loadCachedKeywords(){
+      try{
+        const parsed = JSON.parse(localStorage.getItem(KEYWORD_CACHE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      }catch(_){ return []; }
+    }
+
+    function saveCachedKeywords(items){
+      try{ localStorage.setItem(KEYWORD_CACHE_KEY, JSON.stringify(Array.isArray(items) ? items : [])); }catch(_){ }
     }
 
     function goGoogleLogin(){
@@ -108,6 +120,9 @@
           try{
             const res = await fetch(`/api/push/keywords?id=${encodeURIComponent(id)}`, { method:'DELETE', credentials:'include' });
             if(!res.ok) throw new Error('delete');
+            const nextItems = loadCachedKeywords().filter(item => String(item.id) !== String(id));
+            saveCachedKeywords(nextItems);
+            render(nextItems);
             showStatus('키워드를 삭제했어요.');
             await loadKeywords();
           }catch(_){
@@ -129,6 +144,7 @@
     }
 
     async function loadKeywords(){
+      render(loadCachedKeywords());
       if(!await ensureGoogleLogin()) return;
       const res = await fetch('/api/push/keywords', { credentials:'include', cache:'no-store' });
       if(res.status===401){
@@ -143,6 +159,7 @@
       }
       const data = await res.json();
       await ensurePushTokenIfMissingFromKeywordsResponse(data);
+      saveCachedKeywords(data.items || []);
       render(data.items || []);
     }
 
