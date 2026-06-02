@@ -44,38 +44,9 @@
 
     function setMsg(text){ msg.textContent = text || ''; }
 
-    function isGoogleUser(user){
-      return Boolean(user && user.anonymous === false);
-    }
-
-    function userAccountKey(user){
-      if(!user || user.anonymous) return '';
-      if(user.provider && user.providerId) return `${user.provider}:${user.providerId}`;
-      if(user.email) return `email:${String(user.email).trim().toLowerCase()}`;
-      return '';
-    }
-
-    function syncSavedNickname(nickname, options = {}){
+    function syncSavedNickname(nickname){
       const value = String(nickname || '').trim();
       const user = window.GajiIdentity?.setNickname?.(value);
-      try{
-        const cached = JSON.parse(localStorage.getItem('gaji_auth_user_cache_v1') || 'null');
-        if(cached && typeof cached === 'object'){
-          localStorage.setItem('gaji_auth_user_cache_v1', JSON.stringify({ ...cached, nickname:value }));
-        }else if(user){
-          localStorage.setItem('gaji_auth_user_cache_v1', JSON.stringify({ ...user, nickname:value }));
-        }
-        if(options.remoteSaved){
-          localStorage.removeItem('gaji_profile_pending_nickname_v1');
-          localStorage.removeItem('gaji_profile_updated_at_v1');
-        }else if(options.markPending && options.user){
-          localStorage.setItem('gaji_profile_pending_nickname_v1', JSON.stringify({
-            accountKey:userAccountKey(options.user),
-            nickname:value,
-            at:Date.now()
-          }));
-        }
-      }catch(_){ }
       window.dispatchEvent(new CustomEvent('gaji:nickname-updated', { detail:{ nickname:value } }));
       return user;
     }
@@ -87,104 +58,23 @@
       if(message) setMsg(message);
     }
 
-    async function callApi(body, method='POST'){
-      const res = await fetch('/api/profile-nickname', {
-        method,
-        credentials:'include',
-        headers:{ 'Content-Type':'application/json' },
-        body: method === 'POST' ? JSON.stringify(body || {}) : undefined,
-      });
-      const data = await res.json().catch(() => ({}));
-      if(!res.ok) throw new Error(data.error || '요청 실패');
-      return data;
+    function loadCurrent(){
+      applyNickname(window.GajiIdentity?.getNickname?.() || '');
     }
 
-    function toFriendlyMessage(err){
-      const text = String(err?.message || '');
-      if(/login required/i.test(text) || /로그인/i.test(text)) return '로그인 후 이용해 주세요.';
-      return text || '요청 실패';
-    }
-
-    async function loadSessionUser(){
-      try{
-        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
-        if(!res.ok) return window.GajiIdentity?.getUser?.();
-        const data = await res.json();
-        if(data.user){
-          localStorage.setItem('gaji_auth_user_cache_v1', JSON.stringify(data.user));
-          return data.user;
-        }
-      }catch(_){ }
-      return window.GajiIdentity?.getUser?.();
-    }
-
-    function hasPendingLocalNickname(user, localNickname, remoteNickname){
-      if(!localNickname || localNickname === remoteNickname) return false;
-      try{
-        const pending = JSON.parse(localStorage.getItem('gaji_profile_pending_nickname_v1') || 'null');
-        return Boolean(pending?.accountKey === userAccountKey(user) && pending?.nickname === localNickname);
-      }catch(_){ return false; }
-    }
-
-    async function loadCurrent(){
-      const localNickname = window.GajiIdentity?.getNickname?.() || '';
-      if(localNickname) applyNickname(localNickname);
-      const sessionUser = await loadSessionUser();
-      if(!isGoogleUser(sessionUser)) return;
-      try{
-        const data = await callApi(null, 'GET');
-        const remoteNickname = data.nickname || '';
-        if(hasPendingLocalNickname(sessionUser, localNickname, remoteNickname)){
-          const saved = await callApi({ mode:'manual', nickname:localNickname });
-          syncSavedNickname(saved.nickname || localNickname, { remoteSaved:true, user:sessionUser });
-          applyNickname(saved.nickname || localNickname);
-          return;
-        }
-        if(remoteNickname){
-          syncSavedNickname(remoteNickname, { remoteSaved:true, user:sessionUser });
-          applyNickname(remoteNickname);
-        }
-      }catch(err){
-        setMsg(toFriendlyMessage(err));
-      }
-    }
-
-    document.getElementById('autoBtn').addEventListener('click', async () => {
+    document.getElementById('autoBtn').addEventListener('click', () => {
       setMsg('자동 생성 중...');
-      const localUser = window.GajiIdentity?.getUser?.();
-      if(!isGoogleUser(localUser)){
-        const user = window.GajiIdentity?.regenerateNickname?.() || window.GajiIdentity?.setNickname?.(window.GajiIdentity?.generateNickname?.());
-        applyNickname(user?.nickname || input.value, '자동 생성 닉네임을 적용했어요.');
-        return;
-      }
-      try{
-        const data = await callApi({ mode:'auto' });
-        syncSavedNickname(data.nickname || input.value, { remoteSaved:true, user:localUser });
-        applyNickname(data.nickname || input.value, '자동 생성 닉네임을 적용했어요.');
-      }catch(err){
-        const user = window.GajiIdentity?.regenerateNickname?.();
-        syncSavedNickname(user?.nickname || input.value, { markPending:true, user:localUser });
-        applyNickname(user?.nickname || input.value, `${toFriendlyMessage(err)} 로컬 닉네임으로 적용했어요.`);
-      }
+      const user = window.GajiIdentity?.regenerateNickname?.() || window.GajiIdentity?.setNickname?.(window.GajiIdentity?.generateNickname?.());
+      applyNickname(window.GajiIdentity?.getNickname?.() || user?.nickname || input.value, '자동 생성 닉네임을 적용했어요.');
     });
 
-    document.getElementById('saveBtn').addEventListener('click', async () => {
+    document.getElementById('saveBtn').addEventListener('click', () => {
       const nickname = input.value.trim();
       if(!nickname){ setMsg('닉네임을 입력해 주세요.'); return; }
       setMsg('저장 중...');
-      const localUser = window.GajiIdentity?.getUser?.();
-      if(!isGoogleUser(localUser)){
-        const user = syncSavedNickname(nickname);
-        applyNickname(user?.nickname || nickname, '이 기기 닉네임으로 저장되었습니다.');
-        setTimeout(() => { location.href = 'my-gaji.html?profile=updated'; }, 450);
-        return;
-      }
-      try{
-        const data = await callApi({ mode:'manual', nickname });
-        syncSavedNickname(data.nickname || nickname, { remoteSaved:true, user:localUser });
-        applyNickname(data.nickname || nickname, '저장되었습니다.');
-        setTimeout(() => { location.href = 'my-gaji.html?profile=updated'; }, 450);
-      }catch(err){ setMsg(toFriendlyMessage(err)); }
+      syncSavedNickname(nickname);
+      applyNickname(nickname, '닉네임으로 저장되었습니다.');
+      setTimeout(() => { location.href = 'my-gaji.html?profile=updated'; }, 450);
     });
 
     loadCurrent();

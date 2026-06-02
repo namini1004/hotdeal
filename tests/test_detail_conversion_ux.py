@@ -71,20 +71,20 @@ class DetailConversionUxTests(unittest.TestCase):
         self.assertNotIn('border-bottom-left-radius:10px', html)
         self.assertNotIn('height:18px;border-left:1px solid #d8d5df;border-bottom', html)
 
-    def test_nickname_pages_reconcile_pending_local_google_nickname(self):
+    def test_nickname_pages_do_not_reconcile_google_profile_nickname(self):
         nickname_html = NICKNAME_HTML.read_text(encoding='utf-8')
         my_gaji_html = MY_GAJI_HTML.read_text(encoding='utf-8')
 
-        self.assertIn('async function loadSessionUser()', nickname_html)
-        self.assertIn("/api/auth?action=me", nickname_html)
-        self.assertIn('hasPendingLocalNickname(sessionUser, localNickname, remoteNickname)', nickname_html)
-        self.assertIn('gaji_profile_pending_nickname_v1', nickname_html)
-        self.assertIn("const saved = await callApi({ mode:'manual', nickname:localNickname });", nickname_html)
+        self.assertIn('function loadCurrent()', nickname_html)
+        self.assertIn("applyNickname(window.GajiIdentity?.getNickname?.() || '');", nickname_html)
+        self.assertNotIn("/api/auth?action=me", nickname_html)
+        self.assertNotIn('gaji_profile_pending_nickname_v1', nickname_html)
+        self.assertNotIn('/api/profile-nickname', nickname_html)
 
-        self.assertIn('async function reconcilePendingNickname(user)', my_gaji_html)
-        self.assertIn('hasPendingLocalNickname(user, localNickname, remoteNickname)', my_gaji_html)
-        self.assertIn("/api/profile-nickname", my_gaji_html)
-        self.assertIn('const user = await reconcilePendingNickname(data.user);', my_gaji_html)
+        self.assertIn('function nicknameForDisplay(){', my_gaji_html)
+        self.assertIn("return window.GajiIdentity?.getNickname?.() || '익명 가지';", my_gaji_html)
+        self.assertNotIn('async function reconcilePendingNickname(user)', my_gaji_html)
+        self.assertNotIn('gaji_profile_pending_nickname_v1', my_gaji_html)
 
 
 if __name__ == '__main__':

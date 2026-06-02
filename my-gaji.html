@@ -240,12 +240,12 @@
       document.getElementById('avatarFallback').style.display = 'grid';
     }
 
-    function nicknameForDisplay(user = loadCachedUser()){
-      return user?.nickname || window.GajiIdentity?.getNickname?.() || '익명 가지';
+    function nicknameForDisplay(){
+      return window.GajiIdentity?.getNickname?.() || '익명 가지';
     }
 
     function updateNicknameSurfaces(user = loadCachedUser()){
-      const nickname = nicknameForDisplay(user);
+      const nickname = nicknameForDisplay();
       const avatarUrl = window.GajiIdentity?.getAvatarUrl?.(nickname) || '';
       const profileName = document.getElementById('profileName');
       const profileAvatar = document.getElementById('profileAvatar');
@@ -278,49 +278,6 @@
       return emailName || 'Google 사용자';
     }
 
-    function userAccountKey(user){
-      if(!user || user.anonymous) return '';
-      if(user.provider && user.providerId) return `${user.provider}:${user.providerId}`;
-      if(user.email) return `email:${String(user.email).trim().toLowerCase()}`;
-      return '';
-    }
-
-    function getPendingNickname(user){
-      try{
-        const pending = JSON.parse(localStorage.getItem('gaji_profile_pending_nickname_v1') || 'null');
-        const nickname = String(pending?.nickname || '').trim();
-        if(!nickname || pending?.accountKey !== userAccountKey(user)) return '';
-        return nickname;
-      }catch(_){ return ''; }
-    }
-
-    function hasPendingLocalNickname(user, localNickname, remoteNickname){
-      const pendingNickname = getPendingNickname(user);
-      return Boolean(pendingNickname && pendingNickname === localNickname && pendingNickname !== remoteNickname);
-    }
-
-    async function reconcilePendingNickname(user){
-      if(!user || user.anonymous) return user;
-      const localNickname = String(window.GajiIdentity?.getNickname?.() || '').trim();
-      const remoteNickname = String(user.nickname || '').trim();
-      if(!hasPendingLocalNickname(user, localNickname, remoteNickname)) return user;
-      try{
-        const res = await fetch('/api/profile-nickname', {
-          method:'POST',
-          credentials:'include',
-          cache:'no-store',
-          headers:{ 'Content-Type':'application/json' },
-          body:JSON.stringify({ mode:'manual', nickname:localNickname })
-        });
-        const data = await res.json().catch(() => ({}));
-        if(res.ok && data.nickname){
-          window.GajiIdentity?.setNickname?.(data.nickname);
-          try{ localStorage.removeItem('gaji_profile_pending_nickname_v1'); }catch(_){ }
-          return { ...user, nickname:data.nickname };
-        }
-      }catch(_){ }
-      return { ...user, nickname:localNickname };
-    }
 
     function renderLoggedOut(){
       loggedOut.style.display = 'block';
@@ -344,10 +301,9 @@
       const fallbackText = (displayName || user.email || 'G').trim().charAt(0) || 'G';
       document.getElementById('avatarFallback').textContent = fallbackText;
       const accountAvatar = String(user.avatar || '').trim();
-      const nicknameAvatar = accountAvatar || window.GajiIdentity?.getAvatarUrl?.(String(user.nickname || '').trim() || displayName) || '';
-      if(nicknameAvatar){
+      if(accountAvatar){
         const img = document.getElementById('avatarImg');
-        img.src = nicknameAvatar;
+        img.src = accountAvatar;
         img.style.display = 'block';
         document.getElementById('avatarFallback').style.display = 'none';
       }else{
@@ -388,8 +344,7 @@
         if(!res.ok) return false;
         const data = await res.json();
         if(data.user){
-          const user = await reconcilePendingNickname(data.user);
-          renderLoggedIn(user);
+          renderLoggedIn(data.user);
           return true;
         }
         renderLoggedOut();
