@@ -10,14 +10,14 @@ from urllib.parse import parse_qs, urljoin, urlparse
 
 import requests
 
-LIST_URL = "https://m.ppomppu.co.kr/new/pop_bbs.php?id=ppomppu&bot_type=pop_bbs"
-BASE = "https://m.ppomppu.co.kr"
+LIST_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"
+BASE = "https://www.ppomppu.co.kr"
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "ppomppu_hotdeals_2days.json"
 HIDDEN_PATH = ROOT / "assets" / "hidden_hotdeals.json"
 THUMB_DIR = ROOT / "assets" / "ppomppu_thumbs"
 KST = timezone(timedelta(hours=9))
-HEADERS = {"User-Agent": "Mozilla/5.0", "Referer": "https://m.ppomppu.co.kr/"}
+HEADERS = {"User-Agent": "Mozilla/5.0", "Referer": "https://www.ppomppu.co.kr/"}
 
 
 def pick(pattern: str, text: str) -> str:
@@ -195,6 +195,80 @@ def bbs_no_from_url(url: str) -> str:
     return (q.get("no", [""])[0] or "").strip()
 
 
+def strip_tags(value: str) -> str:
+    value = re.sub(r'<[^>]+>', '', value or '')
+    return html.unescape(value).strip()
+
+
+def parse_list_rows(list_html: str):
+    rows = []
+
+    desktop_blocks = re.findall(
+        r'<tr[^>]*class=["\'][^"\']*baseList[^"\']*["\'][^>]*>[\s\S]*?</tr>',
+        list_html,
+        re.I,
+    )
+    for b in desktop_blocks:
+        href_m = re.search(
+            r'<a[^>]+class=["\'][^"\']*baseList-title[^"\']*["\'][^>]+href=["\']([^"\']+)',
+            b,
+            re.I,
+        )
+        title_m = re.search(
+            r'<a[^>]+class=["\'][^"\']*baseList-title[^"\']*["\'][^>]*>([\s\S]*?)</a>',
+            b,
+            re.I,
+        )
+        if not href_m or not title_m:
+            continue
+
+        href = urljoin(LIST_URL, html.unescape(href_m.group(1)).replace('&&', '&'))
+        if parse_qs(urlparse(href).query).get('id', [''])[0] != 'ppomppu':
+            continue
+        raw_title = strip_tags(title_m.group(1))
+        img = ''
+        img_m = re.search(r'<a[^>]+class=["\'][^"\']*baseList-thumb[^"\']*["\'][\s\S]*?<img[^>]+src=["\']([^"\']+)', b, re.I)
+        if img_m:
+            img = normalize_image_url(img_m.group(1))
+        category_m = re.match(r'\[([^\]]+)\]', raw_title)
+        category = category_m.group(1).strip() if category_m else '기타'
+        comments_m = re.search(r'class=["\'][^"\']*baseList-c[^"\']*["\'][^>]*>\s*([0-9,]+)\s*<', b, re.I)
+        likes_m = re.search(r'class=["\'][^"\']*baseList-rec[^"\']*["\'][^>]*>\s*([0-9,]*)\s*</td>', b, re.I)
+        views_m = re.search(r'class=["\'][^"\']*baseList-views[^"\']*["\'][^>]*>\s*([0-9,]*)\s*</td>', b, re.I)
+        rows.append({
+            "href": href,
+            "raw_title": raw_title,
+            "img": img,
+            "category": category,
+            "views": parse_int(views_m.group(1) if views_m else ''),
+            "comments": parse_int(comments_m.group(1) if comments_m else ''),
+            "likes": parse_int(likes_m.group(1) if likes_m else ''),
+        })
+
+    if rows:
+        return rows
+
+    mobile_blocks = re.findall(r'<li class="none-border bbs_list_thumbnail new_sk "[\s\S]*?</li>', list_html)
+    for b in mobile_blocks:
+        href_m = re.search(r'<a href="([^"]*bbs_view\.php[^"]+)"', b)
+        title_m = re.search(r'<span class="cont"[^>]*>([\s\S]*?)</span>', b)
+        img_m = re.search(r'<img src="([^"]+)"', b)
+        cat_m = re.search(r'<li class="names">\[([^\]]+)\]', b)
+        if not href_m or not title_m:
+            continue
+        img = normalize_image_url(img_m.group(1)) if img_m else ''
+        rows.append({
+            "href": urljoin(LIST_URL, href_m.group(1)),
+            "raw_title": strip_tags(title_m.group(1)),
+            "img": img,
+            "category": cat_m.group(1).strip() if cat_m else "기타",
+            "views": 0,
+            "comments": 0,
+            "likes": 0,
+        })
+    return rows
+
+
 def parse_items():
     s = requests.Session()
     s.headers.update(HEADERS)
@@ -205,37 +279,18 @@ def parse_items():
     for page in range(1, 6):
         page_url = LIST_URL if page == 1 else f"{LIST_URL}&page={page}"
         list_html = s.get(page_url, timeout=20).text
-        blocks = re.findall(r'<li class="none-border bbs_list_thumbnail new_sk "[\s\S]*?</li>', list_html)
-        if not blocks:
+        rows = parse_list_rows(list_html)
+        if not rows:
             break
 
         new_in_page = 0
-        for b in blocks:
-            href_m = re.search(r'<a href="([^"]*bbs_view\.php[^"]+)"', b)
-            title_m = re.search(r'<span class="cont"[^>]*>([\s\S]*?)</span>', b)
-            img_m = re.search(r'<img src="([^"]+)"', b)
-            cat_m = re.search(r'<li class="names">\[([^\]]+)\]', b)
-            if not href_m or not title_m:
-                continue
-
-            href = urljoin(BASE, href_m.group(1))
+        for row in rows:
+            href = row["href"]
             if href in seen_links:
                 continue
             seen_links.add(href)
             new_in_page += 1
-
-            raw_title = re.sub(r'<[^>]+>', '', title_m.group(1))
-            raw_title = html.unescape(raw_title).strip()
-
-            img = img_m.group(1) if img_m else ""
-            if img.startswith('//'):
-                img = 'https:' + img
-            elif img.startswith('/'):
-                img = urljoin(BASE, img)
-            img = normalize_ppomppu_cdn_host(img)
-
-            category = cat_m.group(1).strip() if cat_m else "기타"
-            link_rows.append({"href": href, "raw_title": raw_title, "img": img, "category": category})
+            link_rows.append(row)
 
         if new_in_page == 0:
             break
@@ -260,10 +315,14 @@ def parse_items():
         date_label = dt.strftime('%Y-%m-%d') if dt else ""
         registered_at = dt.isoformat() if dt else ""
         views, comments = parse_post_stats(detail)
+        if not views:
+            views = row.get('views', 0)
+        if not comments:
+            comments = row.get('comments', 0)
 
         # 사러가기 URL (상단 닉네임 아래 링크의 실제 target)
         buy_link = ""
-        s_m = re.search(r'href="(https://s\.ppomppu\.co\.kr\?[^\"]+)"', detail)
+        s_m = re.search(r'(?:href=["\'])?(https://s\.ppomppu\.co\.kr\?[^"\'<>\s]+)', detail)
         if s_m:
             s_url = html.unescape(s_m.group(1))
             q = parse_qs(urlparse(s_url).query)
@@ -291,7 +350,7 @@ def parse_items():
             "time": date_label,
             "registeredAt": registered_at,
             "price": price,
-            "likes": 0,
+            "likes": row.get('likes', 0),
             "views": views,
             "comments": comments,
             "category": category,
