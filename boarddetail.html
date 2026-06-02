@@ -33,6 +33,10 @@
     .body .md-table{width:100%;border-collapse:collapse;font-size:13px}
     .body .md-table th,.body .md-table td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:top}
     .body .md-table th{background:#f8fafc;font-weight:800}
+    .comments-panel{padding:16px;background:#fff;border-top:1px solid var(--line);overflow-x:hidden}
+    .comments-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .comments-title{font-size:18px;font-weight:950;letter-spacing:-.03em}.comments-count{color:var(--muted);font-size:13px;font-weight:850}
+    .comment-list{display:grid;gap:18px;padding-bottom:18px;overflow-x:hidden}.comment-thread{position:relative;min-width:0}.comment-thread.has-replies::before{content:"";position:absolute;left:18px;top:var(--thread-line-top,36px);bottom:var(--thread-line-bottom,15px);border-left:1px solid #d8d5df;z-index:0}.comment-item{position:relative;display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px;min-width:0;z-index:1}.comment-item.reply{grid-template-columns:30px minmax(0,1fr);margin-left:46px}.reply-list{position:relative;display:grid;gap:12px;margin-top:12px}.reply-list::before{display:none}.comment-item.reply::before{content:"";position:absolute;left:-28px;top:15px;width:27px;height:0;border-bottom:1px solid #d8d5df}.comment-avatar{width:36px;height:36px;border-radius:999px;background:#f3edff;color:#5b21b6;display:grid;place-items:center;font-size:13px;font-weight:950;overflow:hidden;position:relative;z-index:1}.comment-item.reply .comment-avatar{width:30px;height:30px}.comment-avatar img{width:100%;height:100%;display:block;object-fit:cover}.comment-main{min-width:0;overflow-wrap:anywhere}.comment-meta{display:flex;align-items:center;gap:6px;color:#8b95a1;font-size:12px;font-weight:800;min-width:0}.comment-name{color:#4b5563;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58%}.comment-body{margin-top:4px;color:#111827;font-size:14px;line-height:1.5;word-break:break-word;overflow-wrap:anywhere;white-space:pre-wrap}.comment-actions{margin-top:8px;display:flex;align-items:center;gap:12px}.reply-btn,.comment-delete-btn{border:none;background:transparent;color:#6b7280;font-size:12px;font-weight:900;padding:0;cursor:pointer}.comment-delete-btn{color:#dc2626}.comment-empty{padding:20px 0;color:#8b95a1;font-size:14px;text-align:center}.comment-composer{--composer-avatar:none;position:sticky;bottom:0;display:flex;align-items:flex-end;gap:8px;padding:10px 0 0;background:#fff;overflow-x:hidden}.comment-composer:before,.reply-composer:before{content:"";width:30px;height:30px;flex:0 0 auto;border-radius:999px;background:#f3edff var(--composer-avatar) center/cover no-repeat}.comment-input{flex:1;min-height:36px;max-height:118px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:18px;background:#f9fafb;color:#111827;font-size:14px;line-height:1.35;resize:none;outline:none;overflow:hidden}.comment-input.is-scrollable{overflow:auto}.comment-input:focus{border-color:#c4b5fd;background:#fff;box-shadow:0 0 0 3px rgba(var(--brand-rgb),.10)}.comment-send{width:36px;height:36px;border:none;border-radius:999px;background:var(--brand);color:#fff;font-size:28px;font-weight:900;line-height:1;cursor:pointer}.comment-note{margin-top:8px;color:#8b95a1;font-size:12px;line-height:1.4}.comment-note a{color:var(--brand);font-weight:900}.reply-slot{margin:10px 0 0 46px}.reply-composer{--composer-avatar:none;display:flex;align-items:flex-start;gap:8px}.reply-box{flex:1;min-width:0}.reply-actions{margin-top:8px;display:flex;justify-content:flex-end;gap:8px}.reply-cancel,.reply-submit{height:32px;border:none;border-radius:999px;padding:0 12px;font-size:13px;font-weight:900;cursor:pointer}.reply-cancel{background:#f3f4f6;color:#4b5563}.reply-submit{background:#e5e7eb;color:#9ca3af}.reply-submit.ready{background:var(--brand);color:#fff}
     .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     .sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:30}
@@ -45,15 +49,17 @@
     .sheet-btn.delete{background:#fff1f2;color:#dc2626}
     @media (min-width:768px){
       body{background:var(--page)}
-      .app{max-width:1080px;display:grid;grid-template-columns:minmax(360px,520px) minmax(0,1fr);margin:32px auto;background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(17,24,39,.08)}
+      .app{max-width:1280px;display:grid;grid-template-columns:minmax(320px,460px) minmax(0,1fr) minmax(320px,360px);margin:32px auto;background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(17,24,39,.08)}
       .hero img{height:100%;min-height:540px}
       .topbtns{top:16px;left:16px;right:16px}
       .content{border-top:none;border-left:1px solid var(--line);padding:42px 38px}
+      .comments-panel{border-top:none;border-left:1px solid var(--line);padding:24px 18px;overflow-y:auto;overflow-x:hidden}
       h1{font-size:26px;font-weight:600}
       .meta{font-size:13px;margin:10px 0 18px}
       .body{font-size:16px;line-height:1.5}
       .action-sheet{max-width:420px;margin-bottom:24px;border-radius:18px;box-shadow:0 18px 50px rgba(17,24,39,.18)}
     }
+    @media (max-width:767px){.comments-panel{display:block;min-height:0;padding:12px 16px 12px}.comments-head{margin-bottom:6px}.comment-list{gap:14px;padding-bottom:8px}.comment-empty{padding:10px 0 8px;font-size:13px}.comment-composer{position:relative;bottom:auto;margin-top:8px;padding-top:8px;padding-bottom:0}.comment-note{display:none}}
   </style>
 </head>
 <body>
@@ -74,6 +80,19 @@
       <div class="meta" id="meta"></div>
       <div class="body" id="body"></div>
     </article>
+
+    <aside class="comments-panel" id="commentsPanel" aria-label="댓글">
+      <div class="comments-head">
+        <div class="comments-title">댓글</div>
+        <div class="comments-count" id="commentsCount">0</div>
+      </div>
+      <div class="comment-list" id="commentList"></div>
+      <form class="comment-composer" id="commentForm">
+        <textarea class="comment-input" id="commentInput" maxlength="500" rows="1" placeholder="댓글 올리기..." autocomplete="off"></textarea>
+        <button class="comment-send" id="commentSend" type="submit" aria-label="댓글 등록">›</button>
+      </form>
+      <div class="comment-note" id="commentNicknameNote"></div>
+    </aside>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -86,11 +105,17 @@
 
   <script src="assets/text-format.js"></script>
   <script src="assets/time-format.js"></script>
+  <script src="assets/anonymous-identity.js?v=20260607"></script>
   <script>
     const BOARD_API = '/api/board-posts';
     const STORAGE_KEY = 'gaji_board_posts_v1';
     const FALLBACK_IMAGE = 'assets/gaji-eggplant.jpg';
+    const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
+    const GUEST_KEY = 'gaji_guest_key_v1';
+    const COMMENT_API = '/api/deals?action=comments';
     let currentPost = null;
+    let currentUser = null;
+    let currentComments = [];
 
     function normalizeBoardCategory(value){
       return ['tips', 'mydeals'].includes(String(value || '').trim()) ? String(value || '').trim() : 'tips';
@@ -159,7 +184,7 @@
 
     async function loadPost(id){
       const cached = readLocalPosts().find(post => String(post.id) === String(id));
-      if(cached) renderPost(cached);
+      if(cached){ renderPost(cached); loadComments(cached); }
       try{
         const res = await fetch(`${BOARD_API}/${encodeURIComponent(id)}`, { cache:'no-store' });
         if(!res.ok) throw new Error('not found');
@@ -167,10 +192,11 @@
         if(data.item){
           const post = normalizePosts([data.item])[0];
           renderPost(post);
+          loadComments(post);
           saveLocalPosts([post, ...readLocalPosts().filter(v => String(v.id) !== String(post.id))]);
         }
       }catch(_){
-        if(!cached) renderPost({ title:'게시글 없음', body:'게시글을 찾을 수 없습니다.', author:'', img:'', createdAt:'' });
+        if(!cached){ const missing = { id, title:'게시글 없음', body:'게시글을 찾을 수 없습니다.', author:'', img:'', createdAt:'' }; renderPost(missing); loadComments(missing); }
       }
     }
 
@@ -247,12 +273,322 @@
       }
     }
 
+
+    function getBoardCommentKey(post = currentPost){
+      const id = String(post?.id || new URLSearchParams(location.search).get('id') || '').trim();
+      return id ? `board:${id}` : '';
+    }
+
+    function getGuestKey(){
+      let key = localStorage.getItem(GUEST_KEY);
+      if(!key){
+        key = window.GajiIdentity?.getDeviceId?.() || `guest-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+        localStorage.setItem(GUEST_KEY, key);
+      }
+      return key;
+    }
+
+    function getCurrentUserFromCache(){
+      try{
+        const cached = JSON.parse(localStorage.getItem(USER_CACHE_KEY) || 'null');
+        return cached && typeof cached === 'object' ? cached : null;
+      }catch(_){ return null; }
+    }
+
+    function getCommentNickname(){
+      const identityUser = window.GajiIdentity?.getUser?.();
+      if(identityUser?.nickname) return identityUser.nickname;
+      const cachedUser = getCurrentUserFromCache();
+      if(cachedUser?.nickname) return cachedUser.nickname;
+      return window.GajiIdentity?.getNickname?.() || '익명 가지';
+    }
+
+    function normalizeComments(comments){
+      const seen = new Set();
+      return (comments || []).map((comment, idx) => ({
+        id: String(comment.id || `local-${idx}`),
+        dealKey: comment.dealKey || comment.deal_key || '',
+        nickname: comment.nickname || '익명 가지',
+        body: comment.body || comment.comment || '',
+        createdAt: comment.createdAt || comment.created_at || new Date().toISOString(),
+        guestKey: comment.guestKey || comment.guest_key || '',
+        parentId: String(comment.parentId || comment.parent_id || '').trim()
+      })).filter(comment => {
+        if(!comment.body.trim()) return false;
+        const key = `${comment.id}|${comment.dealKey}|${comment.parentId}|${comment.body}`;
+        if(seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function isOwnComment(comment){
+      const mine = getGuestKey();
+      return Boolean(comment?.guestKey && mine && String(comment.guestKey) === String(mine));
+    }
+
+    function escapeHtml(text){
+      return String(text || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
+    function commentAvatarUrl(nickname){
+      if(window.GajiIdentity?.getAvatarUrl) return window.GajiIdentity.getAvatarUrl(nickname);
+      const name = String(nickname || '가지').trim() || '가지';
+      let hash = 0;
+      for(let i = 0; i < name.length; i += 1) hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+      const colors = ['#4c1d95','#312e81','#164e63','#14532d','#7c2d12','#831843','#111827','#1f2937'];
+      const bg = colors[Math.abs(hash) % colors.length];
+      const initial = escapeHtml(name.replace(/\s+/g, ' ').split(' ').filter(Boolean).map(v => v.charAt(0)).slice(0,2).join('') || '가');
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><text x="48" y="50" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="28" font-weight="900" fill="#fff">${initial}</text></svg>`;
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    }
+
+    function updateComposerAvatar(){
+      const form = document.getElementById('commentForm');
+      if(form) form.style.setProperty('--composer-avatar', `url("${commentAvatarUrl(getCommentNickname())}")`);
+    }
+
+    function formatCommentTime(value){
+      return window.TimeFormat?.toRelativeKorean(value) || '';
+    }
+
+    function renderComments(comments = currentComments){
+      const normalized = normalizeComments(comments).sort((a,b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''));
+      const list = document.getElementById('commentList');
+      const count = document.getElementById('commentsCount');
+      const note = document.getElementById('commentNicknameNote');
+      if(count) count.textContent = normalized.length ? normalized.length.toLocaleString('ko-KR') : '0';
+      if(note) note.innerHTML = `${escapeHtml(getCommentNickname())} 닉네임으로 댓글이 등록됩니다.<br>변경은 <a href="nickname.html">닉네임 설정</a>에서 가능합니다.`;
+      updateComposerAvatar();
+      if(!list) return;
+      if(!normalized.length){
+        list.innerHTML = '<div class="comment-empty">첫 댓글을 남겨보세요.</div>';
+        return;
+      }
+      const byParent = new Map();
+      normalized.forEach(comment => {
+        const key = comment.parentId || '';
+        if(!byParent.has(key)) byParent.set(key, []);
+        byParent.get(key).push(comment);
+      });
+      const topLevel = (byParent.get('') || []).sort((a,b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''));
+      const renderOne = (comment, isReply = false) => {
+        const avatar = escapeHtml(commentAvatarUrl(comment.nickname));
+        const canDelete = isOwnComment(comment);
+        const actions = [
+          isReply ? '' : `<button class="reply-btn" type="button" data-reply-to="${escapeHtml(comment.id)}" data-reply-name="${escapeHtml(comment.nickname)}">답글</button>`,
+          canDelete ? `<button class="comment-delete-btn" type="button" data-delete-comment="${escapeHtml(comment.id)}">삭제</button>` : ''
+        ].filter(Boolean).join('');
+        return `
+          <article class="comment-item${isReply ? ' reply' : ''}" data-comment-id="${escapeHtml(comment.id)}">
+            <div class="comment-avatar"><img src="${avatar}" alt="" aria-hidden="true"></div>
+            <div class="comment-main">
+              <div class="comment-meta"><span class="comment-name">${escapeHtml(comment.nickname)}</span><span>${escapeHtml(formatCommentTime(comment.createdAt))}</span></div>
+              <div class="comment-body">${escapeHtml(comment.body)}</div>
+              ${actions ? `<div class="comment-actions">${actions}</div>` : ''}
+            </div>
+          </article>
+        `;
+      };
+      list.innerHTML = topLevel.map(comment => {
+        const replies = (byParent.get(comment.id) || []).sort((a,b) => Date.parse(a.createdAt || '') - Date.parse(b.createdAt || ''));
+        return `
+          <section class="comment-thread${replies.length ? ' has-replies' : ''}">
+            ${renderOne(comment)}
+            ${replies.length ? `<div class="reply-list">${replies.map(reply => renderOne(reply, true)).join('')}</div>` : ''}
+            <div class="reply-slot" id="replySlot-${escapeHtml(comment.id)}"></div>
+          </section>
+        `;
+      }).join('');
+      requestAnimationFrame(updateReplyConnectors);
+    }
+
+    function updateReplyConnectors(){
+      document.querySelectorAll('.comment-thread.has-replies').forEach(thread => {
+        const parentAvatar = thread.querySelector(':scope > .comment-item:not(.reply) .comment-avatar');
+        const replyAvatars = thread.querySelectorAll('.comment-item.reply .comment-avatar');
+        const lastReplyAvatar = replyAvatars[replyAvatars.length - 1];
+        if(!parentAvatar || !lastReplyAvatar) return;
+        const threadRect = thread.getBoundingClientRect();
+        const parentRect = parentAvatar.getBoundingClientRect();
+        const replyRect = lastReplyAvatar.getBoundingClientRect();
+        const top = Math.max(0, parentRect.bottom - threadRect.top - 1);
+        const end = replyRect.top + (replyRect.height / 2) - threadRect.top;
+        const bottom = Math.max(0, threadRect.bottom - end);
+        thread.style.setProperty('--thread-line-top', `${top}px`);
+        thread.style.setProperty('--thread-line-bottom', `${bottom}px`);
+      });
+    }
+
+    async function loadMe(){
+      try{
+        const res = await fetch(`/api/auth?action=me&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(!res.ok) return null;
+        const data = await res.json();
+        currentUser = data.user || null;
+        if(currentUser) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(currentUser));
+        return currentUser;
+      }catch(_){
+        currentUser = window.GajiIdentity?.getUser?.() || null;
+        return currentUser;
+      }
+    }
+
+    async function loadComments(post = currentPost){
+      currentComments = [];
+      renderComments([]);
+      const key = getBoardCommentKey(post);
+      if(!key) return;
+      try{
+        const res = await fetch(`${COMMENT_API}&dealKey=${encodeURIComponent(key)}`, { cache:'no-store', credentials:'include' });
+        if(!res.ok) throw new Error('comments failed');
+        const data = await res.json();
+        currentComments = normalizeComments(data.items || []);
+        renderComments(currentComments);
+      }catch(_){
+        showToast('댓글을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+        currentComments = [];
+        renderComments([]);
+      }
+    }
+
+    async function postComment(body, parentId = ''){
+      if(!currentPost || !body.trim()) return false;
+      const comment = {
+        dealKey:getBoardCommentKey(currentPost),
+        nickname:getCommentNickname(),
+        body:body.trim(),
+        guestKey:getGuestKey(),
+        parentId:String(parentId || '')
+      };
+      try{
+        const res = await fetch(COMMENT_API, {
+          method:'POST',
+          credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(comment)
+        });
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok || !data.item) throw new Error(data.error || '댓글 저장 실패');
+        currentComments = normalizeComments([data.item, ...currentComments]);
+        renderComments(currentComments);
+        return true;
+      }catch(err){
+        showToast(err.message || '댓글 저장에 실패했어요.');
+        return false;
+      }
+    }
+
+    async function deleteComment(commentId){
+      const id = String(commentId || '').trim();
+      if(!id || !currentPost) return;
+      const mine = getGuestKey();
+      const local = normalizeComments(currentComments);
+      const target = local.find(comment => comment.id === id);
+      if(!target || !isOwnComment(target)){
+        showToast('내 댓글만 삭제할 수 있습니다.');
+        return;
+      }
+      const removeIds = new Set([id]);
+      local.forEach(comment => {
+        if(comment.parentId === id && isOwnComment(comment)) removeIds.add(comment.id);
+      });
+      try{
+        const res = await fetch(`${COMMENT_API}&id=${encodeURIComponent(id)}&dealKey=${encodeURIComponent(getBoardCommentKey(currentPost))}&guestKey=${encodeURIComponent(mine)}`, {
+          method:'DELETE',
+          cache:'no-store',
+          credentials:'include'
+        });
+        if(!res.ok) throw new Error('delete failed');
+        currentComments = local.filter(comment => !removeIds.has(comment.id));
+        renderComments(currentComments);
+        showToast('삭제되었습니다.');
+      }catch(_){
+        showToast('댓글 삭제에 실패했어요.');
+      }
+    }
+
+    function autoResizeTextarea(el){
+      if(!el) return;
+      const maxHeight = 118;
+      el.style.height = 'auto';
+      const nextHeight = Math.min(el.scrollHeight, maxHeight);
+      el.style.height = `${nextHeight}px`;
+      el.classList.toggle('is-scrollable', el.scrollHeight > maxHeight + 1);
+    }
+
+    function bindCommentForm(){
+      const form = document.getElementById('commentForm');
+      const input = document.getElementById('commentInput');
+      const list = document.getElementById('commentList');
+      if(!form || !input) return;
+      input.addEventListener('input', () => autoResizeTextarea(input));
+      autoResizeTextarea(input);
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if(!text) return;
+        input.value = '';
+        autoResizeTextarea(input);
+        const ok = await postComment(text);
+        if(!ok){ input.value = text; autoResizeTextarea(input); }
+      });
+      list?.addEventListener('click', (e) => {
+        const deleteBtn = e.target.closest('.comment-delete-btn');
+        if(deleteBtn){
+          deleteComment(deleteBtn.dataset.deleteComment || '');
+          return;
+        }
+        const btn = e.target.closest('.reply-btn');
+        if(!btn) return;
+        openReplyComposer(btn.dataset.replyTo || '', btn.dataset.replyName || '');
+      });
+    }
+
+    function openReplyComposer(parentId, parentName){
+      document.querySelectorAll('.reply-slot').forEach(slot => { slot.innerHTML = ''; });
+      const slot = document.getElementById(`replySlot-${parentId}`);
+      if(!slot) return;
+      slot.innerHTML = `
+        <form class="reply-composer" id="replyForm" style="--composer-avatar:url('${commentAvatarUrl(getCommentNickname())}')">
+          <div class="reply-box">
+            <textarea class="comment-input" id="replyInput" maxlength="500" rows="1" placeholder="${escapeHtml(parentName)}에게 답글 추가..." autocomplete="off"></textarea>
+            <div class="reply-actions">
+              <button class="reply-cancel" type="button">취소</button>
+              <button class="reply-submit" type="submit" disabled>답글</button>
+            </div>
+          </div>
+        </form>
+      `;
+      const form = slot.querySelector('form');
+      const input = slot.querySelector('textarea');
+      const submit = slot.querySelector('.reply-submit');
+      slot.querySelector('.reply-cancel')?.addEventListener('click', () => { slot.innerHTML = ''; });
+      input?.addEventListener('input', () => {
+        autoResizeTextarea(input);
+        const ready = Boolean(input.value.trim());
+        submit.disabled = !ready;
+        submit.classList.toggle('ready', ready);
+      });
+      autoResizeTextarea(input);
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if(!text) return;
+        const ok = await postComment(text, parentId);
+        if(ok) slot.innerHTML = '';
+      });
+      input?.focus();
+    }
+
     function init(){
       const id = new URLSearchParams(location.search).get('id');
       if(!id){
         location.replace('board.html');
         return;
       }
+      loadMe().then(() => renderComments(currentComments));
+      bindCommentForm();
       loadPost(id);
     }
 
