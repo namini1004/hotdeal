@@ -11,7 +11,9 @@ const FEED_FILES = [
 const HOT_SCORE_CONFIG = {
   commentWeight: 1.8,
   recencyWeight: 0.65,
-  likeWeight: 0.35,
+  likeWeight: 1.2,
+  dislikeWeight: 1.4,
+  commentSignalWeight: 0.45,
   recencyWindowHours: 48,
   hotBoostHours: 3,
 };
@@ -103,6 +105,8 @@ function computeHotScore(item, nowMs, sourceAvg = { views: 0, comments: 0 }) {
   const views = Math.max(0, Number(item.views || 0));
   const comments = Math.max(0, Number(item.comments || 0));
   const likes = Math.max(0, Number(item.likes || 0));
+  const dislikes = Math.max(0, Number(item.dislikes || 0));
+  const commentSignalScore = Math.max(-18, Math.min(16, Number(item.commentSignalScore || 0)));
 
   const registeredMs = parseDateMs(item.registeredAt || item.date || '');
   const hoursSincePost = registeredMs
@@ -120,8 +124,10 @@ function computeHotScore(item, nowMs, sourceAvg = { views: 0, comments: 0 }) {
   const viewScore = Math.log10(views + 1);
   const commentScore = Math.log10(comments + 1) * HOT_SCORE_CONFIG.commentWeight;
   const likeScore = Math.log10(likes + 1) * HOT_SCORE_CONFIG.likeWeight;
+  const dislikePenalty = Math.log10(dislikes + 1) * HOT_SCORE_CONFIG.dislikeWeight;
+  const commentSignalScoreBoost = commentSignalScore * HOT_SCORE_CONFIG.commentSignalWeight;
   const recencyScore = HOT_SCORE_CONFIG.recencyWeight * freshness * scarcityBoost * ultraFreshBoost;
-  return viewScore + commentScore + likeScore + recencyScore;
+  return viewScore + commentScore + likeScore - dislikePenalty + commentSignalScoreBoost + recencyScore;
 }
 
 function applyTemperatureNormalization(items = []) {
@@ -205,8 +211,12 @@ function normalizeFeedItems(items = []) {
       sourceLink: item.sourceLink || '',
       buyLink: item.buyLink || '',
       likes: Number(item.likes || 0),
+      dislikes: Number(item.dislikes || 0),
       views: Number(item.views || 0),
       comments: Number(item.comments || 0),
+      commentSignalScore: Number(item.commentSignalScore || item.comment_signal_score || 0),
+      positiveCommentSignals: Number(item.positiveCommentSignals || item.positive_comment_signals || 0),
+      negativeCommentSignals: Number(item.negativeCommentSignals || item.negative_comment_signals || 0),
       date: item.date || '',
       registeredAt: item.registeredAt || '',
       source,
@@ -244,8 +254,12 @@ function normalizeFeedDbRow(row = {}) {
     sourceLink: row.source_link || '',
     buyLink: row.buy_link || '',
     likes: Number(row.likes || 0),
+    dislikes: Number(row.dislikes || 0),
     views: Number(row.views || 0),
     comments: Number(row.comments || 0),
+    commentSignalScore: Number(row.comment_signal_score || 0),
+    positiveCommentSignals: Number(row.positive_comment_signals || 0),
+    negativeCommentSignals: Number(row.negative_comment_signals || 0),
     date: row.date || '',
     registeredAt: row.registered_at || '',
     source: row.source || 'feed',
@@ -256,7 +270,7 @@ function normalizeFeedDbRow(row = {}) {
 
 async function readFeedItems() {
   try {
-    const rows = await supabaseRequest('deals?source=neq.user&deleted_at=is.null&order=registered_at.desc&limit=3000');
+    const rows = await supabaseRequest('deals?source=neq.user&deleted_at=is.null&select=*&order=registered_at.desc&limit=3000');
     const normalized = (rows || []).map(normalizeFeedDbRow).filter((v) => v.sourceLink);
     if (normalized.length) {
       const dedupMap = new Map();
@@ -294,8 +308,12 @@ function normalizeUserRow(row) {
     sourceLink: row.source_link || '',
     buyLink: row.buy_link || '',
     likes: Number(row.likes || 0),
+    dislikes: Number(row.dislikes || 0),
     views: Number(row.views || 0),
     comments: Number(row.comments || 0),
+    commentSignalScore: Number(row.comment_signal_score || 0),
+    positiveCommentSignals: Number(row.positive_comment_signals || 0),
+    negativeCommentSignals: Number(row.negative_comment_signals || 0),
     date: row.date || '',
     registeredAt: row.registered_at || row.created_at || '',
     source: 'user',
@@ -367,6 +385,8 @@ module.exports = {
   readFeedItemsFromFiles,
   normalizeUserRow,
   parseUserId,
+  computeHotScore,
+  applyTemperatureNormalization,
   supabaseRequest,
   mapPayload,
 };

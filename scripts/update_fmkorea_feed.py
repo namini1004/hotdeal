@@ -8,6 +8,10 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
 from playwright.sync_api import sync_playwright
+try:
+    from hotdeal_quality_signals import analyze_comment_quality
+except ModuleNotFoundError:
+    from scripts.hotdeal_quality_signals import analyze_comment_quality
 
 LIST_URL = "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine"
 ROOT = Path(__file__).resolve().parents[1]
@@ -136,11 +140,23 @@ def extract_primary_image(detail_html: str) -> str:
     return ""
 
 
+def parse_detail_voted_count(detail_html: str) -> int:
+    patterns = [
+        r'class=["\'][^"\']*btn_img[^"\']*new_voted_count[^"\']*["\'][^>]*\bvalue=["\']?([0-9,]+)',
+        r'class=["\'][^"\']*new_voted_count[^"\']*btn_img[^"\']*["\'][^>]*\bvalue=["\']?([0-9,]+)',
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, detail_html, re.I)
+        if m:
+            return int((m.group(1) or '0').replace(',', '') or '0')
+    return 0
+
+
 def extract_detail_bundle_in_page(page, url: str) -> dict:
     page.goto(url, wait_until="domcontentloaded", timeout=90000)
     page.wait_for_timeout(450)
     return page.evaluate('''() => {
-      const result = { img: '', buyLink: '', desc: '' };
+      const result = { img: '', buyLink: '', desc: '', likes: 0, commentSignalText: '' };
 
       const norm = (v) => (v || '').trim();
       const abs = (href) => {
@@ -224,6 +240,12 @@ def extract_detail_bundle_in_page(page, url: str) -> dict:
         if (root) break;
       }
       if (root) result.desc = (root.innerText || '').trim();
+
+      const voted = document.querySelector('.btn_img.new_voted_count');
+      const votedRaw = voted ? (voted.getAttribute('value') || voted.value || voted.textContent || '') : '';
+      result.likes = Number(String(votedRaw).replace(/[^0-9]/g, '')) || 0;
+      const commentRoot = document.querySelector('.comment, .comment_list, .fdb_lst_ul, .xe_content') || document;
+      result.commentSignalText = (commentRoot.innerText || '').trim();
 
       return result;
     }''')
@@ -328,6 +350,13 @@ def main():
                 body_text = (bundle.get("desc") or "").strip()
                 if body_text:
                     r["desc"] = body_text
+                bundle_likes = int(bundle.get("likes") or 0)
+                if bundle_likes:
+                    r["detailLikes"] = bundle_likes
+                comment_quality = analyze_comment_quality(bundle.get("commentSignalText") or body_text)
+                r["commentSignalScore"] = comment_quality["score"]
+                r["positiveCommentSignals"] = comment_quality["positiveCount"]
+                r["negativeCommentSignals"] = comment_quality["negativeCount"]
             except Exception:
                 pass
         detail_page.close()
@@ -382,6 +411,7 @@ def main():
         comments = int((comments_m.group(1).replace(",", "") if comments_m else "0") or "0")
         likes_m = re.search(r"추천\s*([0-9,]+)", line_meta)
         likes = int((likes_m.group(1).replace(",", "") if likes_m else "0") or "0")
+        likes = int(r.get("detailLikes") or likes or 0)
         views_m = re.search(r"조회\s*([0-9.,만천백]+)", r["raw"])
         views = 0
         if views_m:
@@ -426,6 +456,9 @@ def main():
                 "likes": likes,
                 "views": views,
                 "comments": comments,
+                "commentSignalScore": int(r.get("commentSignalScore") or 0),
+                "positiveCommentSignals": int(r.get("positiveCommentSignals") or 0),
+                "negativeCommentSignals": int(r.get("negativeCommentSignals") or 0),
                 "category": category,
                 "desc": (r.get("desc") or f"쇼핑몰: {shop} / 배송: {delivery}".strip()),
                 "img": img,

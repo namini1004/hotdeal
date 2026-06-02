@@ -9,6 +9,10 @@ from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlparse
 
 import requests
+try:
+    from hotdeal_quality_signals import analyze_comment_quality
+except ModuleNotFoundError:
+    from scripts.hotdeal_quality_signals import analyze_comment_quality
 
 LIST_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"
 BASE = "https://www.ppomppu.co.kr"
@@ -51,6 +55,14 @@ def parse_registered_at(detail: str):
         if ts > 1000000000:
             return datetime.fromtimestamp(ts, tz=KST)
     return None
+
+
+def parse_recommend_counts(detail: str) -> tuple[int, int]:
+    recommend_m = re.search(r'<[^>]+id=["\']recommend["\'][^>]*>([\s\S]*?)(?:</div>|</section>)', detail, re.I)
+    scope = recommend_m.group(1) if recommend_m else detail
+    up_m = re.search(r'class=["\'][^"\']*up-numb[^"\']*["\'][^>]*>\s*([0-9,]+)\s*<', scope, re.I)
+    down_m = re.search(r'class=["\'][^"\']*down-numb[^"\']*["\'][^>]*>\s*([0-9,]+)\s*<', scope, re.I)
+    return parse_int(up_m.group(1) if up_m else ''), parse_int(down_m.group(1) if down_m else '')
 
 
 def parse_post_stats(detail: str) -> tuple[int, int]:
@@ -319,6 +331,8 @@ def parse_items():
             views = row.get('views', 0)
         if not comments:
             comments = row.get('comments', 0)
+        recommend_up, recommend_down = parse_recommend_counts(detail)
+        comment_quality = analyze_comment_quality(detail)
 
         # 사러가기 URL (상단 닉네임 아래 링크의 실제 target)
         buy_link = ""
@@ -350,9 +364,13 @@ def parse_items():
             "time": date_label,
             "registeredAt": registered_at,
             "price": price,
-            "likes": row.get('likes', 0),
+            "likes": recommend_up or row.get('likes', 0),
+            "dislikes": recommend_down,
             "views": views,
             "comments": comments,
+            "commentSignalScore": comment_quality['score'],
+            "positiveCommentSignals": comment_quality['positiveCount'],
+            "negativeCommentSignals": comment_quality['negativeCount'],
             "category": category,
             "desc": body_desc or og_desc or "",
             "img": representative_img,

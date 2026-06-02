@@ -7,6 +7,10 @@ from pathlib import Path
 from urllib.parse import quote
 
 import requests
+try:
+    from hotdeal_quality_signals import analyze_comment_quality
+except ModuleNotFoundError:
+    from scripts.hotdeal_quality_signals import analyze_comment_quality
 
 LIST_URL = "https://m.ruliweb.com/market/board/1020"
 BASE = "https://bbs.ruliweb.com"
@@ -165,6 +169,11 @@ def parse_rows(page_html: str, seen: set):
     return items
 
 
+def parse_detail_like_count(detail_html: str) -> int:
+    like_m = re.search(r'class=["\'][^"\']*like-value[^"\']*["\'][^>]*>\s*([0-9,]+)\s*<', detail_html, re.I)
+    return int((like_m.group(1).replace(',', '') if like_m else '0') or '0')
+
+
 def get_content_chunk(detail_html: str) -> str:
     body_m = re.search(r'<div class="view_content[\s\S]*?</div>\s*</div>', detail_html)
     return body_m.group(0) if body_m else detail_html
@@ -266,6 +275,13 @@ def main():
                 row['img'] = to_proxy_image_url(primary_img or (clean(img_m.group(1)) if img_m else ''))
                 body_text = extract_body_text(detail_html)
                 row['desc'] = body_text or (clean(desc_m.group(1)) if desc_m else '')
+                detail_likes = parse_detail_like_count(detail_html)
+                if detail_likes:
+                    row['likes'] = detail_likes
+                comment_quality = analyze_comment_quality(detail_html)
+                row['commentSignalScore'] = comment_quality['score']
+                row['positiveCommentSignals'] = comment_quality['positiveCount']
+                row['negativeCommentSignals'] = comment_quality['negativeCount']
                 if row.get('price') in {'', '가격 정보 확인'}:
                     body_price = extract_price_from_detail(detail_html)
                     if body_price:

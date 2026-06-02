@@ -8,6 +8,10 @@ from typing import Dict, List
 from urllib.parse import urljoin, urlsplit
 
 import requests
+try:
+    from hotdeal_quality_signals import analyze_comment_quality
+except ModuleNotFoundError:
+    from scripts.hotdeal_quality_signals import analyze_comment_quality
 
 LIST_URL = "https://quasarzone.com/bbs/qb_saleinfo"
 BASE = "https://quasarzone.com"
@@ -372,17 +376,8 @@ def parse_list_items(page_html: str, seen=None):
         likes_text = count_matches[0] if len(count_matches) >= 2 else '0'
         views_text = count_matches[-1] if count_matches else '0'
 
-        l = likes_text.lower().replace(',', '').strip()
-        if l.endswith('k'):
-            try:
-                likes = int(float(l[:-1]) * 1000)
-            except Exception:
-                likes = 0
-        else:
-            try:
-                likes = int(float(l))
-            except Exception:
-                likes = 0
+        # 퀘이사는 현재 신뢰 가능한 추천 점수를 제공하지 않으므로 온도 계산에서 추천 가중치를 쓰지 않는다.
+        likes = 0
 
         v = views_text.lower().replace(',', '').strip()
         if v.endswith('k'):
@@ -622,6 +617,10 @@ def main():
                 body_img = extract_body_image_from_detail(detail_html)
                 row["buyLink"] = real_link or row["sourceLink"]
                 row["desc"] = extract_body_text_from_detail(detail_html)
+                comment_quality = analyze_comment_quality(detail_html)
+                row["commentSignalScore"] = comment_quality["score"]
+                row["positiveCommentSignals"] = comment_quality["positiveCount"]
+                row["negativeCommentSignals"] = comment_quality["negativeCount"]
                 if body_img:
                     row["img"] = body_img
                 if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:

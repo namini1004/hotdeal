@@ -27,6 +27,12 @@ FEED_FILES = [
     ROOT / "assets" / "ruliweb_hotdeals_1day.json",
 ]
 EXPECTED_FEED_SOURCES = {"ppomppu", "quasar", "fmkorea", "ruliweb"}
+QUALITY_SIGNAL_FIELDS = [
+    "dislikes",
+    "comment_signal_score",
+    "positive_comment_signals",
+    "negative_comment_signals",
+]
 
 TRACKED_FIELDS = [
     "buy_link",
@@ -39,8 +45,13 @@ TRACKED_FIELDS = [
     "area",
     "dist",
     "time",
+    "likes",
+    "dislikes",
     "views",
     "comments",
+    "comment_signal_score",
+    "positive_comment_signals",
+    "negative_comment_signals",
     "date",
     "registered_at",
 ]
@@ -94,8 +105,13 @@ def normalize(item: Dict) -> Dict:
         "area": str(item.get("area") or "뽐뿌 핫딜").strip(),
         "dist": str(item.get("dist") or "기타").strip(),
         "time": str(item.get("time") or item.get("date") or "").strip(),
+        "likes": int(item.get("likes") or 0),
+        "dislikes": int(item.get("dislikes") or 0),
         "views": int(item.get("views") or 0),
         "comments": int(item.get("comments") or 0),
+        "comment_signal_score": int(item.get("commentSignalScore") or item.get("comment_signal_score") or 0),
+        "positive_comment_signals": int(item.get("positiveCommentSignals") or item.get("positive_comment_signals") or 0),
+        "negative_comment_signals": int(item.get("negativeCommentSignals") or item.get("negative_comment_signals") or 0),
         "date": str(item.get("date") or "").strip(),
         "registered_at": item.get("registeredAt") or None,
         "updated_at": None,
@@ -293,7 +309,7 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
     }
     endpoint = (
         f"{supabase_url}/rest/v1/deals"
-        "?select=source,source_link,buy_link,title,desc,price,category,img,detail_img,area,dist,time,views,comments,date,registered_at,updated_at,deleted_at"
+        "?select=*"
         "&source=neq.user"
     )
 
@@ -322,6 +338,13 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
         start += page_size
 
     return existing
+
+
+def strip_quality_signal_fields(rows: List[Dict]) -> List[Dict]:
+    return [
+        {k: v for k, v in row.items() if k not in QUALITY_SIGNAL_FIELDS}
+        for row in rows
+    ]
 
 
 def send_push_ingest(changed_rows: List[Dict]):
@@ -459,6 +482,14 @@ def main():
                 use_insert_fallback = True
                 headers["Prefer"] = "return=minimal"
                 res = requests.post(endpoint_insert, headers=headers, json=batch, timeout=60)
+
+            if not res.ok and res.status_code == 400 and any(field in (res.text or "") for field in QUALITY_SIGNAL_FIELDS):
+                # 운영 DB에 새 품질 지표 컬럼이 아직 적용되지 않은 경우 피드 동기화 전체가 멈추지 않게
+                # 기존 컬럼만 우선 저장한다. supabase_hotdeal_schema.sql 적용 후에는 자동으로 지표까지 저장된다.
+                print("WARN_QUALITY_SIGNAL_COLUMNS_MISSING retry_without_quality_signal_fields")
+                fallback_batch = strip_quality_signal_fields(batch)
+                retry_endpoint = endpoint_insert if use_insert_fallback else endpoint
+                res = requests.post(retry_endpoint, headers=headers, json=fallback_batch, timeout=60)
 
             if not res.ok:
                 raise SystemExit(f"Supabase upsert failed ({res.status_code}): {res.text}")
