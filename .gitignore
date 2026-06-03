@@ -15,3 +15,4 @@ oauth_clientid.txt
 oauth_secret.txt
 codex_prompt.txt
 .vercel
+.env*.local

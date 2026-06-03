@@ -377,11 +377,35 @@
     function shouldUseDeltaRefresh(mode = 'auto'){
       if(!state.lastFeedSyncAt) return false;
       if(mode === 'entry') return !isFeedSyncExpired();
+      if(mode === 'manual') return false;
       return true;
     }
 
+    function canonicalDealKey(item = {}){
+      const source = item?.source || 'feed';
+      const sourceLink = String(item?.sourceLink || '').trim();
+      if(source === 'ppomppu'){
+        const noMatch = sourceLink.match(/[?&]no=(\d+)/);
+        if(noMatch) return `${source}::no:${noMatch[1]}`;
+      }
+      if(source === 'fmkorea'){
+        const idMatch = sourceLink.match(/fmkorea\.com\/(\d+)/);
+        if(idMatch) return `${source}::doc:${idMatch[1]}`;
+      }
+      if(source === 'quasar'){
+        const idMatch = sourceLink.match(/\/views\/(\d+)/);
+        if(idMatch) return `${source}::view:${idMatch[1]}`;
+      }
+      if(source === 'ruliweb'){
+        const idMatch = sourceLink.match(/\/read\/(\d+)/);
+        if(idMatch) return `${source}::read:${idMatch[1]}`;
+      }
+      return sourceLink ? `${source}::${sourceLink}` : '';
+    }
+
     function getDealKey(item){
-      if(item?.sourceLink) return item.sourceLink;
+      const canonicalKey = canonicalDealKey(item);
+      if(canonicalKey) return canonicalKey;
       if(item?.id) return `id:${item.id}:${item.date || ''}`;
       return `title:${item?.title || ''}:${item?.date || ''}`;
     }
@@ -517,7 +541,7 @@
         const db = Date.parse(b.registeredAt || b.date || '') || 0;
         const ta = Number(a.temperature || 0);
         const tb = Number(b.temperature || 0);
-        if(state.sortMode === 'temperature'){
+        if(state.activeTab !== 'latest' && state.sortMode === 'temperature'){
           if(tb !== ta) return tb - ta;
           return db - da;
         }
