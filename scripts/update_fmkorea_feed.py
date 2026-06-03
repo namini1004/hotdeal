@@ -13,7 +13,7 @@ try:
 except ModuleNotFoundError:
     from scripts.hotdeal_quality_signals import analyze_comment_quality
 
-LIST_URL = "https://m.fmkorea.com/index.php?mid=hotdeal&sort_index=pop&order_type=desc&listStyle=webzine"
+LIST_URL = "https://m.fmkorea.com/index.php?mid=hotdeal&listStyle=webzine"
 MAX_PAGES = 10
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "fmkorea_hotdeals_2days.json"
@@ -274,6 +274,40 @@ def extract_document_id_from_link(link: str) -> str:
     return m.group(1) if m else ""
 
 
+def extract_row_meta(row: Dict, now: datetime) -> Dict:
+    line_meta = ""
+    for ln in row.get("lines") or []:
+        if " / " in ln and ("추천" in ln or "조회" in ln):
+            line_meta = ln
+            break
+
+    time_token = ""
+    category = "기타"
+    time_pattern = r'(?:\d{2}:\d{2}|20\d{2}\.\d{2}\.\d{2}|\d{2}\.\d{2})'
+    m_meta = re.search(rf'^(.*?)\s*/\s*({time_pattern})\s*/', line_meta)
+    if m_meta:
+        category = m_meta.group(1).strip() or "기타"
+        time_token = m_meta.group(2).strip()
+    else:
+        tm = re.search(time_pattern, line_meta or row.get("raw") or "")
+        if tm:
+            time_token = tm.group(0)
+
+    return {
+        "line_meta": line_meta,
+        "time_token": time_token,
+        "category": category,
+        "dt": parse_time_token(time_token, now),
+    }
+
+
+def should_keep_row_by_time(row: Dict, now: datetime, since: datetime) -> bool:
+    meta = extract_row_meta(row, now)
+    row["_meta"] = meta
+    dt = meta["dt"]
+    return not (dt < since and dt.date() != since.date())
+
+
 def has_reusable_detail_fields(item: Dict) -> bool:
     return bool((item.get("buyLink") or "").strip() and (item.get("desc") or "").strip())
 
@@ -331,11 +365,19 @@ def main():
         for pg in range(1, MAX_PAGES + 1):
             url = f"{LIST_URL}&page={pg}"
             rows = run_page_extract(page, url)
+            page_kept = 0
             for r in rows:
-                if r["href"] in seen:
+                if not should_keep_row_by_time(r, now, since):
                     continue
-                seen.add(r["href"])
+                page_kept += 1
+                doc_id = extract_document_id_from_link(r.get("href") or "")
+                key = doc_id or canonical_fmkorea_source_link(r.get("href") or "") or r.get("href")
+                if key in seen:
+                    continue
+                seen.add(key)
                 all_rows.append(r)
+            if rows and page_kept == 0:
+                break
 
         detail_page = context.new_page()
         for r in all_rows:
@@ -364,6 +406,13 @@ def main():
                 r["commentSignalScore"] = comment_quality["score"]
                 r["positiveCommentSignals"] = comment_quality["positiveCount"]
                 r["negativeCommentSignals"] = comment_quality["negativeCount"]
+                doc_id = extract_document_id_from_link(r.get("href") or "")
+                source_link = canonical_fmkorea_source_link(r.get("href") or "")
+                if has_reusable_detail_fields(r):
+                    if doc_id:
+                        previous_lookup[f"id:{doc_id}"] = r
+                    if source_link:
+                        previous_lookup[f"source:{source_link}"] = r
             except Exception:
                 pass
         detail_page.close()
@@ -375,26 +424,11 @@ def main():
 
     items = []
     for r in all_rows:
-        line_meta = ""
-        for ln in r["lines"]:
-            if " / " in ln and ("추천" in ln or "조회" in ln):
-                line_meta = ln
-                break
-
-        # 예: 먹거리 / 12:01 / 작성자 / 추천 24
-        time_token = ""
-        category = "기타"
-        time_pattern = r'(?:\d{2}:\d{2}|20\d{2}\.\d{2}\.\d{2}|\d{2}\.\d{2})'
-        m_meta = re.search(rf'^(.*?)\s*/\s*({time_pattern})\s*/', line_meta)
-        if m_meta:
-            category = m_meta.group(1).strip() or "기타"
-            time_token = m_meta.group(2).strip()
-        else:
-            tm = re.search(time_pattern, line_meta or r["raw"])
-            if tm:
-                time_token = tm.group(0)
-
-        dt = parse_time_token(time_token, now)
+        meta = r.get("_meta") or extract_row_meta(r, now)
+        line_meta = meta["line_meta"]
+        time_token = meta["time_token"]
+        category = meta["category"]
+        dt = meta["dt"]
         if dt < since and dt.date() != since.date():
             continue
 

@@ -3,6 +3,29 @@ from scripts import update_ppomppu_feed as ppomppu
 from scripts import update_quasar_feed as quasar
 
 
+def test_fmkorea_uses_latest_listing_not_popular_sort():
+    assert "sort_index=pop" not in fmkorea.LIST_URL
+    assert "mid=hotdeal" in fmkorea.LIST_URL
+
+
+def test_fmkorea_filters_old_rows_before_detail_parse():
+    now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+    row = {"lines": ["먹거리 / 2026.05.31 / tester / 추천 1"], "raw": ""}
+
+    assert fmkorea.should_keep_row_by_time(row, now, since) is False
+    assert row["_meta"]["time_token"] == "2026.05.31"
+
+
+def test_fmkorea_keeps_recent_rows_before_detail_parse():
+    now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+    row = {"lines": ["가전제품 / 11:37 / wakfu / 추천 14"], "raw": ""}
+
+    assert fmkorea.should_keep_row_by_time(row, now, since) is True
+    assert row["_meta"]["category"] == "가전제품"
+
+
 def test_fmkorea_reuses_cached_detail_fields_by_document_id():
     cached = {
         "id": "123456",
