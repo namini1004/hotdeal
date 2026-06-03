@@ -301,6 +301,8 @@
     const SCROLL_RESTORE_PENDING_KEY = 'hotdeal_list_scroll_restore_pending_v1';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const VIEW_MODE_KEY = 'hotdeal_web_view_mode_v1';
+    const LAST_FEED_SYNC_KEY = 'hotdeal_last_feed_sync_at_v1';
+    const FULL_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
     let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'all', sortMode: 'latest', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '' };
     let isRefreshing = false;
 
@@ -353,6 +355,29 @@
     function saveItems(items){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
       localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
+
+    function restoreLastFeedSyncAt(){
+      state.lastFeedSyncAt = localStorage.getItem(LAST_FEED_SYNC_KEY) || '';
+    }
+
+    function persistLastFeedSyncAt(value){
+      if(!value) return;
+      state.lastFeedSyncAt = value;
+      localStorage.setItem(LAST_FEED_SYNC_KEY, value);
+    }
+
+    function isFeedSyncExpired(){
+      if(!state.lastFeedSyncAt) return true;
+      const lastMs = Date.parse(state.lastFeedSyncAt);
+      if(!Number.isFinite(lastMs)) return true;
+      return Date.now() - lastMs >= FULL_REFRESH_INTERVAL_MS;
+    }
+
+    function shouldUseDeltaRefresh(mode = 'auto'){
+      if(!state.lastFeedSyncAt) return false;
+      if(mode === 'entry') return !isFeedSyncExpired();
+      return true;
     }
 
     function getDealKey(item){
@@ -866,7 +891,7 @@
         .join('~');
     }
 
-    async function refreshFeed({ silent = false } = {}){
+    async function refreshFeed({ silent = false, mode = 'auto' } = {}){
       if(isRefreshing) return;
       isRefreshing = true;
       const wrap = document.getElementById('pullRefresh');
@@ -878,7 +903,7 @@
           label.textContent = '가지 로딩중...';
         }
         const headers = state.feedEtag ? { 'If-None-Match': state.feedEtag } : {};
-        const sinceQuery = state.lastFeedSyncAt ? `&since=${encodeURIComponent(state.lastFeedSyncAt)}` : '';
+        const sinceQuery = shouldUseDeltaRefresh(mode) && state.lastFeedSyncAt ? `&since=${encodeURIComponent(state.lastFeedSyncAt)}` : '';
         const res = await fetch(`${DEALS_API}?scope=feed${sinceQuery}`, { cache: 'no-store', headers });
         if(res.status === 304) return;
         if(res.ok){
@@ -896,7 +921,7 @@
           }
 
           applyItems([...state.userItems, ...state.feedItems]);
-          state.lastFeedSyncAt = data.serverTime || new Date().toISOString();
+          persistLastFeedSyncAt(data.serverTime || new Date().toISOString());
           const nextFingerprint = makeFeedFingerprint(getCurrentTabItems());
           if(prevFingerprint !== nextFingerprint){
             render();
@@ -984,7 +1009,7 @@
         if(pullDistance >= threshold){
           setPullHeight(86);
           wrap.classList.add('show');
-          await refreshFeed();
+          await refreshFeed({ mode: 'manual' });
         }else{
           setPullHeight(0);
           label.textContent = '당겨서 새로고침';
@@ -1061,6 +1086,7 @@
       bindTemperatureModal();
 
       const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
+      restoreLastFeedSyncAt();
       applyItems(cached);
       render();
       restoreListScrollState();
@@ -1070,7 +1096,7 @@
         restoreListScrollState();
       }
 
-      await refreshFeed({ silent: true });
+      await refreshFeed({ silent: true, mode: 'entry' });
       refreshNaminDealsBackground();
 
       render();
