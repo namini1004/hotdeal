@@ -179,6 +179,18 @@ def is_blocked_image_candidate(source: str, src: str) -> bool:
     return any(token in src_l for token in blocked_tokens)
 
 
+def is_ppomppu_forbidden_warning_image(content: bytes) -> bool:
+    """뽐뿌 hotlink 차단 경고 이미지를 200 JPEG 응답에서도 감지한다."""
+    size = len(content or b"")
+    if size < 24_000 or size > 26_000:
+        return False
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            return image.size == (355, 138)
+    except Exception:
+        return False
+
+
 def make_webp_image(content: bytes, max_size: int, quality: Optional[int] = None) -> bytes:
     image = Image.open(io.BytesIO(content))
     image = ImageOps.exif_transpose(image)
@@ -253,6 +265,15 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
         raise RuntimeError(f"{source} image response is not image ({content_type})")
     if len(res.content) < 500:
         raise RuntimeError(f"{source} image response too small")
+    if source == "ppomppu" and is_ppomppu_forbidden_warning_image(res.content):
+        reusable_prev = {
+            "img": prev_img,
+            "detail_img": prev_detail_img,
+        }
+        if is_reusable_storage_webp(prev_img, source, supabase_url, "thumb") and is_reusable_storage_webp(prev_detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT):
+            return reusable_prev
+        print(f"WARN_PPOMPPU_FORBIDDEN_IMAGE_FALLBACK source_link={row.get('source_link')}")
+        return {"img": "", "detail_img": ""}
     if len(res.content) > MAX_MIRROR_IMAGE_BYTES:
         raise RuntimeError(f"{source} image too large ({len(res.content)} bytes)")
 
