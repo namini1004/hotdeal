@@ -2,6 +2,7 @@
 import html
 import json
 import re
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
@@ -551,8 +552,17 @@ def has_reusable_detail_fields(item: Dict) -> bool:
 
 def build_previous_detail_lookup(items: List[Dict]) -> Dict[str, Dict]:
     lookup: Dict[str, Dict] = {}
+    image_counts = Counter(
+        str(item.get("img") or "").strip()
+        for item in items or []
+        if str(item.get("img") or "").strip()
+    )
+    repeated_images = {img for img, count in image_counts.items() if count >= 3}
     for item in items or []:
         if not has_reusable_detail_fields(item):
+            continue
+        if str(item.get("img") or "").strip() in repeated_images:
+            # 과거 목록 썸네일/placeholder가 여러 상세에 잘못 캐시된 경우 상세를 다시 열어 본문 이미지를 재추출한다.
             continue
         item_id = str(item.get("id") or "").strip()
         source_link = str(item.get("sourceLink") or "").strip()
@@ -579,6 +589,19 @@ def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
             row[key] = value
     row["_detailCached"] = True
     return True
+
+
+def dedupe_items_by_title(items: List[Dict]) -> List[Dict]:
+    seen_titles = set()
+    deduped = []
+    for item in items:
+        title_key = re.sub(r'\s+', ' ', str(item.get('title') or '').strip()).lower()
+        if title_key and title_key in seen_titles:
+            continue
+        if title_key:
+            seen_titles.add(title_key)
+        deduped.append(item)
+    return deduped
 
 
 def main():
@@ -667,6 +690,8 @@ def main():
 
         if old_count == len(rows):
             break
+
+    filtered = dedupe_items_by_title(filtered)
 
     today_label = str(now.date())
     yesterday_label = str((now - timedelta(days=1)).date())

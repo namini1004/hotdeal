@@ -282,6 +282,28 @@ function normalizeFeedDbRow(row = {}) {
   };
 }
 
+function canonicalFeedKey(item = {}) {
+  const source = item.source || 'feed';
+  const sourceLink = item.sourceLink || '';
+  if (source === 'ppomppu') {
+    const noMatch = String(sourceLink).match(/[?&]no=(\d+)/);
+    if (noMatch) return `${source}::no:${noMatch[1]}`;
+  }
+  if (source === 'fmkorea') {
+    const idMatch = String(sourceLink).match(/fmkorea\.com\/(\d+)/);
+    if (idMatch) return `${source}::doc:${idMatch[1]}`;
+  }
+  if (source === 'quasar') {
+    const idMatch = String(sourceLink).match(/\/views\/(\d+)/);
+    if (idMatch) return `${source}::view:${idMatch[1]}`;
+  }
+  if (source === 'ruliweb') {
+    const idMatch = String(sourceLink).match(/\/read\/(\d+)/);
+    if (idMatch) return `${source}::read:${idMatch[1]}`;
+  }
+  return `${source}::${sourceLink}`;
+}
+
 async function readFeedItems() {
   try {
     const rows = await supabaseRequest('deals?source=neq.user&deleted_at=is.null&select=*&order=registered_at.desc&limit=3000');
@@ -289,7 +311,7 @@ async function readFeedItems() {
     if (normalized.length) {
       const dedupMap = new Map();
       for (const item of normalized) {
-        const key = `${item.source}::${item.sourceLink}`;
+        const key = canonicalFeedKey(item);
         const prev = dedupMap.get(key);
         if (!prev) {
           dedupMap.set(key, item);
@@ -401,6 +423,7 @@ module.exports = {
   parseUserId,
   computeHotScore,
   applyTemperatureNormalization,
+  canonicalFeedKey,
   supabaseRequest,
   mapPayload,
 };

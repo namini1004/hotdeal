@@ -7,7 +7,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, quote, urlencode, urlparse
 
 import requests
 try:
@@ -88,9 +88,23 @@ def load_items() -> List[Dict]:
     return merged
 
 
+def canonicalize_source_link(source: str, source_link: str) -> str:
+    source = str(source or "").strip()
+    source_link = str(source_link or "").strip()
+    if source == "ppomppu":
+        parsed = urlparse(source_link)
+        query = parse_qs(parsed.query)
+        no = (query.get("no") or [""])[0]
+        board_id = (query.get("id") or ["ppomppu"])[0]
+        if no:
+            canonical_query = urlencode({"id": board_id or "ppomppu", "no": no})
+            return f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{canonical_query}"
+    return source_link
+
+
 def normalize(item: Dict) -> Dict:
     source = str(item.get("source") or "feed").strip()
-    source_link = str(item.get("sourceLink") or "").strip()
+    source_link = canonicalize_source_link(source, str(item.get("sourceLink") or "").strip())
     buy_link = str(item.get("buyLink") or source_link).strip()
     return {
         "source": source,
@@ -460,10 +474,17 @@ def main():
     raw_items = load_items()
     norm_items = [normalize(v) for v in raw_items if (v.get("sourceLink") or "").strip()]
 
-    # source+source_link 기준 중복 제거(최신 항목 우선)
+    # source+source_link / exact title 기준 중복 제거(최신 항목 우선)
     dedup = {}
+    title_keys = set()
     for row in norm_items:
-        dedup[f"{row['source']}::{row['source_link']}"] = row
+        canonical_key = f"{row['source']}::{row['source_link']}"
+        normalized_title = re.sub(r"\s+", " ", row.get("title") or "").strip().lower()
+        title_key = f"{row['source']}::title::{normalized_title}"
+        if title_key in title_keys:
+            continue
+        title_keys.add(title_key)
+        dedup[canonical_key] = row
     rows = list(dedup.values())
 
     if not rows:

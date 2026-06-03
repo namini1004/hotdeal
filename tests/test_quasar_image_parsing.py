@@ -49,6 +49,43 @@ class QuasarImageParsingTests(unittest.TestCase):
 
         self.assertEqual(item["img"], "")
 
+    def test_repeated_cached_list_thumbnail_is_not_reused_for_detail_image(self):
+        repeated_thumb = "https://img2.quasarzone.com/editor/2026/06/03/thumb_bad.png"
+        previous = [
+            {
+                "id": "1",
+                "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/1",
+                "img": repeated_thumb,
+                "buyLink": "https://a.example/1",
+                "desc": "cached",
+                "registeredAt": "2026-06-03T10:00:00+09:00",
+            },
+            {
+                "id": "2",
+                "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/2",
+                "img": repeated_thumb,
+                "buyLink": "https://a.example/2",
+                "desc": "cached",
+                "registeredAt": "2026-06-03T10:00:00+09:00",
+            },
+            {
+                "id": "3",
+                "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/3",
+                "img": repeated_thumb,
+                "buyLink": "https://a.example/3",
+                "desc": "cached",
+                "registeredAt": "2026-06-03T10:00:00+09:00",
+            },
+        ]
+        lookup = quasar.build_previous_detail_lookup(previous)
+        row = {
+            "id": "1",
+            "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/1",
+            "img": repeated_thumb,
+        }
+
+        self.assertFalse(quasar.apply_cached_detail_fields(row, lookup))
+
 
 if __name__ == "__main__":
     unittest.main()

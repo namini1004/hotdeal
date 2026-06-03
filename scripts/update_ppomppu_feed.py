@@ -6,7 +6,7 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import parse_qs, urljoin, urlparse
+from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 import requests
 try:
@@ -262,6 +262,17 @@ def strip_tags(value: str) -> str:
     return html.unescape(value).strip()
 
 
+def canonicalize_source_link(url: str) -> str:
+    parsed = urlparse(urljoin(LIST_URL, html.unescape(url or '').replace('&&', '&')))
+    query = parse_qs(parsed.query)
+    no = (query.get('no') or [''])[0]
+    board_id = (query.get('id') or ['ppomppu'])[0]
+    if no:
+        canonical_query = urlencode({'id': board_id or 'ppomppu', 'no': no})
+        return f'{parsed.scheme}://{parsed.netloc}{parsed.path}?{canonical_query}'
+    return parsed.geturl()
+
+
 def parse_list_rows(list_html: str):
     rows = []
 
@@ -284,7 +295,7 @@ def parse_list_rows(list_html: str):
         if not href_m or not title_m:
             continue
 
-        href = urljoin(LIST_URL, html.unescape(href_m.group(1)).replace('&&', '&'))
+        href = canonicalize_source_link(href_m.group(1))
         if parse_qs(urlparse(href).query).get('id', [''])[0] != 'ppomppu':
             continue
         raw_title = strip_tags(title_m.group(1))
@@ -320,7 +331,7 @@ def parse_list_rows(list_html: str):
             continue
         img = normalize_image_url(img_m.group(1)) if img_m else ''
         rows.append({
-            "href": urljoin(LIST_URL, href_m.group(1)),
+            "href": canonicalize_source_link(href_m.group(1)),
             "raw_title": strip_tags(title_m.group(1)),
             "img": img,
             "category": cat_m.group(1).strip() if cat_m else "기타",

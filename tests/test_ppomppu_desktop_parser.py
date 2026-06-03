@@ -26,7 +26,7 @@ def test_parse_desktop_list_rows_from_zboard_hotdeal_page():
 
     assert rows == [
         {
-            "href": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=1&divpage=112&no=708780",
+            "href": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=708780",
             "raw_title": "[스팀]Winexy (무료/무료)",
             "img": "https://cdn3.ppomppu.co.kr/zboard/data/_thumb/ppomppu/0/small_708780.jpg?t=20260603",
             "category": "스팀",

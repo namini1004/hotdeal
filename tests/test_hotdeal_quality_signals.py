@@ -69,6 +69,19 @@ def test_comment_keyword_score_strongly_penalizes_viral_expensive_and_no_buy_phr
     assert result['score'] <= -25
 
 
+def test_api_canonical_feed_key_dedupes_ppomppu_page_variants():
+    script = f'''
+      const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});
+      const a = deals.canonicalFeedKey({{ source: 'ppomppu', sourceLink: 'https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=1&divpage=112&no=708770' }});
+      const b = deals.canonicalFeedKey({{ source: 'ppomppu', sourceLink: 'https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=6&divpage=112&no=708770' }});
+      console.log(JSON.stringify({{ a, b }}));
+    '''
+    out = subprocess.check_output(['node', '-e', script], cwd=ROOT, text=True)
+    data = json.loads(out)
+    assert data['a'] == 'ppomppu::no:708770'
+    assert data['a'] == data['b']
+
+
 def test_temperature_weights_recommendations_dislikes_and_comment_signals():
     script = f'''
       const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});
