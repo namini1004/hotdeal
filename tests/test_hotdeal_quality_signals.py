@@ -55,6 +55,20 @@ def test_comment_keyword_score_adds_positive_and_subtracts_negative_signals():
     assert result['score'] < 0
 
 
+def test_comment_keyword_score_strongly_penalizes_viral_expensive_and_no_buy_phrases():
+    signals = load_module('scripts/hotdeal_quality_signals.py', 'hotdeal_quality_signals')
+    html = '''
+      <ul class="comments">
+        <li>바이럴업체 같은데요</li>
+        <li>비싸네요. 응 안사</li>
+        <li>안사요</li>
+      </ul>
+    '''
+    result = signals.analyze_comment_quality(html)
+    assert result['negativeCount'] >= 5
+    assert result['score'] <= -25
+
+
 def test_temperature_weights_recommendations_dislikes_and_comment_signals():
     script = f'''
       const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});
@@ -67,4 +81,21 @@ def test_temperature_weights_recommendations_dislikes_and_comment_signals():
     out = subprocess.check_output(['node', '-e', script], cwd=ROOT, text=True)
     data = json.loads(out)
     assert data['liked'] > data['disliked']
-    assert data['liked'] - data['disliked'] >= 3
+    assert data['liked'] - data['disliked'] >= 8
+
+
+def test_temperature_caps_at_50_when_negative_comments_or_dislikes_reach_three():
+    script = f'''
+      const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});
+      const items = [
+        {{ id: 'good', source: 'ppomppu', price: '10,000원', views: 100, comments: 1, likes: 0, dislikes: 0, commentSignalScore: 0, negativeCommentSignals: 0, registeredAt: '2026-06-01T10:00:00+09:00' }},
+        {{ id: 'negative-comments', source: 'ppomppu', price: '무료', views: 999999, comments: 999, likes: 999, dislikes: 0, commentSignalScore: -30, negativeCommentSignals: 3, registeredAt: new Date().toISOString() }},
+        {{ id: 'disliked', source: 'ppomppu', price: '10,000원', views: 999999, comments: 999, likes: 999, dislikes: 3, commentSignalScore: 0, negativeCommentSignals: 0, registeredAt: new Date().toISOString() }},
+      ];
+      const result = deals.applyTemperatureNormalization(items);
+      console.log(JSON.stringify(Object.fromEntries(result.map((item) => [item.id, item.temperature]))));
+    '''
+    out = subprocess.check_output(['node', '-e', script], cwd=ROOT, text=True)
+    data = json.loads(out)
+    assert data['negative-comments'] <= 50
+    assert data['disliked'] <= 50

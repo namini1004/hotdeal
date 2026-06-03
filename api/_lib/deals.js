@@ -12,10 +12,12 @@ const HOT_SCORE_CONFIG = {
   commentWeight: 1.8,
   recencyWeight: 0.65,
   likeWeight: 1.2,
-  dislikeWeight: 1.4,
-  commentSignalWeight: 0.45,
+  dislikeWeight: 4.0,
+  commentSignalWeight: 0.75,
   recencyWindowHours: 48,
   hotBoostHours: 3,
+  negativeSignalCapThreshold: 3,
+  negativeSignalTemperatureCap: 50,
 };
 
 function parseNumericPriceValue(priceText = '') {
@@ -106,7 +108,7 @@ function computeHotScore(item, nowMs, sourceAvg = { views: 0, comments: 0 }) {
   const comments = Math.max(0, Number(item.comments || 0));
   const likes = Math.max(0, Number(item.likes || 0));
   const dislikes = Math.max(0, Number(item.dislikes || 0));
-  const commentSignalScore = Math.max(-18, Math.min(16, Number(item.commentSignalScore || 0)));
+  const commentSignalScore = Math.max(-60, Math.min(16, Number(item.commentSignalScore || 0)));
 
   const registeredMs = parseDateMs(item.registeredAt || item.date || '');
   const hoursSincePost = registeredMs
@@ -128,6 +130,15 @@ function computeHotScore(item, nowMs, sourceAvg = { views: 0, comments: 0 }) {
   const commentSignalScoreBoost = commentSignalScore * HOT_SCORE_CONFIG.commentSignalWeight;
   const recencyScore = HOT_SCORE_CONFIG.recencyWeight * freshness * scarcityBoost * ultraFreshBoost;
   return viewScore + commentScore + likeScore - dislikePenalty + commentSignalScoreBoost + recencyScore;
+}
+
+function shouldCapNegativeTemperature(item = {}) {
+  const negativeCommentSignals = Math.max(0, Number(item.negativeCommentSignals || 0));
+  const dislikes = Math.max(0, Number(item.dislikes || 0));
+  return (
+    negativeCommentSignals >= HOT_SCORE_CONFIG.negativeSignalCapThreshold ||
+    dislikes >= HOT_SCORE_CONFIG.negativeSignalCapThreshold
+  );
 }
 
 function applyTemperatureNormalization(items = []) {
@@ -180,6 +191,9 @@ function applyTemperatureNormalization(items = []) {
     if (isFree) {
       // 무료 딜은 0~100 정규화 결과를 80~100 구간으로 재매핑
       clamped = Math.max(80, Math.min(100, Math.round(80 + clamped * 0.2)));
+    }
+    if (shouldCapNegativeTemperature(item)) {
+      clamped = Math.min(clamped, HOT_SCORE_CONFIG.negativeSignalTemperatureCap);
     }
 
     return { ...item, hotScore: Number(item.hotScore.toFixed(4)), temperature: clamped };
