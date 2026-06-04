@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -14,11 +15,16 @@ except ModuleNotFoundError:
     from scripts.hotdeal_quality_signals import analyze_comment_quality
 
 LIST_URL = "https://m.fmkorea.com/index.php?mid=hotdeal&listStyle=webzine"
+LIST_URL_CANDIDATES = [
+    LIST_URL,
+    "https://www.fmkorea.com/index.php?mid=hotdeal&listStyle=webzine",
+]
 MAX_PAGES = 10
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "fmkorea_hotdeals_2days.json"
 KST = timezone(timedelta(hours=9))
 HEADERS = {"User-Agent": "Mozilla/5.0"}
+FMKOREA_DIAGNOSTIC_DIR = os.environ.get("FMKOREA_DIAGNOSTIC_DIR", "").strip()
 
 
 def parse_time_token(token: str, now: datetime):
@@ -123,6 +129,74 @@ def run_page_extract(page, url):
       return rows;
     }'''
     return page.evaluate(script)
+
+
+def write_fmkorea_diagnostics(page, url: str, rows: List[Dict], label: str):
+    """Actions에서 0건 파싱될 때 HTML/DOM 상태를 artifact로 남긴다."""
+    if not FMKOREA_DIAGNOSTIC_DIR:
+        return
+    try:
+        diag_dir = Path(FMKOREA_DIAGNOSTIC_DIR)
+        diag_dir.mkdir(parents=True, exist_ok=True)
+        safe_label = re.sub(r"[^a-zA-Z0-9_-]+", "-", label).strip("-") or "page"
+        payload = {
+            "label": label,
+            "url": url,
+            "finalUrl": page.url,
+            "title": page.title(),
+            "rowCount": len(rows or []),
+            "liCount": page.locator("li").count(),
+            "documentLinks": page.locator("a[href*='document_srl=']").count(),
+            "bodyTextSample": page.locator("body").inner_text(timeout=2000)[:3000],
+        }
+        (diag_dir / f"{safe_label}.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        (diag_dir / f"{safe_label}.html").write_text(page.content(), encoding="utf-8")
+        print(f"WARN_FMKOREA_ZERO_ITEMS_DIAGNOSTIC path={diag_dir} label={label} url={url} rows={len(rows or [])}")
+    except Exception as exc:
+        print(f"WARN_FMKOREA_DIAGNOSTIC_FAILED label={label} reason={exc}")
+
+
+def collect_recent_rows(page, now: datetime, since: datetime) -> List[Dict]:
+    collected = []
+    seen = set()
+    last_rows = []
+    last_url = ""
+
+    for base_url in LIST_URL_CANDIDATES:
+        source_rows = []
+        source_seen = set()
+        for pg in range(1, MAX_PAGES + 1):
+            separator = "&" if "?" in base_url else "?"
+            url = f"{base_url}{separator}page={pg}"
+            rows = run_page_extract(page, url)
+            last_rows = rows
+            last_url = url
+            page_kept = 0
+            for r in rows:
+                if not should_keep_row_by_time(r, now, since):
+                    continue
+                page_kept += 1
+                doc_id = extract_document_id_from_link(r.get("href") or "")
+                key = doc_id or canonical_fmkorea_source_link(r.get("href") or "") or r.get("href")
+                if key in source_seen:
+                    continue
+                source_seen.add(key)
+                source_rows.append(r)
+            if rows and page_kept == 0:
+                break
+        print(f"FMKOREA_LIST_CANDIDATE url={base_url} rows={len(source_rows)}")
+        if source_rows:
+            for r in source_rows:
+                key = extract_document_id_from_link(r.get("href") or "") or canonical_fmkorea_source_link(r.get("href") or "") or r.get("href")
+                if key in seen:
+                    continue
+                seen.add(key)
+                collected.append(r)
+            break
+
+    if not collected:
+        write_fmkorea_diagnostics(page, last_url or LIST_URL, last_rows, "zero-list-rows")
+    return collected
 
 
 def extract_primary_image(detail_html: str) -> str:
@@ -350,7 +424,6 @@ def main():
     previous_lookup = build_previous_detail_lookup(load_previous_items())
 
     all_rows = []
-    seen = set()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -361,23 +434,7 @@ def main():
             timezone_id="Asia/Seoul",
         )
         page = context.new_page()
-
-        for pg in range(1, MAX_PAGES + 1):
-            url = f"{LIST_URL}&page={pg}"
-            rows = run_page_extract(page, url)
-            page_kept = 0
-            for r in rows:
-                if not should_keep_row_by_time(r, now, since):
-                    continue
-                page_kept += 1
-                doc_id = extract_document_id_from_link(r.get("href") or "")
-                key = doc_id or canonical_fmkorea_source_link(r.get("href") or "") or r.get("href")
-                if key in seen:
-                    continue
-                seen.add(key)
-                all_rows.append(r)
-            if rows and page_kept == 0:
-                break
+        all_rows = collect_recent_rows(page, now, since)
 
         detail_page = context.new_page()
         for r in all_rows:
