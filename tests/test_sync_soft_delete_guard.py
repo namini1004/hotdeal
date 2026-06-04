@@ -46,6 +46,46 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
         self.assertEqual(deleted_rows, [])
         self.assertIn("fmkorea", skipped_sources)
 
+    def test_stale_fallback_source_does_not_soft_delete_newer_database_rows(self):
+        rows = [
+            {
+                "source": "fmkorea",
+                "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=123",
+                "title": "committed stale fmkorea fallback",
+                "img": "",
+                "detail_img": "",
+            }
+        ]
+        existing_map = {
+            "fmkorea::https://m.fmkorea.com/?mid=hotdeal&document_srl=123": {
+                "source": "fmkorea",
+                "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=123",
+                "title": "committed stale fmkorea fallback",
+                "img": "",
+                "detail_img": "",
+                "deleted_at": None,
+            },
+            "fmkorea::https://m.fmkorea.com/?mid=hotdeal&document_srl=456": {
+                "source": "fmkorea",
+                "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=456",
+                "title": "newer database fmkorea row",
+                "img": "",
+                "detail_img": "",
+                "deleted_at": None,
+            },
+        }
+
+        changed_rows, deleted_rows, skipped_sources = sync.build_sync_plan(
+            rows,
+            existing_map,
+            "2026-05-29T00:00:00+00:00",
+            stale_fallback_sources={"fmkorea"},
+        )
+
+        self.assertEqual(changed_rows, [])
+        self.assertEqual(deleted_rows, [])
+        self.assertIn("fmkorea", skipped_sources)
+
     def test_source_with_current_rows_still_soft_deletes_missing_rows(self):
         rows = [
             {

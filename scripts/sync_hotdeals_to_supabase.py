@@ -78,13 +78,22 @@ MAX_MIRROR_IMAGE_BYTES = int(os.environ.get("MAX_MIRROR_IMAGE_BYTES", "3145728")
 _bucket_ready = False
 
 
-def load_items() -> List[Dict]:
+def load_feed_data():
     merged: List[Dict] = []
+    stale_fallback_sources = set()
     for f in FEED_FILES:
         if not f.exists():
             continue
         data = json.loads(f.read_text(encoding="utf-8"))
+        source = str(data.get("sourceKey") or "").strip()
+        if data.get("staleFallback") and source:
+            stale_fallback_sources.add(source)
         merged.extend(data.get("items", []))
+    return merged, stale_fallback_sources
+
+
+def load_items() -> List[Dict]:
+    merged, _ = load_feed_data()
     return merged
 
 
@@ -407,17 +416,21 @@ def send_push_ingest(changed_rows: List[Dict]):
     return "OK"
 
 
-def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: str):
+def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: str, stale_fallback_sources=None):
     """변경 upsert 대상과 soft-delete 대상을 계산한다.
 
     특정 피드 소스가 이번 수집에서 0건이면 파서/원천 차단 실패로 보고,
     해당 소스의 기존 row를 삭제 처리하지 않는다. 펨코처럼 Actions 환경에서
     일시적으로 0건이 나와 운영 탭이 통째로 사라지는 문제를 방지한다.
+
+    파서가 0건이라 이전 파일/커밋본을 fallback으로 쓴 소스도 stale로 보고
+    DB의 더 최신 row를 삭제하지 않는다.
     """
+    stale_fallback_sources = set(stale_fallback_sources or [])
     changed_rows: List[Dict] = []
     current_keys = set()
     current_sources = {str(row.get("source") or "").strip() for row in rows if row.get("source")}
-    skipped_delete_sources = EXPECTED_FEED_SOURCES - current_sources
+    skipped_delete_sources = (EXPECTED_FEED_SOURCES - current_sources) | stale_fallback_sources
 
     for row in rows:
         key = f"{row['source']}::{row['source_link']}"
@@ -471,7 +484,7 @@ def main():
     if not supabase_url or not service_key:
         raise SystemExit("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
 
-    raw_items = load_items()
+    raw_items, stale_fallback_sources = load_feed_data()
     norm_items = [normalize(v) for v in raw_items if (v.get("sourceLink") or "").strip()]
 
     # source+source_link / exact title 기준 중복 제거(최신 항목 우선)
@@ -495,7 +508,7 @@ def main():
     mirror_feed_images(rows, existing_map, supabase_url, service_key)
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    changed_rows, deleted_rows, skipped_delete_sources = build_sync_plan(rows, existing_map, now_iso)
+    changed_rows, deleted_rows, skipped_delete_sources = build_sync_plan(rows, existing_map, now_iso, stale_fallback_sources)
     if skipped_delete_sources:
         print(f"WARN_SOFT_DELETE_GUARD skipped_sources={','.join(sorted(skipped_delete_sources))}")
 

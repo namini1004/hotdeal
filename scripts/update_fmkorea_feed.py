@@ -519,16 +519,20 @@ def main():
             dedup[key] = it
     items = list(dedup.values())
 
+    stale_fallback = False
     if not items:
         previous_items = load_previous_items()
         if previous_items:
             items = previous_items
+            stale_fallback = True
             print(f"WARN_FMKOREA_ZERO_ITEMS_KEEP_PREVIOUS previous={len(previous_items)} all_rows={len(all_rows)}")
         else:
             print(f"WARN_FMKOREA_ZERO_ITEMS_NO_PREVIOUS all_rows={len(all_rows)}")
 
     out = {
         "source": LIST_URL,
+        "sourceKey": "fmkorea",
+        "staleFallback": stale_fallback,
         "generatedAt": now.isoformat(),
         "rangeHours": 48,
         "since": since.isoformat(),
