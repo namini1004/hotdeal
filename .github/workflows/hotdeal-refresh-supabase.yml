@@ -180,8 +180,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: feed-*
-          path: .
+          path: .downloaded-feeds
           merge-multiple: true
+
+      - name: Copy downloaded feed artifacts into assets
+        run: |
+          mkdir -p assets
+          cp .downloaded-feeds/*hotdeals*.json assets/
 
       - name: List merged feed artifacts
         run: |

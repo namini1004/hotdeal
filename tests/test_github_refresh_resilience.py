@@ -22,6 +22,8 @@ class GithubRefreshResilienceTests(unittest.TestCase):
             self.assertIn(f"  {job}:", workflow)
         self.assertIn("name: Download refreshed feed artifacts", workflow)
         self.assertIn("name: Remove checkout feed snapshots before artifact merge", workflow)
+        self.assertIn("name: Copy downloaded feed artifacts into assets", workflow)
+        self.assertIn("cp .downloaded-feeds/*hotdeals*.json assets/", workflow)
         self.assertIn("needs.refresh-fmkorea.result == 'success'", workflow)
 
     def test_github_watchdog_dispatches_refresh_when_site_feed_is_stale(self):
