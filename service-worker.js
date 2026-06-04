@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gaji-shell-v13';
+const CACHE_NAME = 'gaji-shell-v14';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
@@ -10,6 +10,8 @@ const SHELL_ASSETS = [
   '/assets/favicon.svg',
   '/assets/gaji-eggplant.jpg',
   '/assets/gaji-eggplant-transparent.png',
+  '/assets/pwa-icon-192.png',
+  '/assets/pwa-icon-512.png',
   '/assets/time-format.js',
   '/assets/text-format.js',
   '/assets/anonymous-identity.js'

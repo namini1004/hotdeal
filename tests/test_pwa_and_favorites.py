@@ -10,7 +10,10 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         manifest = json.loads((ROOT / 'manifest.webmanifest').read_text(encoding='utf-8'))
         self.assertEqual(manifest['display'], 'standalone')
         self.assertEqual(manifest['scope'], '/')
-        self.assertIn('/assets/favicon.svg', [icon['src'] for icon in manifest['icons']])
+        icon_srcs = [icon['src'] for icon in manifest['icons']]
+        self.assertIn('/assets/favicon.svg', icon_srcs)
+        self.assertIn('/assets/pwa-icon-192.png', icon_srcs)
+        self.assertIn('/assets/pwa-icon-512.png', icon_srcs)
 
         service_worker = (ROOT / 'service-worker.js').read_text(encoding='utf-8')
         self.assertIn("if (url.pathname.startsWith('/api/')) return;", service_worker)
@@ -20,6 +23,12 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
             html = (ROOT / page).read_text(encoding='utf-8')
             self.assertIn('<link rel="manifest" href="/manifest.webmanifest" />', html)
             self.assertIn("navigator.serviceWorker.register('/service-worker.js')", html)
+
+        index = (ROOT / 'index.html').read_text(encoding='utf-8')
+        self.assertIn('id="pwaInstallCard"', index)
+        self.assertIn("beforeinstallprompt", index)
+        self.assertIn("bindPwaInstallPrompt()", index)
+        self.assertIn("gaji_pwa_install_dismissed_at_v1", index)
 
     def test_favorites_are_persisted_through_existing_deals_api(self):
         deals_api = (ROOT / 'api' / 'deals.js').read_text(encoding='utf-8')

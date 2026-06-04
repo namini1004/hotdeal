@@ -59,6 +59,7 @@
     .profile-chip{width:38px;height:38px;display:grid;place-items:center;border:none;border-radius:999px;background:#f7f4ff;color:#2d2438;padding:0;cursor:pointer}
     .profile-avatar{width:32px;height:32px;border-radius:999px;display:block;object-fit:cover;flex:0 0 auto}.profile-name{display:none}
     .nick-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);display:none;place-items:center;z-index:80;padding:18px}.nick-modal-backdrop.show{display:grid}.nick-modal{width:min(320px,100%);background:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 18px 60px rgba(17,24,39,.24);text-align:center}.nick-modal-title{font-size:17px;font-weight:950;letter-spacing:-.03em}.nick-modal-body{margin-top:8px;color:#667085;font-size:14px;line-height:1.45}.nick-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.nick-modal-btn{height:44px;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer}.nick-modal-btn.cancel{background:#f4f6f8;color:#374151}.nick-modal-btn.confirm{background:var(--brand);color:#fff}
+    .pwa-install-card{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 14px);transform:translateX(-50%) translateY(18px);width:min(402px,calc(100vw - 28px));display:none;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px;border:1px solid rgba(var(--brand-rgb),.16);border-radius:18px;background:rgba(255,255,255,.97);box-shadow:0 18px 44px rgba(42,25,82,.22);z-index:90;backdrop-filter:blur(14px);opacity:0;transition:opacity .2s ease,transform .2s ease}.pwa-install-card.show{display:grid;opacity:1;transform:translateX(-50%) translateY(0)}.pwa-install-icon{width:44px;height:44px;border-radius:14px;background:#f3edff;display:grid;place-items:center}.pwa-install-icon img{width:29px;height:29px;object-fit:contain}.pwa-install-title{font-size:14px;font-weight:950;letter-spacing:-.02em}.pwa-install-copy{margin-top:2px;color:#667085;font-size:12px;line-height:1.35}.pwa-install-actions{display:flex;align-items:center;gap:6px}.pwa-install-btn{height:34px;border:0;border-radius:999px;padding:0 12px;background:var(--brand);color:#fff;font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap}.pwa-install-close{width:32px;height:32px;border:0;border-radius:999px;background:#f4f6f8;color:#697386;font-size:18px;line-height:1;cursor:pointer}
 
     .search-wrap{display:none;margin-top:10px}
     .search-wrap.show{display:block}
@@ -256,6 +257,17 @@
   </div>
 
   <button class="fab" id="writeBtn" aria-label="글쓰기"><span class="fab-plus" aria-hidden="true">+</span><span class="fab-text">글쓰기</span></button>
+  <div class="pwa-install-card" id="pwaInstallCard" role="dialog" aria-live="polite" aria-label="앱 설치 안내">
+    <div class="pwa-install-icon" aria-hidden="true"><img src="assets/gaji-eggplant-transparent.png" alt=""></div>
+    <div>
+      <div class="pwa-install-title">앱처럼 더 빠르게 써보세요</div>
+      <div class="pwa-install-copy" id="pwaInstallCopy">설치하면 홈 화면에서 바로 열고 전체화면으로 볼 수 있어요.</div>
+    </div>
+    <div class="pwa-install-actions">
+      <button class="pwa-install-btn" id="pwaInstallBtn" type="button">설치</button>
+      <button class="pwa-install-close" id="pwaInstallClose" type="button" aria-label="설치 안내 닫기">×</button>
+    </div>
+  </div>
   <div class="sort-sheet-backdrop" id="sortSheetBackdrop"></div>
   <div class="sort-sheet" id="sortSheet" role="dialog" aria-modal="true" aria-label="정렬 선택">
     <button class="sheet-btn" id="sortLatestBtn" type="button">최신순</button>
@@ -302,6 +314,8 @@
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const VIEW_MODE_KEY = 'hotdeal_web_view_mode_v1';
     const LAST_FEED_SYNC_KEY = 'hotdeal_last_feed_sync_at_v1';
+    const PWA_INSTALL_DISMISSED_KEY = 'gaji_pwa_install_dismissed_at_v1';
+    const PWA_INSTALL_DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
     const FULL_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
     let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'all', sortMode: 'latest', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '' };
     let isRefreshing = false;
@@ -1052,6 +1066,64 @@
       });
     }
 
+    function bindPwaInstallPrompt(){
+      const card = document.getElementById('pwaInstallCard');
+      const installBtn = document.getElementById('pwaInstallBtn');
+      const closeBtn = document.getElementById('pwaInstallClose');
+      const copy = document.getElementById('pwaInstallCopy');
+      if(!card || !installBtn || !closeBtn) return;
+
+      let deferredPrompt = null;
+      const isStandalone = () => window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true || document.documentElement.classList.contains('app-webview');
+      const isDismissedRecently = () => {
+        const last = Number(localStorage.getItem(PWA_INSTALL_DISMISSED_KEY) || 0);
+        return last && Date.now() - last < PWA_INSTALL_DISMISS_MS;
+      };
+      const show = () => {
+        if(isStandalone() || isDismissedRecently()) return;
+        requestAnimationFrame(() => card.classList.add('show'));
+      };
+      const hide = () => card.classList.remove('show');
+      const dismiss = () => {
+        localStorage.setItem(PWA_INSTALL_DISMISSED_KEY, String(Date.now()));
+        hide();
+      };
+
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+        installBtn.textContent = '설치';
+        if(copy) copy.textContent = '설치하면 홈 화면에서 바로 열고 전체화면으로 볼 수 있어요.';
+        setTimeout(show, 1600);
+      });
+
+      window.addEventListener('appinstalled', () => {
+        localStorage.setItem(PWA_INSTALL_DISMISSED_KEY, String(Date.now()));
+        deferredPrompt = null;
+        hide();
+      });
+
+      installBtn.addEventListener('click', async () => {
+        if(deferredPrompt){
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice.catch(() => undefined);
+          deferredPrompt = null;
+          dismiss();
+          return;
+        }
+        if(copy) copy.textContent = '브라우저 메뉴에서 “홈 화면에 추가”를 선택하면 앱처럼 사용할 수 있어요.';
+      });
+      closeBtn.addEventListener('click', dismiss);
+
+      const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+      const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent || '');
+      if(isiOS && isSafari && !isStandalone()){
+        installBtn.textContent = '방법 보기';
+        if(copy) copy.textContent = '공유 버튼 → 홈 화면에 추가를 누르면 앱처럼 열 수 있어요.';
+        setTimeout(show, 2200);
+      }
+    }
+
     function openTempModal(rawTemp){
       const temp = Math.max(0, Math.min(100, Number(rawTemp || 0)));
       const value = document.getElementById('tempModalValue');
@@ -1107,6 +1179,7 @@
       bindScrollChrome();
       bindPullToRefresh();
       bindAutoSync();
+      bindPwaInstallPrompt();
       bindTemperatureModal();
 
       const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));

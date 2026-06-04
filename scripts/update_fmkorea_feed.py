@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+import html
 import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, unquote, urljoin, urlparse
 
 import requests
 from playwright.sync_api import sync_playwright
@@ -23,7 +24,10 @@ MAX_PAGES = 10
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "fmkorea_hotdeals_2days.json"
 KST = timezone(timedelta(hours=9))
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+}
 FMKOREA_DIAGNOSTIC_DIR = os.environ.get("FMKOREA_DIAGNOSTIC_DIR", "").strip()
 
 
@@ -131,6 +135,91 @@ def run_page_extract(page, url):
     return page.evaluate(script)
 
 
+def strip_tags(value: str) -> str:
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", value or ""))).strip()
+
+
+def absolutize_fmkorea_url(href: str, base_url: str) -> str:
+    href = html.unescape((href or "").strip())
+    if href.startswith("//"):
+        return f"https:{href}"
+    return urljoin(base_url, href)
+
+
+def extract_attr(fragment: str, attr_names) -> str:
+    for name in attr_names:
+        m = re.search(rf"{re.escape(name)}=[\"']([^\"']+)[\"']", fragment or "", re.I)
+        if m:
+            return html.unescape(m.group(1).strip())
+    return ""
+
+
+def parse_static_html_rows(page_html: str, base_url: str) -> List[Dict]:
+    """Playwright가 보안 페이지에 막힐 때를 대비한 정적 HTML fallback 파서."""
+    if "에펨코리아 보안 시스템" in (page_html or ""):
+        return []
+
+    chunks = re.findall(r"(<li\b[^>]*class=[\"'][^\"']*\bli\b[\s\S]*?</li>)", page_html or "", re.I)
+    rows = []
+    for chunk in chunks:
+        if "document_srl=" not in chunk or "쇼핑몰:" not in chunk:
+            continue
+
+        href_m = re.search(r"<a[^>]+href=[\"']([^\"']*document_srl=[^\"']+)[\"']", chunk, re.I)
+        if not href_m:
+            continue
+        href = absolutize_fmkorea_url(href_m.group(1), base_url)
+
+        title_m = re.search(r"<span[^>]+class=[\"'][^\"']*ellipsis-target[^\"']*[\"'][^>]*>([\s\S]*?)</span>", chunk, re.I)
+        if not title_m:
+            title_m = re.search(r"<h3[^>]*[\s\S]*?<a[^>]+href=[\"'][^\"']*document_srl=[^\"']+[\"'][^>]*>([\s\S]*?)</a>[\s\S]*?</h3>", chunk, re.I)
+        title = strip_tags(title_m.group(1) if title_m else "")
+        if not title or "공지" in title:
+            continue
+
+        img_fragment_m = re.search(r"<img[^>]+>", chunk, re.I)
+        img = ""
+        if img_fragment_m:
+            img_tag = img_fragment_m.group(0)
+            img = extract_attr(img_tag, ["data-original", "data-src", "src"])
+            img = absolutize_fmkorea_url(img, base_url) if img else ""
+
+        raw = strip_tags(chunk)
+        category_html_m = re.search(r"<span[^>]+class=[\"'][^\"']*category[^\"']*[\"'][^>]*>([\s\S]*?)</span>", chunk, re.I)
+        category_from_html = strip_tags(category_html_m.group(1) if category_html_m else "").replace("/", "").strip()
+        shop_m = re.search(r"쇼핑몰:\s*([^/]+?)\s*/\s*가격:", raw)
+        price_m = re.search(r"가격:\s*([^/]+?)\s*/\s*배송:", raw)
+        delivery_m = re.search(r"배송:\s*(.+?)(?:\s+[가-힣]+\s*/\s*(?:\d{2}:\d{2}|20\d{2}\.\d{2}\.\d{2}|\d{2}\.\d{2})|$)", raw)
+        category_m = re.search(r"배송:.*?\s+([^/\s][^/]*?)\s*/\s*(\d{2}:\d{2}|20\d{2}\.\d{2}\.\d{2}|\d{2}\.\d{2})", raw)
+        time_m = re.search(r"\b(\d{2}:\d{2}|20\d{2}\.\d{2}\.\d{2}|\d{2}\.\d{2})\b", raw)
+        likes_m = re.search(r"추천\s*([0-9,]+)", raw)
+        views_m = re.search(r"조회\s*([0-9.,만천백]+)", raw)
+
+        shop = (shop_m.group(1).strip() if shop_m else "")
+        price = (price_m.group(1).strip() if price_m else "")
+        delivery = (delivery_m.group(1).strip() if delivery_m else "")
+        category = category_from_html or (category_m.group(1).strip() if category_m else "기타")
+        time_token = (category_m.group(2).strip() if category_m else (time_m.group(1).strip() if time_m else ""))
+        likes = likes_m.group(1) if likes_m else "0"
+        views = views_m.group(1) if views_m else "0"
+        info_line = f"쇼핑몰: {shop} / 가격: {price} / 배송: {delivery}".strip()
+        meta_line = f"{category} / {time_token} / 추천 {likes} / 조회 {views}".strip()
+        rows.append({"title": title, "href": href, "img": img, "lines": [title, info_line, meta_line], "raw": raw, "_listParser": "static"})
+    return rows
+
+
+def fetch_static_page_rows(url: str) -> List[Dict]:
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=25)
+        text = res.text or ""
+        rows = parse_static_html_rows(text, res.url or url)
+        print(f"FMKOREA_STATIC_LIST url={url} status={res.status_code} rows={len(rows)} security={'에펨코리아 보안 시스템' in text}")
+        return rows
+    except Exception as exc:
+        print(f"WARN_FMKOREA_STATIC_LIST_FAILED url={url} reason={exc}")
+        return []
+
+
 def write_fmkorea_diagnostics(page, url: str, rows: List[Dict], label: str):
     """Actions에서 0건 파싱될 때 HTML/DOM 상태를 artifact로 남긴다."""
     if not FMKOREA_DIAGNOSTIC_DIR:
@@ -168,7 +257,9 @@ def collect_recent_rows(page, now: datetime, since: datetime) -> List[Dict]:
         for pg in range(1, MAX_PAGES + 1):
             separator = "&" if "?" in base_url else "?"
             url = f"{base_url}{separator}page={pg}"
-            rows = run_page_extract(page, url)
+            rows = fetch_static_page_rows(url)
+            if not rows:
+                rows = run_page_extract(page, url)
             last_rows = rows
             last_url = url
             page_kept = 0
