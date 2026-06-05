@@ -9,7 +9,10 @@ from typing import Dict, List
 from urllib.parse import parse_qs, unquote, urljoin, urlparse
 
 import requests
-from playwright.sync_api import sync_playwright
+try:
+    from playwright.sync_api import sync_playwright
+except ModuleNotFoundError:
+    sync_playwright = None
 try:
     from hotdeal_quality_signals import analyze_comment_quality
 except ModuleNotFoundError:
@@ -258,7 +261,7 @@ def collect_recent_rows(page, now: datetime, since: datetime) -> List[Dict]:
             separator = "&" if "?" in base_url else "?"
             url = f"{base_url}{separator}page={pg}"
             rows = fetch_static_page_rows(url)
-            if not rows:
+            if not rows and page is not None:
                 rows = run_page_extract(page, url)
             last_rows = rows
             last_url = url
@@ -285,7 +288,7 @@ def collect_recent_rows(page, now: datetime, since: datetime) -> List[Dict]:
                 collected.append(r)
             break
 
-    if not collected:
+    if not collected and page is not None:
         write_fmkorea_diagnostics(page, last_url or LIST_URL, last_rows, "zero-list-rows")
     return collected
 
@@ -337,7 +340,7 @@ def parse_detail_voted_count(detail_html: str) -> int:
 def extract_detail_bundle_in_page(page, url: str) -> dict:
     page.goto(url, wait_until="domcontentloaded", timeout=90000)
     page.wait_for_timeout(450)
-    return page.evaluate('''() => {
+    return page.evaluate(r'''() => {
       const result = { img: '', buyLink: '', desc: '', likes: 0, commentSignalText: '' };
 
       const norm = (v) => (v || '').trim();
@@ -537,63 +540,82 @@ def main():
 
     all_rows = []
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            viewport={"width": 390, "height": 844},
-            user_agent="Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
-            locale="ko-KR",
-            timezone_id="Asia/Seoul",
-        )
-        page = context.new_page()
-        all_rows = collect_recent_rows(page, now, since)
-
-        detail_page = context.new_page()
+    if sync_playwright is None:
+        print("WARN_FMKOREA_PLAYWRIGHT_UNAVAILABLE using_static_requests_only")
+        all_rows = collect_recent_rows(None, now, since)
         for r in all_rows:
             if apply_cached_detail_fields(r, previous_lookup):
                 continue
             try:
-                bundle = extract_detail_bundle_in_page(detail_page, r["href"])
-
-                current = (r.get("img") or "").strip()
-                if (not current) or is_low_quality_fmkorea_thumbnail(current) or ("/logos/mobile/fmkorea.png" in current) or ("transparent.gif" in current):
-                    picked = (bundle.get("img") or "").strip()
-                    if (not picked) or is_low_quality_fmkorea_thumbnail(picked):
-                        try:
-                            detail_html = s.get(r["href"], timeout=20).text
-                            picked = extract_primary_image(detail_html) or picked
-                        except Exception:
-                            pass
-                    if picked and not is_low_quality_fmkorea_thumbnail(picked):
-                        r["img"] = picked
-                        r["detailImg"] = picked
-
-                buy = normalize_fmkorea_outbound(bundle.get("buyLink") or "")
-                if buy:
-                    r["buyLink"] = buy
-
-                body_text = (bundle.get("desc") or "").strip()
-                if body_text:
-                    r["desc"] = body_text
-                bundle_likes = int(bundle.get("likes") or 0)
-                if bundle_likes:
-                    r["detailLikes"] = bundle_likes
-                comment_quality = analyze_comment_quality(bundle.get("commentSignalText") or body_text)
+                detail_html = s.get(r["href"], timeout=20).text
+                picked = extract_primary_image(detail_html)
+                if picked and not is_low_quality_fmkorea_thumbnail(picked):
+                    r["img"] = picked
+                    r["detailImg"] = picked
+                comment_quality = analyze_comment_quality(strip_tags(detail_html))
                 r["commentSignalScore"] = comment_quality["score"]
                 r["positiveCommentSignals"] = comment_quality["positiveCount"]
                 r["negativeCommentSignals"] = comment_quality["negativeCount"]
-                doc_id = extract_document_id_from_link(r.get("href") or "")
-                source_link = canonical_fmkorea_source_link(r.get("href") or "")
-                if has_reusable_detail_fields(r):
-                    if doc_id:
-                        previous_lookup[f"id:{doc_id}"] = r
-                    if source_link:
-                        previous_lookup[f"source:{source_link}"] = r
             except Exception:
                 pass
-        detail_page.close()
+    else:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                viewport={"width": 390, "height": 844},
+                user_agent="Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+                locale="ko-KR",
+                timezone_id="Asia/Seoul",
+            )
+            page = context.new_page()
+            all_rows = collect_recent_rows(page, now, since)
 
-        browser.close()
+            detail_page = context.new_page()
+            for r in all_rows:
+                if apply_cached_detail_fields(r, previous_lookup):
+                    continue
+                try:
+                    bundle = extract_detail_bundle_in_page(detail_page, r["href"])
+
+                    current = (r.get("img") or "").strip()
+                    if (not current) or is_low_quality_fmkorea_thumbnail(current) or ("/logos/mobile/fmkorea.png" in current) or ("transparent.gif" in current):
+                        picked = (bundle.get("img") or "").strip()
+                        if (not picked) or is_low_quality_fmkorea_thumbnail(picked):
+                            try:
+                                detail_html = s.get(r["href"], timeout=20).text
+                                picked = extract_primary_image(detail_html) or picked
+                            except Exception:
+                                pass
+                        if picked and not is_low_quality_fmkorea_thumbnail(picked):
+                            r["img"] = picked
+                            r["detailImg"] = picked
+
+                    buy = normalize_fmkorea_outbound(bundle.get("buyLink") or "")
+                    if buy:
+                        r["buyLink"] = buy
+
+                    body_text = (bundle.get("desc") or "").strip()
+                    if body_text:
+                        r["desc"] = body_text
+                    bundle_likes = int(bundle.get("likes") or 0)
+                    if bundle_likes:
+                        r["detailLikes"] = bundle_likes
+                    comment_quality = analyze_comment_quality(bundle.get("commentSignalText") or body_text)
+                    r["commentSignalScore"] = comment_quality["score"]
+                    r["positiveCommentSignals"] = comment_quality["positiveCount"]
+                    r["negativeCommentSignals"] = comment_quality["negativeCount"]
+                    doc_id = extract_document_id_from_link(r.get("href") or "")
+                    source_link = canonical_fmkorea_source_link(r.get("href") or "")
+                    if has_reusable_detail_fields(r):
+                        if doc_id:
+                            previous_lookup[f"id:{doc_id}"] = r
+                        if source_link:
+                            previous_lookup[f"source:{source_link}"] = r
+                except Exception:
+                    pass
+            detail_page.close()
+
+            browser.close()
 
     items = []
     for r in all_rows:
@@ -694,6 +716,16 @@ def main():
     items = list(dedup.values())
 
     stale_fallback = False
+    if sync_playwright is None:
+        previous_items = load_previous_items()
+        if previous_items and items and len(items) < int(len(previous_items) * 0.8):
+            merged = {}
+            for it in items + previous_items:
+                key = it.get("sourceLink") or it.get("id")
+                if key and key not in merged:
+                    merged[key] = it
+            print(f"WARN_FMKOREA_PARTIAL_STATIC_KEEP_PREVIOUS current={len(items)} previous={len(previous_items)} merged={len(merged)}")
+            items = list(merged.values())
     if not items:
         previous_items = load_previous_items()
         if previous_items:
