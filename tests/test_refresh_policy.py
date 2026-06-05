@@ -28,10 +28,11 @@ class RefreshPolicyTests(unittest.TestCase):
         self.assertIn("if(source === 'ppomppu')", html)
         self.assertIn("return `${source}::no:${noMatch[1]}`;", html)
 
-    def test_latest_tab_ignores_temperature_sort(self):
+    def test_all_tabs_use_temperature_sort_when_selected(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
 
-        self.assertIn("if(state.activeTab !== 'latest' && state.sortMode === 'temperature')", html)
+        self.assertIn("if(state.sortMode === 'temperature')", html)
+        self.assertNotIn("activeTab !== 'latest' && state.sortMode === 'temperature'", html)
 
 
 if __name__ == "__main__":

@@ -555,7 +555,7 @@
         const db = Date.parse(b.registeredAt || b.date || '') || 0;
         const ta = Number(a.temperature || 0);
         const tb = Number(b.temperature || 0);
-        if(state.activeTab !== 'latest' && state.sortMode === 'temperature'){
+        if(state.sortMode === 'temperature'){
           if(tb !== ta) return tb - ta;
           return db - da;
         }
