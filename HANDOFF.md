@@ -1,483 +1,699 @@
 # HANDOFF.md
 
-이 문서는 **WSL(Hermes)에서 진행한 작업을 Windows Codex 앱으로 안전하게 이어받기 위한 인수인계 문서**입니다.
+이 문서는 **hotdeal-site / gaji.run 작업을 Windows Codex 앱, WSL(Hermes), 다른 에이전트가 안전하게 이어받기 위한 인수인계 문서**입니다.
 
----
-
-## 1) 프로젝트 개요
-
-- 프로젝트명: `hotdeal-site`
+- 마지막 업데이트: 2026-06-05 22:28 KST
+- 실제 로컬 작업 폴더: `C:\Users\namin\hotdeal-site` (`/mnt/c/Users/namin/hotdeal-site`)
 - 원격 저장소: `https://github.com/namini1004/hotdeal.git`
 - 기본 브랜치: `main`
-- 배포: Vercel (`https://hotdeal-omega.vercel.app`)
-- 데이터 소스: 뽐뿌 모바일 핫딜 `pop_bbs.php?id=ppomppu&bot_type=pop_bbs`
-
-핵심 동작:
-- 메인 페이지에서 `오늘의 핫딜 / 어제의 핫딜` 탭 표시
-- 검색 아이콘으로 검색창 토글, 제목 기준 검색
-- 상세 페이지에서 상단 `사러가기` 버튼으로 실제 구매 링크 이동
-- 썸네일은 로컬 캐시(`assets/ppomppu_thumbs`) 우선 사용
+- 현재 최신 커밋: `dbc6cb5 요구사항: 펨딜 이미지 품질 및 사용자 이미지 640px 정규화`
+- 주의: Git push는 기본 수행하되, **Vercel production deploy는 사용자가 명시 요청할 때만 실행**한다.
 
 ---
 
-## 2) 최근 반영된 작업(요약)
+## 1) 현재 서비스 구조 요약
 
-### UI
-- 하단 카테고리형 네비 영역 제거
-- 메인 우상단 검색 아이콘만 유지
-- 상세페이지 하단 검은 CTA 제거, 상단 `사러가기`만 유지
-- 배송 정보 문구 제거
-- 상세 이미지/본문 경계선 1px 추가
-- 메인 우상단 돋보기 아이콘 크기 확대(타이틀과 균형)
+### 서비스/도메인
 
-### 데이터 파싱/동기화
-- 초기에는 1페이지 기준(최대 20개)이라 누락 발생
-- 현재는 `page=1~5` 순회 수집 후 오늘/어제 필터링으로 확장
-- 최근 결과 예시: `total=41 (today=16, yesterday=25)`
+- 웹 서비스: `gaji.run` / Vercel 프로젝트 `hotdeal`, `hotdeal-site` 계열
+- GitHub 원격: `namini1004/hotdeal`
+- 데이터 저장: Supabase `deals`, `board_posts`, comments/profile 관련 API
+- 이미지 저장:
+  - feed 이미지: Supabase Storage `deal-images/<source>/...webp`
+  - user 업로드 이미지: Supabase Storage `hotdeal-images/user/...jpg` 또는 640px 변환 URL
 
-### 안정성
-- 외부 썸네일 핫링크 깨짐 이슈를 로컬 캐시 방식으로 완화
-- 1시간 주기 자동 갱신(변경 시 커밋/푸시) 구성
+### 핵심 화면
+
+- `index.html`: 핫딜 홈
+- `indexdetail.html`: 핫딜 상세
+- `indexcreate.html`: 핫딜 작성/수정
+- `gajigaji.html`: 가지가지/쇼핑팁 화면
+- `my-gaji.html`: 내 가지/계정 화면
+- `favorites.html`: 찜/저장 관련 화면
+
+### 현재 노출 정책
+
+- 웹 상단 메뉴는 현재 **홈 / 가지가지 / 내 가지** 3개 중심이다.
+- 채팅은 사용자가 다시 요청할 때까지 숨김 상태로 유지한다.
+- 하단 네비게이션 탭은 메인(index)에서만 노출하고 상세(detail)에는 넣지 않는다.
+- 사용자가 명시 요청하지 않은 Vercel prod 배포는 절대 하지 않는다.
 
 ---
 
-## 3) 핵심 파일 맵
+## 2) 이번 주 핵심 변경 요약
 
-- `index.html`
-  - 메인 UI, 탭/검색/리스트 렌더링
-  - 데이터 파일: `assets/ppomppu_hotdeals_2days.json`
-- `detail.html`
-  - 상세 UI, `사러가기` 버튼, 경계선 포함
+이번 주 작업의 중심은 **피드 안정화, FMKorea(펨딜) 수집 구조 분리, 이미지 품질 개선, 가지가지 팁 운영 자동화, PWA/설치성 개선, 새로고침 안정화**입니다.
+
+최근 주요 커밋:
+
+```text
+dbc6cb5 요구사항: 펨딜 이미지 품질 및 사용자 이미지 640px 정규화
+ca45642 요구사항: 펨코 수집을 Hermes 로컬 업서트로 분리
+87af25b 요구사항: 가지가지 팁 탭 단일화
+ce05638 요구사항: PWA 설치 이름과 아이콘 변경
+a20fc53 요구사항: PWA 설치 유도와 펨딜 파싱 보강
+63ce5fd 요구사항: 새로고침 artifact 병합 보정
+e51c991 요구사항: 핫딜 새로고침 안정화
+ce9abe4 요구사항: 펨딜 stale fallback 삭제 방지
+749839a 요구사항: 최신딜 새로고침 및 정렬 보정
+d39ceb7 요구사항: 썸네일 오매칭 및 중복 딜 정리
+51f428c 요구사항: 부정 댓글 및 비추천 온도 패널티 강화
+bbd92cc 요구사항: 뽐뿌 경고 이미지 fallback 반영
+```
+
+---
+
+## 3) 데이터 수집/동기화 현재 구조
+
+### Feed 소스
+
+현재 핫딜 feed 주요 source:
+
+- `ppomppu`: 뽐딜
+- `quasar`: 퀘딜
+- `fmkorea`: 펨딜
+- `ruliweb`: 루딜
+- `user`: 사용자 등록 가지딜
+
+### 중요 스크립트
+
 - `scripts/update_ppomppu_feed.py`
-  - 뽐뿌 수집/필터/구매링크 추출/썸네일 캐시/JSON 갱신
-- `scripts/cron_refresh_hotdeals.sh`
-  - 갱신 스크립트 실행 + 변경 시 커밋/푸시
-- `scripts/refresh_hotdeals_windows.ps1`
-  - Windows 작업 스케줄러용 자동 갱신/커밋/푸시 실행 스크립트
-- `scripts/register_hotdeal_task_windows.ps1`
-  - Windows 작업 스케줄러 원클릭 등록(교체 등록/즉시실행 옵션)
-- `scripts/unregister_hotdeal_task_windows.ps1`
-  - Windows 작업 스케줄러 작업 삭제 스크립트
-- `assets/ppomppu_hotdeals_2days.json`
-  - 실제 렌더링용 데이터
-- `assets/ppomppu_thumbs/*`
-  - 썸네일 로컬 캐시
+  - 뽐뿌 48시간 수집
+  - 뽐뿌 CDN hotlink 경고 이미지 방어와 Storage 미러링 계약과 연결
+
+- `scripts/update_quasar_feed.py`
+  - 퀘이사존 수집
+  - rendered markdown fallback / pagination / thumbnail cache pollution 방어가 중요
+
+- `scripts/update_fmkorea_feed.py`
+  - FMKorea 수집
+  - 로컬에서는 정상 수집 가능
+  - GitHub hosted runner에서는 430 보안/Turnstile/IP 평판 문제로 0건이 될 수 있음
+  - 최신순/default URL 기준으로 48시간, 최대 10페이지 순회
+  - 상세에서 `buyLink`, `desc`, `likes`, comment quality, 실제 상품 이미지 보강
+
+- `scripts/update_ruliweb_feed.py`
+  - 루리웹 수집
+  - 목록 제목 파싱은 `subject_link` 범용 매칭 주의
+  - `buyLink`는 본문 하단 `출처: http...` 우선
+
+- `scripts/sync_hotdeals_to_supabase.py`
+  - 수집 JSON들을 Supabase `deals` 테이블로 upsert
+  - soft-delete / restore 처리
+  - `img` / `detail_img` Storage WebP 미러링 처리
+  - 뽐뿌/루리웹/펨딜 이미지는 동기화 시 Storage로 미러링 대상
+
+- `scripts/hermes_fmkorea_ingest.py`
+  - FMKorea만 로컬 Hermes/WSL에서 수집 후 Supabase에 source-scoped upsert
+  - hosted runner 차단 우회 목적
+  - 수동 실행 성공 확인됨
+
+### Supabase credential 파일 위치
+
+절대 토큰 값을 문서/응답에 노출하지 않는다.
+
+```text
+/mnt/c/codex/supabase_url.txt
+/mnt/c/codex/supabase_jwt.txt
+/mnt/c/codex/supabase_service_role_key.txt
+/mnt/c/codex/supabase_usagetoken.txt
+```
+
+---
+
+## 4) 이번 주 중요 이슈와 해결 내용
+
+### 4-1. FMKorea hosted runner 차단 / 로컬 ingest 분리
+
+확인된 사실:
+
+- GitHub hosted runner(Azure IP)는 FMKorea에서 `430` 보안 페이지/Turnstile 계열 차단을 받을 수 있다.
+- 로컬 WSL/Hermes에서는 `requests`/Playwright 경로로 FMKorea 목록 수집이 가능하다.
+- Actions에서 0건이 나왔을 때 기존 row를 soft-delete하면 펨딜이 운영에서 사라질 수 있으므로, stale fallback/zero source guard가 중요하다.
+
+현재 방향:
+
+- 일반 all-source GitHub Actions 갱신과 별개로, FMKorea는 로컬 Hermes ingest로 source-scoped upsert하는 구조를 사용.
+- `scripts/hermes_fmkorea_ingest.py --verbose` 수동 실행 결과:
+  - 2026-06-05 기준 162건 수집
+  - `UPSERT_OK total=162 changed=162 deleted=0 ingest=SKIP`
 
 주의:
-- `codex_prompt.txt`는 현재 untracked 상태(의도적으로 커밋 제외 가능)
+
+- Hermes cron `hotdeal-fmkorea-local-ingest`는 등록돼 있으나 2026-06-05 22시 기준 최근 상태가 `error`로 표시됐다.
+- 반면 repo 내 `python3 scripts/hermes_fmkorea_ingest.py --verbose` 수동 실행은 성공했다.
+- 다음 인계자는 `~/.hermes/scripts/hotdeal_fmkorea_ingest.py` 래퍼 경로/환경변수/working directory를 점검해야 한다.
+
+### 4-2. AWS Lambda/EventBridge 검토
+
+이전 대화 결론:
+
+- Firebase 단독, 특히 Spark 무료 플랜은 Cloud Functions 운영에 적합하지 않음.
+- AWS Lambda + EventBridge가 소형 실험 후보로 더 낫다.
+- 단, FMKorea가 GitHub IP만 막는 것이 아니라 클라우드/데이터센터 IP 전반을 막는다면 AWS도 실패할 수 있다.
+- 따라서 곧장 이전하지 말고 **AWS Lambda probe**로 먼저 확인한다.
+
+Probe 기준:
+
+- Lambda에서 `https://m.fmkorea.com/index.php?mid=hotdeal&listStyle=webzine&page=1` 요청
+- status 200 여부
+- `보안 시스템`/Turnstile 페이지 여부
+- `쇼핑몰:`/`가격:`/`배송:` 포함 row 추출 가능 여부
+- 실패 시 로컬 Hermes cron/self-hosted runner 유지가 안전
+
+관련 참고 skill reference:
+
+```text
+references/fmkorea-aws-lambda-ingest-probe.md
+references/local-hermes-source-ingest-cron.md
+```
+
+### 4-3. 펨딜 이미지 품질 개선
+
+문제:
+
+- FMKorea 목록 이미지가 `.../cache/thumb/..._70x50.crop.webp` 또는 140x100급 목록 썸네일로 들어오면 상세 hero에서 심하게 확대/열화됨.
+- 단순히 fmkorea를 Storage 미러링 대상에 넣으면 70x50 원본을 그대로 WebP로 변환해 `detail640`이라는 파일명인데 실제 픽셀은 70x50인 문제가 발생했다.
+
+해결:
+
+- `scripts/update_fmkorea_feed.py`
+  - `/cache/thumb/` 이미지는 저품질 후보로 간주
+  - 상세 DOM에서 `data-src`, `data-original`, `src` 순으로 실제 이미지 재추출
+  - Playwright 상세 DOM이 실패하거나 썸네일만 잡으면 `requests` 상세 HTML에서 `og:image`/본문 첨부 이미지 fallback 추출
+  - `/modules/point/icons/`, FMKorea 로고, transparent gif 제외
+  - `detailImg` 필드도 실제 첨부 이미지로 저장
+
+- `scripts/sync_hotdeals_to_supabase.py`
+  - `fmkorea`를 `IMAGE_HEADERS_BY_SOURCE`에 추가
+  - `row_id_from_source_link()`에서 `fmkorea.com/<document_id>` 추출
+  - `/cache/thumb/` 이미지는 미러링 후보에서 차단
+  - 품질 전환 중에는 fmkorea 기존 Storage WebP 재사용을 막아 원본 첨부에서 새로 생성
+  - 결과: `img`는 320px급 WebP, `detail_img`는 640px급 WebP
+
+검증 결과:
+
+```text
+python3 scripts/hermes_fmkorea_ingest.py --verbose
+# saved: assets/fmkorea_hotdeals_2days.json (162 items)
+# UPSERT_OK total=162 changed=162 deleted=0 ingest=SKIP
+```
+
+JSON 검증:
+
+```text
+total 162
+full_img 162
+thumb_img 0
+blank 0
+```
+
+Supabase 최신 30건 샘플 검증:
+
+```text
+storage_urls 60
+direct_urls 0
+blank 0
+sample_small<=80px 0
+sample_detail>=300px 7
+```
+
+샘플 이미지 크기:
+
+```text
+img        (196, 320) WEBP
+detail_img (391, 640) WEBP
+img        (258, 320) WEBP
+detail_img (517, 640) WEBP
+img        (320, 306) WEBP
+detail_img (640, 613) WEBP
+```
+
+### 4-4. 사용자 등록 이미지 640px 정규화
+
+문제:
+
+- 사용자 등록 이미지가 원본 URL 또는 큰 업로드 이미지로 들어오면 과도하게 클 수 있음.
+
+해결:
+
+- `indexcreate.html`
+  - 첨부 파일 압축 기준을 `maxSide=960`에서 `maxSide=640`으로 변경
+  - `maxLen`은 `50_000`에서 `80_000`으로 완화해 640px 품질을 확보
+
+- `api/_lib/deals.js`
+  - `normalizeUserImageUrl()` 추가
+  - user 이미지 저장/응답 시 http(s) 이미지는 다음 형태로 정규화:
+
+```text
+https://wsrv.nl/?url=<encoded-host-path-query>&w=640&h=640&fit=inside&output=webp
+```
+
+검증:
+
+```text
+node - <<'NODE'
+const { mapPayload, normalizeUserRow } = require('./api/_lib/deals');
+const raw = 'https://example.com/images/product-large.jpg?x=1';
+const mapped = mapPayload({ title: 't', img: raw });
+const row = normalizeUserRow({ id: '1', title: 't', img: raw, detail_img: raw });
+console.log(mapped.img.includes('w=640') && row.detailImg.includes('h=640'));
+NODE
+# true
+```
+
+### 4-5. 루딜 이미지 방식 정정
+
+중요 정정:
+
+- 루딜은 단순 CDN URL 직접 로딩 구조가 아니다.
+- 현재 `scripts/sync_hotdeals_to_supabase.py` 기준 `ruliweb`은 이미 `IMAGE_HEADERS_BY_SOURCE`에 포함되어 있고, 동기화 시 Supabase Storage `deal-images/ruliweb/...webp` 미러링 대상이다.
+- 다만 실제 운영 샘플에 루딜 건수가 적거나 없으면 확인 시 안 보일 수 있다.
+
+### 4-6. 뽐뿌 이미지 hotlink 경고 이미지 대응
+
+이번 주 초반 주요 안정화:
+
+- 뽐뿌 CDN 이미지는 서버에서 200이어도 브라우저에서 `403 Forbidden - Invalid image reference` 이미지가 200 JPEG로 내려올 수 있다.
+- `<img onerror>`로 감지되지 않는다.
+- 동기화 단계에서 뽐뿌 referer로 1회 다운로드 후 355x138 약 25KB 경고 이미지를 감지하고, 실제 상품 이미지를 Storage에 미러링하는 구조로 전환했다.
+- 운영 DB에는 장기적으로 원본 `cdn*.ppomppu.co.kr` 직접 URL을 남기지 않는 것이 원칙이다.
+
+### 4-7. 가지온도 부정 신호 강화
+
+요구사항:
+
+- 바이럴/업체/비싸다/안사요 등 부정 댓글 신호나 비추천이 3개 이상이면 최신성·댓글수·무료딜 보정과 무관하게 온도는 50점을 초과하면 안 된다.
+
+현재 반영:
+
+- `api/_lib/deals.js`에서 `computeHotScore`, `applyTemperatureNormalization`, negative cap 로직을 운영 중.
+- 파서 쪽에서 `commentSignalScore`, `positiveCommentSignals`, `negativeCommentSignals`, `likes/dislikes` 등을 source별로 저장한다.
+- 신규 지표 추가 시 Supabase 스키마와 payload를 같이 맞춰야 한다.
+
+### 4-8. 새로고침 / artifact 병합 / soft-delete 안정화
+
+이번 주 여러 커밋에서 정리한 핵심:
+
+- source별 parser job 결과 artifact가 하위 디렉터리로 풀릴 수 있으므로 upsert 단계에서 실제 artifact path/source row count를 로그로 확인해야 한다.
+- 특정 source가 0건이면 전체 source soft-delete가 발생하지 않게 source-aware guard가 필요하다.
+- API dedupe는 `source+canonical sourceLink` 기준으로 최신 row를 우선 선택해야 한다.
+- `scope=all`에서 user 조회 필터가 누락되면 feed row가 user로 섞일 수 있으므로 source 분포를 항상 교차 검증한다.
 
 ---
 
-## 4) Windows Codex 앱에서 이어받는 베스트 절차
+## 5) 가지가지 / 쇼핑팁 현재 운영
 
-## A. 저장소 열기
-1. Windows Codex 앱에서 폴더 열기:
-   - `C:\Users\namin\hotdeal-site`
-2. 터미널(Codex 내장 or PowerShell)에서 확인:
-   - `git remote -v`
-   - `git branch --show-current`
+### 현재 제품 규칙
 
-## B. 최신화 (상황별)
-- **같은 컴퓨터(WSL + Windows가 같은 로컬 파일 공유)**:
-  - 보통 pull 불필요 (같은 폴더 파일을 보고 있음)
-  - 대신 아래 확인 권장:
-    - `git status`
-    - `git log --oneline -n 3`
-- **다른 컴퓨터/새 환경**:
+- `gajigaji.html`은 쇼핑팁 중심으로 운영.
+- 여러 가지 팁 / 내가 올린 핫딜 탭 구조는 숨기고, tips-only 모드로 정리했다.
+- 작성/수정 경로도 `category=tips` 고정 흐름을 유지한다.
+
+### 자동 작성 규칙
+
+- 매일 gaji.run 가지가지 > 여러 가지 팁 글 1개 자동 작성 cron이 있다.
+- 사용자가 선호한 참고 방향:
+  - 노써치
+  - 귀곰
+  - 잇섭
+  - 정가거부
+  - 최근 유튜브/콘텐츠가 있으면 그 내용을 우선 주제로 삼음
+- 글 스타일:
+  - 정부 공식문서식/딱딱한 참고근거 나열 금지
+  - 실사용 리뷰·쇼핑 채널을 종합한 짧고 실용적인 인사이트형 글
+  - 출처 요약문보다 “구매 기준/체감 포인트” 중심
+
+### 관련 cron
+
+- `daily-gajigaji-shopping-tip-post`
+  - schedule: `0 12 * * *`
+  - deliver: origin
+  - enabled: true
+  - 최근 상태: ok
+
+---
+
+## 6) PWA / 설치성 변경
+
+이번 주 변경:
+
+- PWA 설치 이름과 아이콘 변경.
+- 설치 유도 UI/메타 보강.
+- 관련 파일은 `manifest.webmanifest`, icon assets, service worker 관련 파일을 확인.
+
+주의:
+
+- PWA/아이콘 변경은 캐시 영향이 있을 수 있으므로 운영 확인 시 hard refresh 또는 새 설치 테스트 권장.
+- Android WebView와 모바일웹은 nav 책임이 다르므로 앱 WebView에서 중복 네비가 생기지 않는지 확인해야 한다.
+
+---
+
+## 7) 현재 Hermes cron / 자동화 상태
+
+2026-06-05 22:28 KST 기준 확인한 cron 상태 요약:
+
+### Enabled / scheduled
+
+- `infra-usage-report-every-3h-with-vercel-deploys`
+  - schedule: every 180m
+  - script: `infra_usage_report.py`
+  - 최근 상태: ok
+  - Vercel/Supabase 사용량 및 당일 prod 배포 횟수 보고용
+
+- `daily-gajigaji-shopping-tip-post`
+  - schedule: `0 12 * * *`
+  - 최근 상태: ok
+
+- `hotdeal-refresh-watchdog`
+  - schedule: every 15m
+  - script: `hotdeal_refresh_watchdog.py`
+  - 최근 상태: ok
+
+- `hotdeal-refresh-aux-watchdog`
+  - schedule: every 15m
+  - script: `hotdeal_refresh_watchdog.py`
+  - 최근 상태: ok
+
+- `hotdeal-fmkorea-local-ingest`
+  - schedule: every 15m
+  - script: `hotdeal_fmkorea_ingest.py`
+  - 최근 상태: error
+  - 중요: repo 내 `scripts/hermes_fmkorea_ingest.py --verbose`는 성공했으므로 Hermes script wrapper 환경을 점검해야 한다.
+
+### Paused
+
+- `hotdeals-15m-refresh-all-sources`
+  - script: `cron_refresh_hotdeals.sh`
+  - 상태: paused
+  - 과거 all-source 15분 refresh job으로 보이며 현재는 사용하지 않음/보류 상태
+
+---
+
+## 8) 로컬/운영 검증 명령 모음
+
+### 시작 전 저장소 상태
+
+같은 PC에서 WSL/Hermes와 Windows Codex는 같은 작업 폴더를 보므로 보통 pull 불필요. 그래도 시작 전 확인:
+
+```bash
+cd /mnt/c/Users/namin/hotdeal-site
+git status -sb
+git log --oneline -10
+```
+
+다른 컴퓨터/새 환경이면:
+
 ```bash
 git pull origin main
 ```
 
-## C. 의존 실행(필요 시)
-파서는 Python 기반이므로 Python 3 설치 상태 확인:
+### 문법/테스트
+
 ```bash
-python --version
-# 또는
-py --version
+cd /mnt/c/Users/namin/hotdeal-site
+python3 -m py_compile scripts/update_fmkorea_feed.py scripts/sync_hotdeals_to_supabase.py
+node -c api/_lib/deals.js
+python3 -m pytest tests/test_fmkorea_static_fallback.py tests/test_sync_soft_delete_guard.py
 ```
 
-## D. 데이터 수동 갱신(즉시 반영 테스트)
-```bash
-python scripts/update_ppomppu_feed.py
-```
-예상 출력 형식:
-- `UPDATED total=... today=... yesterday=...`
-- 변경 없으면 `NO_CHANGES ...`
+2026-06-05 결과:
 
-## E. 로컬 미리보기
-```bash
-python -m http.server 4173
-```
-브라우저에서:
-- `http://localhost:4173/index.html`
-- `http://localhost:4173/detail.html?id=...`
-
-## F. 변경사항 반영(권장 워크플로)
-```bash
-git status
-git add .
-git commit
-git push origin main
-```
-
-커밋 메시지 규칙(사용자 선호):
-- 제목 첫 줄: `요구사항: ...`
-- 본문: 요청사항 + 실제 작업 내용 요약
-
-예시:
 ```text
-요구사항: 페이지정리
-
-- 요청사항
-  - ...
-
-- 작업 내용
-  - ...
+5 passed
 ```
 
----
+### FMKorea 수동 ingest
 
-## 5) 자동 갱신(크론) 관련
-
-Hermes 환경에서 등록된 작업:
-- job name: `ppomppu-hotdeals-hourly-refresh`
-- 주기: `every 60m`
-- 실행 스크립트: `~/.hermes/scripts/cron_refresh_hotdeals.sh`
-
-중요:
-- 이 크론은 **Hermes/WSL 측 스케줄러**입니다.
-- Windows Codex 앱만 켜둔다고 자동으로 돌지 않습니다.
-- Windows에서도 동일 자동화를 원하면, 별도로 작업 스케줄러(Windows Task Scheduler) 구성 필요.
-
-### Windows Task Scheduler 구성(추가)
-
-Windows Codex 앱/Windows 단독 환경에서 자동 갱신을 돌리려면 아래 순서 권장:
-
-1) 수동 1회 테스트 (실행 스크립트)
-```powershell
-cd C:\Users\namin\hotdeal-site
-powershell -ExecutionPolicy Bypass -File .\scripts\refresh_hotdeals_windows.ps1
+```bash
+cd /mnt/c/Users/namin/hotdeal-site
+python3 scripts/hermes_fmkorea_ingest.py --verbose
 ```
 
-2) 원클릭 등록(매 60분, 기존 작업 있으면 교체)
-```powershell
-cd C:\Users\namin\hotdeal-site
-powershell -ExecutionPolicy Bypass -File .\scripts\register_hotdeal_task_windows.ps1 -IntervalMinutes 60 -RunNow
+예상 성공 로그:
+
+```text
+FMKOREA_LIST_CANDIDATE ... rows=162
+saved: ... assets/fmkorea_hotdeals_2days.json (162 items)
+UPSERT_OK total=162 changed=162 deleted=0 ingest=SKIP
 ```
 
-3) 동작 확인
-```powershell
-Get-ScheduledTask -TaskName "HotdealHourlyRefresh"
-Get-ScheduledTaskInfo -TaskName "HotdealHourlyRefresh"
+### 펨딜 이미지 품질 확인
+
+```bash
+cd /mnt/c/Users/namin/hotdeal-site
+python3 - <<'PY'
+import json
+from pathlib import Path
+items=json.loads(Path('assets/fmkorea_hotdeals_2days.json').read_text(encoding='utf-8')).get('items',[])
+thumb=sum(1 for it in items if '/cache/thumb/' in (it.get('img') or ''))
+blank=sum(1 for it in items if not it.get('img'))
+full=sum(1 for it in items if it.get('img') and '/cache/thumb/' not in it.get('img'))
+print('total',len(items),'full_img',full,'thumb_img',thumb,'blank',blank)
+PY
 ```
 
-4) 수동 실행/중지
-```powershell
-Start-ScheduledTask -TaskName "HotdealHourlyRefresh"
-Stop-ScheduledTask -TaskName "HotdealHourlyRefresh"
+정상 기준:
+
+```text
+total 162 full_img 162 thumb_img 0 blank 0
 ```
 
-5) 삭제(원클릭)
-```powershell
-cd C:\Users\namin\hotdeal-site
-powershell -ExecutionPolicy Bypass -File .\scripts\unregister_hotdeal_task_windows.ps1
+### 사용자 이미지 640 정규화 확인
+
+```bash
+node - <<'NODE'
+const { mapPayload, normalizeUserRow } = require('./api/_lib/deals');
+const raw = 'https://example.com/images/product-large.jpg?x=1';
+const mapped = mapPayload({ title: 't', img: raw });
+const row = normalizeUserRow({ id: '1', title: 't', img: raw, detail_img: raw });
+console.log(mapped.img);
+console.log(row.detailImg);
+console.log(mapped.img.includes('w=640') && row.detailImg.includes('h=640'));
+NODE
 ```
 
----
+정상 기준:
 
-## 6) 자주 발생 가능한 이슈와 대응
+```text
+true
+```
 
-### 이슈 1) 실제 사이트보다 항목이 적게 보임
-원인:
-- 단일 페이지 수집 시 누락
-대응:
-- `scripts/update_ppomppu_feed.py`의 페이지 순회 범위 확인(`1~5`)
-- 수동 실행 후 결과 개수 확인
+### 로컬 UI 미리보기
 
-### 이슈 2) 썸네일 깨짐
-원인:
-- 원본 외부 이미지 링크 불안정
-대응:
-- 로컬 캐시(`assets/ppomppu_thumbs`) 재생성 여부 확인
-- 파서 재실행
+단순 정적 서버는 `/api/deals`를 처리하지 못할 수 있다. UI만 볼 때는 가능하지만 API 연동 검증은 `vercel dev` 또는 live API 프리뷰 서버 패턴을 사용한다.
 
-### 이슈 3) 상세 `사러가기` 이동 이상
-원인:
-- 원문 링크/제휴 리다이렉트 파싱 실패
-대응:
-- `update_ppomppu_feed.py`의 buyLink 추출 로직 점검
-- 문제 게시글 샘플 URL로 단건 재현 테스트
-
-### 이슈 4) 푸시 인증 실패
-대응:
-- 로컬 자격증명 관리자 확인
-- 필요 시 PAT 방식으로 push 구성 재확인
-
----
-
-## 7) 빠른 점검 체크리스트
-
-작업 시작 전:
-- [ ] (같은 컴퓨터) `git status` / `git log --oneline -n 3` 확인
-- [ ] (다른 컴퓨터) `git pull origin main`
-- [ ] `git status` 깨끗한지 확인
-
-변경 후:
-- [ ] 오늘/어제 탭 정상 동작
-- [ ] 검색창 토글/검색 정상
-- [ ] 상세페이지 이미지/본문 경계선 보임
-- [ ] `사러가기` 링크 이동 정상
-- [ ] 썸네일 깨짐 없음
-- [ ] `git commit` 메시지 형식 준수(`요구사항: ...`)
-- [ ] `git push origin main`
-
----
-
-## 8) 권장 다음 개선
-
-- 페이지 순회 범위를 설정값으로 분리(하드코딩 제거)
-- 파싱 실패/시간초과 시 fallback 로깅 강화
-- 데이터 스키마 검증(필수 키 누락 시 경고)
-- 간단한 스냅샷 테스트(오늘/어제 개수, 링크 유효성) 자동화
-
----
-
-## 9) 인계 메모
-
-현재는 **Git 중심 이어받기 전략**이 가장 안전합니다.
-- 이미 main에 최신 변경 푸시됨
-- 같은 컴퓨터면 pull 없이 바로 작업 가능(다른 컴퓨터는 pull 권장)
-- 작업 맥락은 본 문서 + Git log로 복원 가능
-
-끝.
-
----
-
-## 10) 2026-05-20 모바일 이어작업 메모
-
-내일 모바일에서 이어서 확인할 최신 상태입니다.
-
-### 현재 최신 커밋
-
-`hotdeal-site`:
-- 최신 커밋: `9ab857d 요구사항: 스크롤 반응형 상단바와 글쓰기 버튼 적용`
-- 원격 `main`에 푸시 완료
-- 중간에 자동 갱신 커밋도 들어옴: `4c523f7 chore: hourly refresh ppomppu hotdeals feed`
-
-`hotdeal-android`:
-- 로컬 최신 커밋: `fc83640 요구사항: Android 공유 설명과 가격 메타 전달`
-- Android 프로젝트는 현재 원격 저장소가 설정되어 있지 않아 로컬 커밋만 있음
-- Debug APK 빌드 경로: `C:\users\namin\hotdeal-android\app\build\outputs\apk\debug\app-debug.apk`
-
-주의:
-- `hotdeal-android`에는 아직 커밋하지 않은 변경이 남아 있음
-  - `app/src/main/java/com/hotdeal/app/MainActivity.java`: 상단 inset을 50%로 줄이는 실험성 변경
-  - `app/src/main/res/drawable/ic_launcher_foreground.xml`: 이전부터 남아 있던 런처 아이콘 변경
-  - 내일 시작 시 `git status --short`와 `git diff`로 확인 후 유지/커밋/되돌림 여부 결정 권장
-
-### 주요 기능 변경 요약
-
-브랜딩/레이아웃:
-- 메인 타이틀은 `가지고 싶다`
-- `가지`는 당근 스타일을 참고한 가지색 보라 톤
-- PC에서도 보기 좋도록 메인/상세/작성 페이지 반응형 보강
-- 메인 글쓰기 FAB는 PC/모바일 모두 우하단에 잘 보이도록 조정
-- 최신 변경: 스크롤을 내려 목록을 읽으면 상단바가 숨고, 글쓰기 버튼은 보라색 원형 `+`로 축소됨
-- 다시 위로 스크롤하면 상단바와 `+ 글쓰기` 버튼이 원래 상태로 복귀
-
-목록/파싱:
-- `오늘의 핫딜 / 어제의 핫딜` 구분은 제거
-- 현재는 `오늘의 핫딜` 단일 목록만 표시
-- 파서는 등록일 기준 최근 48시간 핫딜만 `assets/ppomppu_hotdeals_2days.json`에 저장
-- 메인 리스트에 조회수/댓글수 표시
-- 삭제된 게시물은 로컬 삭제키와 `assets/hidden_hotdeals.json` 기반으로 다시 보이지 않게 처리
-
-작성/편집:
-- 글쓰기 화면에서 사진 첨부 가능
-- 이미지 URL 입력은 제거됨
-- 대신 `핫딜주소` 필드가 추가됨
-- 작성 완료 시 `핫딜주소`가 상세 페이지 하단 `사러가기` 버튼 링크가 됨
-- 제목은 필수
-- 설명은 빈 값 허용
-- 가격은 비우면 자동으로 `0원`
-- 상세 우상단 `...` 메뉴:
-  - `편집하기`: 가지색 버튼, 삭제 위에 표시
-  - `삭제하기`: 빨간색
-  - `닫기`
-- 편집은 `create.html?editId=...`로 기존 작성 화면을 재사용
-- 편집된 글은 `source:'user'`, `edited:true`로 저장되어 다음 파싱 때도 원본 피드로 덮이지 않도록 처리
-
-공유/Android:
-- 상세 페이지 우상단 공유 버튼은 Android 브리지 `HotdealAndroid.share(title, url)` 우선 사용
-- Android WebView에서 사진 첨부가 되도록 `onShowFileChooser` 구현 완료
-- Android 앱이 외부 사이트의 `http/https` URL 공유를 받을 수 있도록 `ACTION_SEND text/plain` 등록
-- 외부 사이트에서 가지 앱으로 URL 공유 시:
-  - 작성창으로 이동
-  - `핫딜주소` 자동 입력
-  - `og:title` 또는 `<title>`을 제목에 자동 입력
-  - `og:image`를 대표사진 미리보기에 자동 입력
-  - `og:description` 또는 `meta description`을 상세내용에 자동 입력
-  - 제목/상세내용에서 `12,900원` 같은 `숫자+원` 패턴을 찾아 가격에 자동 입력
-
-### 내일 모바일에서 우선 확인할 것
-
-- Android APK 설치 후 외부 쇼핑몰 페이지에서 공유하기 → 가지 앱 선택
-- 작성창에 `핫딜주소`, 제목, 대표사진, 상세내용, 가격이 자동 입력되는지 확인
-- 모바일에서 사진 첨부 버튼을 눌렀을 때 갤러리/파일 선택기가 열리는지 확인
-- 작성 완료 후 메인 목록 첫 번째에 표시되는지 확인
-- 상세에서 `사러가기` 버튼이 `핫딜주소`로 이동하는지 확인
-- 상세 `...` 메뉴에서 편집/삭제/닫기 동작 확인
-- 편집 후 파서가 다시 돌아도 편집 내용이 유지되는지 확인
-- 메인 목록 스크롤 시 상단바 숨김/FAB 원형 축소가 실제 폰에서 자연스러운지 확인
-
-### 로컬 실행/검증 명령
-
-사이트:
-```powershell
-cd C:\users\namin\hotdeal-site
-python -m http.server 4173
+```bash
+python3 -m http.server 4173
 ```
 
 브라우저:
+
 ```text
 http://localhost:4173/index.html
-http://localhost:4173/create.html
-```
-
-Android 빌드:
-```powershell
-cd C:\users\namin\hotdeal-android
-$env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"
-.\gradlew.bat assembleDebug
-```
-
-### 작업 습관 메모
-
-- `hotdeal-site` 변경 시 사용자 요청에 따라 커밋과 푸시까지 함께 수행
-- Android 프로젝트는 원격이 없으므로 로컬 커밋까지만 가능
-- 내일 작업 시작 전:
-```powershell
-cd C:\users\namin\hotdeal-site
-git status --short
-git log --oneline -5
-
-cd C:\users\namin\hotdeal-android
-git status --short
-git log --oneline -5
+http://localhost:4173/indexdetail.html?id=<id>
 ```
 
 ---
 
-## 11) 2026-05-22 작업 메모
+## 9) 배포/푸시 정책
 
-내일 이어서 볼 때는 이 섹션을 우선 확인하면 됩니다.
+### Git
 
-### 최종 구조 결정
+사용자 선호:
 
-- `hotdeal-site`는 웹/PWA/콘텐츠 UI의 중심으로 유지합니다.
-- `hotdeal-android`는 Android WebView 셸로 두고, 하단 4탭/푸시/공유 받기/권한 같은 네이티브 기능만 맡깁니다.
-- 이 방향을 `goal.md`에 정리했습니다.
-- 프로젝트 규칙은 `rule.md`에 추가했습니다.
-  - Git repo가 연결되어 있으면 모든 완료 변경은 요청사항 설명으로 커밋합니다.
-  - remote가 있으면 푸시까지 합니다.
+- 코드 변경 완료 시 기본적으로 commit + push까지 수행.
+- 커밋 메시지는 한국어, 첫 줄은 `요구사항: ...` 형식.
+- 본문에는 `요청사항`, `작업 내용`, 가능하면 `기대 효과` 포함.
 
-### Vercel Hobby 함수 제한 대응
-
-- Hobby 플랜은 Serverless Functions 수 제한 때문에 auth API를 여러 파일로 쪼개면 배포 실패가 납니다.
-- 기존 `/api/auth/config`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/google/start`, `/api/auth/google/callback` 등을 하나로 합쳤습니다.
-- 현재 인증 엔드포인트는 단일 함수입니다.
+예시:
 
 ```text
-/api/auth?action=config
-/api/auth?action=me
-/api/auth?action=logout
-/api/auth?action=start&provider=google
-/api/auth  # Google OAuth callback
+요구사항: 펨딜 이미지 품질 및 사용자 이미지 640px 정규화
+
+- 요청사항
+  - 펨딜 이미지를 뽐딜 수준으로 320/640 Storage WebP 구조에 맞춤
+  - 사용자 등록 이미지를 640px 수준으로 제한
+
+- 작업 내용
+  - scripts/update_fmkorea_feed.py: cache/thumb 썸네일 배제 및 상세 첨부 이미지 재추출
+  - scripts/sync_hotdeals_to_supabase.py: fmkorea Storage 미러링 추가
+
+- 기대 효과
+  - 펨딜 상세 이미지가 70x50 목록 썸네일로 확대되는 문제 감소
 ```
 
-- Kakao 로그인 코드는 제거했습니다. 나중에 다시 지원할 때 Google 구조를 참고해 단일 `api/auth.js` 안에 provider 분기로 넣으면 됩니다.
+### GitHub push 인증
 
-### Google 로그인 상태
-
-- `my-gaji.html`은 Google 로그인만 노출합니다.
-- 필요한 Vercel 환경변수:
+일반 push에서 HTTPS username/password prompt 실패 가능:
 
 ```text
-AUTH_SESSION_SECRET
-GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET
+fatal: could not read Username for 'https://github.com': No such device or address
 ```
 
-- 사용자가 로컬에 만든 파일:
+이때 PAT 파일은 아래에 있음. 토큰값은 절대 출력하지 않는다.
 
 ```text
-oauth_clientid.txt  -> GOOGLE_CLIENT_ID
-oauth_secret.txt    -> GOOGLE_CLIENT_SECRET
-autn_session.txt    -> AUTH_SESSION_SECRET
+/mnt/c/codex/pat.txt
 ```
 
-- 위 로컬 파일들은 `.gitignore`에 추가되어 Git에 올라가지 않습니다.
-- Google Cloud OAuth Redirect URI:
+필요 시 `GIT_ASKPASS` 임시 스크립트로 push 가능.
 
-```text
-https://hotdeal-omega.vercel.app/api/auth
+### Vercel prod 배포
+
+중요:
+
+- `hotdeal`/`hotdeal-site`는 GitHub push 자동 배포를 막기 위해 Vercel 설정에서 deployment 생성이 제한되어 있다.
+- `vercel.json`에도 `git.deploymentEnabled=false`가 추가되어 있다.
+- 따라서 `git push`는 코드 저장소 반영일 뿐, 운영 prod 배포 완료를 의미하지 않는다.
+- 사용자가 명시적으로 운영 배포를 요청했을 때만 Vercel CLI/REST deploy를 실행한다.
+- 배포 요청이 없으면 절대 prod deploy하지 않는다.
+
+---
+
+## 10) 자주 발생 가능한 이슈와 대응
+
+### 이슈 A) 펨딜이 갑자기 사라짐/0건
+
+가능 원인:
+
+- GitHub Actions hosted runner가 FMKorea 430 보안 페이지를 받아 0건 수집
+- stale fallback/soft-delete guard 미작동
+- 로컬 Hermes ingest cron wrapper 실패
+
+대응:
+
+1. 운영 API source 분포 확인
+2. Actions 로그에서 `WARN_FMKOREA_ZERO_ITEMS_KEEP_PREVIOUS`, `saved: ... fmkorea ...`, `UPSERT_OK ... deleted=N` 확인
+3. 로컬에서 수동 실행:
+
+```bash
+python3 scripts/hermes_fmkorea_ingest.py --verbose
 ```
 
-- 2026-05-22 확인 결과:
+4. Hermes cron wrapper `~/.hermes/scripts/hotdeal_fmkorea_ingest.py` 점검
 
-```json
-{"providers":{"google":true,"session":true},"ready":true}
-```
+### 이슈 B) 펨딜 상세 이미지가 흐림/작음
 
-- `/api/auth?action=start&provider=google`는 Google 로그인 화면으로 302 이동 확인했습니다.
-- 깨진 세션 쿠키가 있어도 `/api/auth?action=me`가 `{"user":null}`을 반환하도록 방어 코드를 추가했습니다.
+가능 원인:
 
-### 내 가지 페이지 변경
+- `/cache/thumb/` 목록 썸네일이 다시 들어옴
+- 기존 저품질 Storage WebP가 재사용됨
 
-- URL:
+대응:
 
-```text
-https://hotdeal-omega.vercel.app/my-gaji.html
-```
+- `assets/fmkorea_hotdeals_2days.json`에서 `/cache/thumb/` 건수 확인
+- Supabase `deals`의 `img`, `detail_img`가 `deal-images/fmkorea/...thumb...webp`, `...detail640...webp`인지 확인
+- 실제 이미지 픽셀 크기를 PIL로 측정
 
-- 하단 4탭은 웹 `my-gaji.html`에서 제거했습니다.
-  - Android 쪽 네이티브 하단 탭이 별도로 관리할 예정입니다.
-- 기존 설명 문구는 제거했습니다.
-- Google 로그인 버튼은 컬러 Google `G` 로고 SVG(`assets/google-g.svg`)와 함께 보이도록 변경했습니다.
-- 현재 안내 문구:
+### 이슈 C) 뽐딜 이미지가 403 경고 이미지처럼 보임
 
-```text
-로그인을 하면 글작성 및 저장, 채팅방 입장이 가능합니다.
-```
+가능 원인:
 
-### 홈/가지가지 UI 정렬
+- 원본 `cdn*.ppomppu.co.kr` 직접 URL이 DB에 남음
+- 경고 이미지가 HTTP 200으로 내려와 onerror가 동작하지 않음
 
-- `board.html` 상단 타이틀 `가지가지 한다`의 위치, 크기, 검색 아이콘 크기를 `index.html`의 `가지고 싶다`와 맞췄습니다.
-- `board.html`의 `+ 글쓰기` FAB도 홈 화면의 크기/구조와 맞췄습니다.
-  - 홈과 동일하게 `+` 텍스트 기반 구조 사용
-  - 기본 크기: `min-width:108px`, `height:52px`
-  - PC 크기: `min-width:116px`, `height:56px`
+대응:
 
-### 최근 주요 커밋
+- 동기화 단계에서 Storage WebP로 미러링되었는지 확인
+- 355x138, 약 25KB JPEG 경고 이미지를 감지하는 로직 유지
 
-```text
-f47bbe2 요구사항: 글쓰기 버튼과 내 가지 Google 로그인 화면 정리
-1fef5d3 요구사항: 가지가지 상단 타이틀과 검색 아이콘 정렬
-b20fbee 요구사항: Kakao 로그인 코드 제거
-1430100 요구사항: OAuth 세션 시크릿 로컬 파일 git 제외
-b03212b 요구사항: OAuth 로컬 설정 파일 git 제외
-7916083 요구사항: 내 가지를 Google 로그인 우선 화면으로 정리
-```
+### 이슈 D) 사용자 등록 이미지가 너무 큼
 
-### 다음 작업 후보
+대응:
 
-- Google 로그인 실제 브라우저 완료 플로우 확인
-  - Google Cloud OAuth 설정에서 Authorized redirect URI가 정확히 `https://hotdeal-omega.vercel.app/api/auth`인지 확인
-  - OAuth 동의 화면 test user에 사용자 계정이 들어갔는지 확인
-- 로그인 성공 후 글쓰기/저장/채팅방 입장 제한을 실제로 적용할지 결정
-- `my-gaji.html`에 찜한 핫딜/최근 본 핫딜을 localStorage 기반으로 추가할지 결정
-- PWA 작업 시작:
-  - `manifest.webmanifest`
-  - 앱 아이콘
-  - service worker
-  - mobile/desktop install 확인
+- `indexcreate.html`의 `maxSide=640` 유지 확인
+- API user row normalize에서 `wsrv.nl ... w=640&h=640` 변환 확인
+
+### 이슈 E) 운영 반영이 안 된 것처럼 보임
+
+가능 원인:
+
+- push는 됐지만 prod deploy를 하지 않았음
+- Vercel 자동 배포가 intentionally disabled
+- API/브라우저 캐시
+
+대응:
+
+- 먼저 사용자에게 prod 배포 요청 여부 확인
+- 명시 요청 없으면 deploy하지 않음
+- 운영 확인 시 API cache-bust query 사용
+
+---
+
+## 11) 다음 작업 후보 / 우선순위
+
+### 1순위: FMKorea 로컬 ingest cron error 점검
+
+현재 수동 실행은 성공했지만 Hermes cron 상태가 error다.
+
+확인할 것:
+
+- `~/.hermes/scripts/hotdeal_fmkorea_ingest.py` 내용
+- working directory가 `/mnt/c/Users/namin/hotdeal-site`인지
+- 필요한 Supabase credential 파일 경로 접근 가능 여부
+- stdout/stderr가 비어야 정상 조용히 지나가도록 되어 있는지
+
+### 2순위: AWS Lambda probe
+
+목표:
+
+- FMKorea가 AWS Lambda IP에서 목록 1페이지를 정상 반환하는지 확인
+- 성공하면 EventBridge 기반 소형 수집 실험 가능
+- 실패하면 로컬 Hermes/self-hosted runner 유지
+
+### 3순위: 운영 이미지 품질 정기 감사
+
+- source별 최신 20건의 `img/detail_img` host 분포
+- actual pixel size
+- content-type / format
+- `/cache/thumb/`, placeholder, blank URL 건수
+
+### 4순위: PWA/Android WebView 실제 단말 검증
+
+- 설치 이름/아이콘
+- 앱 WebView와 모바일웹 네비 중복 여부
+- Google OAuth 외부 브라우저 위임/딥링크 복귀
+- push/keyword notify 연계 여부
+
+### 5순위: 가지가지 자동 글 품질 점검
+
+- 최근 게시글이 tips-only category로 잘 들어가는지
+- 출처 나열식이 아닌 실사용 쇼핑팁 톤인지
+- 이미지 URL이 깨지지 않는지
+
+---
+
+## 12) 작업 시작/종료 체크리스트
+
+### 시작 전
+
+- [ ] `cd /mnt/c/Users/namin/hotdeal-site`
+- [ ] `git status -sb`
+- [ ] `git log --oneline -10`
+- [ ] 같은 PC면 보통 pull 불필요, 다른 PC면 `git pull origin main`
+- [ ] 작업 범위 확인: 웹만인지, Android도 포함인지, prod deploy 요청이 있는지
+
+### 변경 후
+
+- [ ] 문법 검사: `py_compile`, `node -c`
+- [ ] 관련 pytest 실행
+- [ ] 실제 수집/운영 API 검증이 필요한 작업이면 샘플 row/이미지 픽셀까지 확인
+- [ ] 커밋 메시지 `요구사항: ...` 형식
+- [ ] `git push origin main`
+- [ ] prod deploy는 명시 요청이 있을 때만
+
+---
+
+## 13) Android 관련 오래된 인계 메모
+
+이 문서의 과거 섹션에는 2026-05 Android WebView 작업 메모가 있었다. 최신 웹 작업과 직접 연결되는 핵심만 남긴다.
+
+- Android 앱은 WebView shell 역할이며, 네이티브 하단 탭/푸시/공유 받기/권한을 담당한다.
+- 웹 detail/index에 앱 네이티브와 중복되는 하단 탭을 함부로 추가하지 않는다.
+- Google OAuth는 Android WebView에서 `disallowed_useragent`가 날 수 있으므로 외부 브라우저/Custom Tabs 위임을 기본으로 한다.
+- APK 전달 시 사용자는 `gaji_YYMMDD.apk` 형식의 파일명을 선호한다.
+
+---
+
+끝.
