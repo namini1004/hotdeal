@@ -99,6 +99,11 @@ IMAGE_HEADERS_BY_SOURCE = {
         "Referer": "https://m.ruliweb.com/market/board/1020",
         "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
     },
+    "fmkorea": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
+        "Referer": "https://www.fmkorea.com/hotdeal",
+        "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    },
 }
 MAX_MIRROR_IMAGE_BYTES = int(os.environ.get("MAX_MIRROR_IMAGE_BYTES", "3145728"))
 _bucket_ready = False
@@ -215,6 +220,10 @@ def row_id_from_source_link(source: str, source_link: str) -> str:
         m = re.search(r"/read/(\d+)", source_link)
         if m:
             return m.group(1)
+    if source == "fmkorea":
+        m = re.search(r"fmkorea\.com/(\d+)", source_link)
+        if m:
+            return m.group(1)
     return hashlib.sha1(source_link.encode("utf-8")).hexdigest()[:12]
 
 
@@ -223,6 +232,8 @@ def is_blocked_image_candidate(source: str, src: str) -> bool:
     if not src_l or not src_l.startswith("http"):
         return True
     if source == "ruliweb" and "ruliweb_bi.png" in src_l:
+        return True
+    if source == "fmkorea" and re.search(r"/cache/thumb/", src_l):
         return True
     blocked_tokens = ["transparent.", "blank.", "noimage", "no_image", "spacer."]
     return any(token in src_l for token in blocked_tokens)
@@ -287,7 +298,7 @@ def ensure_public_image_bucket(supabase_url: str, service_key: str):
 
 
 def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, service_key: str) -> Dict[str, str]:
-    """뽐딜/루딜 원본 이미지를 목록용 320px와 상세용 640px WebP로 저장한다."""
+    """뽐딜/루딜/펨딜 원본 이미지를 목록용 320px와 상세용 640px WebP로 저장한다."""
     source = str(row.get("source") or "").strip()
     src = decode_proxy_image_url(row.get("img") or "")
     if source not in IMAGE_HEADERS_BY_SOURCE:
@@ -300,7 +311,7 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
 
     prev_img = str((prev or {}).get("img") or "").strip()
     prev_detail_img = str((prev or {}).get("detail_img") or "").strip()
-    if is_reusable_storage_webp(prev_img, source, supabase_url, "thumb") and is_reusable_storage_webp(prev_detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT):
+    if source != "fmkorea" and is_reusable_storage_webp(prev_img, source, supabase_url, "thumb") and is_reusable_storage_webp(prev_detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT):
         # 같은 게시글은 기존 WebP 썸네일/상세 이미지를 재사용해 원본 CDN 재요청을 최소화한다.
         return {"img": prev_img, "detail_img": prev_detail_img}
 
@@ -328,12 +339,12 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
 
     variants = {}
     public_urls = {}
-    if is_reusable_storage_webp(prev_img, source, supabase_url, "thumb"):
+    if source != "fmkorea" and is_reusable_storage_webp(prev_img, source, supabase_url, "thumb"):
         public_urls["thumb"] = prev_img
     else:
         variants["thumb"] = make_webp_image(res.content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY)
 
-    if is_reusable_storage_webp(prev_detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT):
+    if source != "fmkorea" and is_reusable_storage_webp(prev_detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT):
         public_urls[DETAIL_IMAGE_VARIANT] = prev_detail_img
     else:
         variants[DETAIL_IMAGE_VARIANT] = make_webp_image(res.content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY)

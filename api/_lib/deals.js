@@ -97,6 +97,19 @@ function inferKeywordPrice(title = '', desc = '', currentPrice = '') {
   return p;
 }
 
+function normalizeUserImageUrl(value = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (!/^https?:\/\//i.test(raw)) return raw;
+  try {
+    const url = new URL(raw);
+    if (/wsrv\.nl$/i.test(url.hostname)) return raw;
+    return `https://wsrv.nl/?url=${encodeURIComponent(url.host + url.pathname + url.search)}&w=640&h=640&fit=inside&output=webp`;
+  } catch (_) {
+    return raw;
+  }
+}
+
 function parseDateMs(value) {
   if (!value) return 0;
   const ms = Date.parse(String(value));
@@ -330,6 +343,8 @@ async function readFeedItems() {
 }
 
 function normalizeUserRow(row) {
+  const img = normalizeUserImageUrl(row.img || '');
+  const detailImg = normalizeUserImageUrl(row.detail_img || row.img || '');
   const base = {
     id: `user-${row.id}`,
     title: row.title || '제목 없음',
@@ -339,8 +354,8 @@ function normalizeUserRow(row) {
     price: row.price || '0원',
     category: row.category || '디지털',
     desc: row.desc || '',
-    img: row.img || '',
-    detailImg: row.detail_img || row.img || '',
+    img,
+    detailImg: detailImg || img,
     sourceLink: row.source_link || '',
     buyLink: row.buy_link || '',
     likes: Number(row.likes || 0),
@@ -396,13 +411,15 @@ async function supabaseRequest(endpoint, options = {}) {
 }
 
 function mapPayload(body = {}) {
+  const img = normalizeUserImageUrl(body.img || '');
+  const detailImg = normalizeUserImageUrl(body.detailImg || body.detail_img || body.img || '');
   return {
     title: String(body.title || '').trim(),
     desc: String(body.desc || '').trim(),
     price: String(body.price || '0원').trim(),
     category: String(body.category || '디지털').trim(),
-    img: String(body.img || '').trim(),
-    detail_img: String(body.detailImg || body.detail_img || body.img || '').trim(),
+    img,
+    detail_img: detailImg || img,
     buy_link: String(body.buyLink || '').trim(),
     source_link: String(body.sourceLink || body.buyLink || '').trim(),
     area: String(body.area || '오늘의 핫딜').trim(),

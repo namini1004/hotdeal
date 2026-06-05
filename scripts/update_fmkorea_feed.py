@@ -290,26 +290,36 @@ def collect_recent_rows(page, now: datetime, since: datetime) -> List[Dict]:
     return collected
 
 
+def is_low_quality_fmkorea_thumbnail(src: str) -> bool:
+    return bool(re.search(r'/cache/thumb/', str(src or ''), re.I))
+
+
 def extract_primary_image(detail_html: str) -> str:
     body_m = re.search(r'<div[^>]+class="[^"]*xe_content[^"]*"[\s\S]*?</div>\s*</div>', detail_html, re.I)
     chunk = body_m.group(0) if body_m else detail_html
+    low_quality_fallback = ""
 
-    for m in re.finditer(r'<img[^>]+(?:data-src|src)=["\']([^"\']+)["\']', chunk, re.I):
+    for m in re.finditer(r'''<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["']''', chunk, re.I):
         src = (m.group(1) or "").strip()
-        if not src or src.startswith('data:') or '/logos/mobile/fmkorea.png' in src or 'transparent.gif' in src:
+        if not src or src.startswith('data:') or '/logos/mobile/fmkorea.png' in src or 'transparent.gif' in src or '/modules/point/icons/' in src:
             continue
         if src.startswith("//"):
-            return f"https:{src}"
+            src = f"https:{src}"
+        if is_low_quality_fmkorea_thumbnail(src):
+            low_quality_fallback = low_quality_fallback or src
+            continue
         return src
 
-    og = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', detail_html, re.I)
+    og = re.search(r'''<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)''', detail_html, re.I)
     if og:
         src = (og.group(1) or "").strip()
         if src and '/logos/mobile/fmkorea.png' not in src:
             if src.startswith("//"):
-                return f"https:{src}"
-            return src
-    return ""
+                src = f"https:{src}"
+            if not is_low_quality_fmkorea_thumbnail(src):
+                return src
+            low_quality_fallback = low_quality_fallback or src
+    return low_quality_fallback
 
 
 def parse_detail_voted_count(detail_html: str) -> int:
@@ -343,15 +353,24 @@ def extract_detail_bundle_in_page(page, url: str) -> dict:
         if (imgRoot) break;
       }
       if (!imgRoot) imgRoot = document;
+      const isLowQualityFmkoreaThumb = (value) => /\/cache\/thumb\//i.test(value || '');
+      let lowQualityFallback = '';
       for (const img of imgRoot.querySelectorAll('img')) {
-        const src = (img.getAttribute('data-src') || img.getAttribute('src') || '').trim();
+        const src = (img.getAttribute('data-src') || img.getAttribute('data-original') || img.getAttribute('src') || '').trim();
         if (!src) continue;
         if (src.startsWith('data:')) continue;
         if (src.includes('/logos/mobile/fmkorea.png')) continue;
         if (src.includes('transparent.gif')) continue;
-        result.img = src.startsWith('//') ? `https:${src}` : src;
+        if (src.includes('/modules/point/icons/')) continue;
+        const resolved = src.startsWith('//') ? `https:${src}` : src;
+        if (isLowQualityFmkoreaThumb(resolved)) {
+          lowQualityFallback = lowQualityFallback || resolved;
+          continue;
+        }
+        result.img = resolved;
         break;
       }
+      if (!result.img && lowQualityFallback) result.img = lowQualityFallback;
 
       // 1) '링크' 라벨 옆 anchor 우선
       const cells = Array.from(document.querySelectorAll('th,td,dt,dd,li,span,div'));
@@ -506,13 +525,15 @@ def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
         if value:
             row[key] = value
     row["_detailCached"] = True
-    return True
+    return not is_low_quality_fmkorea_thumbnail(row.get("img") or "")
 
 
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
     previous_lookup = build_previous_detail_lookup(load_previous_items())
+    s = requests.Session()
+    s.headers.update(HEADERS)
 
     all_rows = []
 
@@ -535,10 +556,17 @@ def main():
                 bundle = extract_detail_bundle_in_page(detail_page, r["href"])
 
                 current = (r.get("img") or "").strip()
-                if (not current) or ("/logos/mobile/fmkorea.png" in current) or ("transparent.gif" in current):
+                if (not current) or is_low_quality_fmkorea_thumbnail(current) or ("/logos/mobile/fmkorea.png" in current) or ("transparent.gif" in current):
                     picked = (bundle.get("img") or "").strip()
-                    if picked:
+                    if (not picked) or is_low_quality_fmkorea_thumbnail(picked):
+                        try:
+                            detail_html = s.get(r["href"], timeout=20).text
+                            picked = extract_primary_image(detail_html) or picked
+                        except Exception:
+                            pass
+                    if picked and not is_low_quality_fmkorea_thumbnail(picked):
                         r["img"] = picked
+                        r["detailImg"] = picked
 
                 buy = normalize_fmkorea_outbound(bundle.get("buyLink") or "")
                 if buy:
@@ -566,9 +594,6 @@ def main():
         detail_page.close()
 
         browser.close()
-
-    s = requests.Session()
-    s.headers.update(HEADERS)
 
     items = []
     for r in all_rows:
@@ -652,6 +677,7 @@ def main():
                 "category": category,
                 "desc": (r.get("desc") or f"쇼핑몰: {shop} / 배송: {delivery}".strip()),
                 "img": img,
+                "detailImg": (r.get("detailImg") or img),
                 "buyLink": normalize_fmkorea_outbound(r.get("buyLink") or r["href"]),
                 "sourceLink": source_link,
                 "source": "fmkorea",
