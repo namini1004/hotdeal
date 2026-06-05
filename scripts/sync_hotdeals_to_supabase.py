@@ -20,13 +20,39 @@ except ModuleNotFoundError:
     from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parents[1]
-FEED_FILES = [
+DEFAULT_FEED_FILES = [
     ROOT / "assets" / "ppomppu_hotdeals_2days.json",
     ROOT / "assets" / "quasar_hotdeals_2days.json",
     ROOT / "assets" / "fmkorea_hotdeals_2days.json",
     ROOT / "assets" / "ruliweb_hotdeals_1day.json",
 ]
-EXPECTED_FEED_SOURCES = {"ppomppu", "quasar", "fmkorea", "ruliweb"}
+DEFAULT_EXPECTED_FEED_SOURCES = {"ppomppu", "quasar", "fmkorea", "ruliweb"}
+
+
+def _configured_feed_files():
+    raw = os.environ.get("HOTDEAL_FEED_FILES", "").strip()
+    if not raw:
+        return DEFAULT_FEED_FILES
+    files = []
+    for part in raw.split(os.pathsep):
+        value = part.strip()
+        if not value:
+            continue
+        path = Path(value)
+        files.append(path if path.is_absolute() else ROOT / path)
+    return files or DEFAULT_FEED_FILES
+
+
+def _configured_expected_sources():
+    raw = os.environ.get("HOTDEAL_EXPECTED_FEED_SOURCES", "").strip()
+    if not raw:
+        return DEFAULT_EXPECTED_FEED_SOURCES
+    sources = {part.strip() for part in raw.split(",") if part.strip()}
+    return sources or DEFAULT_EXPECTED_FEED_SOURCES
+
+
+FEED_FILES = _configured_feed_files()
+EXPECTED_FEED_SOURCES = _configured_expected_sources()
 QUALITY_SIGNAL_FIELDS = [
     "dislikes",
     "comment_signal_score",

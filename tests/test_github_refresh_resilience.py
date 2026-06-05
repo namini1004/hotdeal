@@ -18,13 +18,24 @@ class GithubRefreshResilienceTests(unittest.TestCase):
     def test_refresh_workflow_runs_sources_as_independent_jobs_before_upsert(self):
         workflow = REFRESH_WORKFLOW.read_text(encoding="utf-8")
 
-        for job in ("refresh-ppomppu", "refresh-quasar", "refresh-fmkorea", "refresh-ruliweb"):
+        for job in ("refresh-ppomppu", "refresh-quasar", "refresh-ruliweb"):
             self.assertIn(f"  {job}:", workflow)
+        self.assertNotIn("  refresh-fmkorea:", workflow)
         self.assertIn("name: Download refreshed feed artifacts", workflow)
         self.assertIn("name: Remove checkout feed snapshots before artifact merge", workflow)
         self.assertIn("name: Copy downloaded feed artifacts into assets", workflow)
         self.assertIn("cp .downloaded-feeds/*hotdeals*.json assets/", workflow)
-        self.assertIn("needs.refresh-fmkorea.result == 'success'", workflow)
+        self.assertNotIn("needs.refresh-fmkorea.result", workflow)
+
+    def test_fmkorea_ingest_is_split_to_local_hermes_runner(self):
+        script = (ROOT / "scripts" / "hermes_fmkorea_ingest.py").read_text(encoding="utf-8")
+
+        self.assertIn("scripts/update_fmkorea_feed.py", script)
+        self.assertIn("scripts/sync_hotdeals_to_supabase.py", script)
+        self.assertIn("HOTDEAL_FEED_FILES", script)
+        self.assertIn("fmkorea_hotdeals_2days.json", script)
+        self.assertIn("HOTDEAL_EXPECTED_FEED_SOURCES", script)
+        self.assertIn("fmkorea", script)
 
     def test_github_watchdog_dispatches_refresh_when_site_feed_is_stale(self):
         workflow = WATCHDOG_WORKFLOW.read_text(encoding="utf-8")
