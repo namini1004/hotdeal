@@ -37,6 +37,7 @@
     .file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
     .bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:720px;padding:12px 14px calc(env(safe-area-inset-bottom) + 12px);background:#fff;border-top:1px solid var(--line)}
     .submit{width:100%;height:50px;border:none;border-radius:14px;background:var(--brand);color:#fff;font-size:17px;font-weight:800}
+    .category-field{display:none}
   </style>
 </head>
 <body>
@@ -48,11 +49,10 @@
     </header>
 
     <form class="wrap" id="form">
-      <div class="field">
+      <div class="field category-field" aria-hidden="true">
         <label for="category">게시판</label>
-        <select id="category" required>
+        <select id="category" required tabindex="-1">
           <option value="tips">여러 가지 팁</option>
-          <option value="mydeals">내가올린 핫딜</option>
         </select>
       </div>
 
@@ -137,7 +137,7 @@
       document.querySelector('.title').textContent = '게시글 편집';
       document.querySelector('.submit').textContent = '수정 완료';
       document.getElementById('title').value = post.title || '';
-      document.getElementById('category').value = normalizeBoardCategory(post.category);
+      document.getElementById('category').value = 'tips';
       document.getElementById('body').value = post.body || '';
       if(post.img){
         previewImage = post.img;
@@ -238,7 +238,7 @@
       const canWrite = await ensureLoggedIn();
       if(!canWrite) return;
       const title = document.getElementById('title').value.trim();
-      const category = normalizeBoardCategory(document.getElementById('category').value);
+      const category = 'tips';
       const body = document.getElementById('body').value.trim();
       if(!title) return;
 
@@ -294,7 +294,7 @@
       }
     });
     async function init(){
-      document.getElementById('category').value = normalizeBoardCategory(new URLSearchParams(location.search).get('category'));
+      document.getElementById('category').value = 'tips';
       const canWrite = await ensureLoggedIn();
       if(!canWrite) return;
       await loadEditPost();

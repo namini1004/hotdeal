@@ -47,9 +47,6 @@
     .profile-chip{width:38px;height:38px;display:grid;place-items:center;border:none;border-radius:999px;background:#f7f4ff;color:#2d2438;padding:0;cursor:pointer}
     .profile-avatar{width:32px;height:32px;border-radius:999px;display:block;object-fit:cover;flex:0 0 auto}.profile-name{display:none}
     .nick-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);display:none;place-items:center;z-index:80;padding:18px}.nick-modal-backdrop.show{display:grid}.nick-modal{width:min(320px,100%);background:#fff;border-radius:18px;padding:20px 18px;box-shadow:0 18px 60px rgba(17,24,39,.24);text-align:center}.nick-modal-title{font-size:17px;font-weight:950;letter-spacing:-.03em}.nick-modal-body{margin-top:8px;color:#667085;font-size:14px;line-height:1.45}.nick-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.nick-modal-btn{height:44px;border:none;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer}.nick-modal-btn.cancel{background:#f4f6f8;color:#374151}.nick-modal-btn.confirm{background:var(--brand);color:#fff}
-    .board-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 16px 8px;background:#fff;position:sticky;top:73px;z-index:4;border-bottom:1px solid var(--line)}
-    .board-tab{height:42px;border:1px solid var(--line);border-radius:999px;background:#fff;color:#6b7280;font-size:14px;font-weight:900;letter-spacing:-.015em;cursor:pointer}
-    .board-tab.active{border-color:rgba(var(--brand-rgb),.2);background:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(var(--brand-rgb),.18)}
     .list{padding:0 16px}
     .post{display:grid;grid-template-columns:82px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
     .thumb{width:82px;height:82px;border-radius:12px;object-fit:cover;background:#f3f4f6}
@@ -162,10 +159,6 @@
     </header>
 
     <section class="view active" id="listView">
-      <nav class="board-tabs" aria-label="게시판 구분">
-        <button class="board-tab active" type="button" data-category="tips">여러 가지 팁</button>
-        <button class="board-tab" type="button" data-category="mydeals">내가올린 핫딜</button>
-      </nav>
       <main class="list" id="list"></main>
       <button class="fab" id="writeBtn" type="button" aria-label="글쓰기"><span class="fab-plus" aria-hidden="true">+</span><span class="fab-text">글쓰기</span></button>
     </section>
@@ -251,11 +244,7 @@
     }
 
     function syncCategoryTabs(){
-      document.querySelectorAll('.board-tab').forEach(tab => {
-        const active = tab.dataset.category === state.category;
-        tab.classList.toggle('active', active);
-        tab.setAttribute('aria-selected', active ? 'true' : 'false');
-      });
+      state.category = 'tips';
     }
 
     function normalizePosts(posts){
@@ -582,17 +571,7 @@
       document.getElementById('writeBtn').addEventListener('click', async () => {
         const ok = await ensureLoggedInForWrite();
         if(!ok) return;
-        location.href = `boardcreate.html?category=${encodeURIComponent(state.category)}`;
-      });
-      document.querySelectorAll('.board-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          state.category = normalizeBoardCategory(tab.dataset.category);
-          const params = new URLSearchParams(location.search);
-          params.set('category', state.category);
-          history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
-          syncCategoryTabs();
-          renderList();
-        });
+        location.href = 'boardcreate.html?category=tips';
       });
       document.getElementById('searchToggle').addEventListener('click', () => {
         const wrap = document.getElementById('searchWrap');
@@ -627,7 +606,7 @@
       bindListControls();
       bindProfileChip();
       const params = new URLSearchParams(location.search);
-      state.category = normalizeBoardCategory(params.get('category'));
+      state.category = 'tips';
       syncCategoryTabs();
       const id = params.get('id');
       if(id){

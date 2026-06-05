@@ -46,6 +46,17 @@ class UserPreferenceUiTests(unittest.TestCase):
         self.assertIn("new BroadcastChannel('gaji_read_highlight_pref_v1')", index)
         self.assertIn("window.addEventListener('pageshow',", index)
         self.assertIn("window.addEventListener('storage',", index)
+    def test_gajigaji_hides_category_tabs_and_shows_tips_only(self):
+        board = (ROOT / 'board.html').read_text(encoding='utf-8')
+        create = (ROOT / 'boardcreate.html').read_text(encoding='utf-8')
+
+        self.assertNotIn('class="board-tabs"', board)
+        self.assertNotIn('data-category="mydeals"', board)
+        self.assertIn("state.category = 'tips';", board)
+        self.assertIn("location.href = 'boardcreate.html?category=tips';", board)
+        self.assertIn('class="field category-field"', create)
+        self.assertNotIn('<option value="mydeals">', create)
+        self.assertIn("const category = 'tips';", create)
 
 
 if __name__ == '__main__':
