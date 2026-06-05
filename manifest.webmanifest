@@ -1,6 +1,6 @@
 {
-  "name": "가지딜 - 커뮤니티 핫딜 모아보기",
-  "short_name": "가지딜",
+  "name": "가지",
+  "short_name": "가지",
   "description": "뽐딜, 퀘딜, 펨딜, 루딜과 가지딜을 한곳에서 빠르게 확인하세요.",
   "lang": "ko-KR",
   "start_url": "/index.html?source=pwa",
@@ -12,7 +12,7 @@
   "categories": ["shopping", "news", "utilities"],
   "icons": [
     {
-      "src": "/assets/favicon.svg",
+      "src": "/assets/hotdeal-android-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -35,19 +35,19 @@
       "name": "핫딜 보기",
       "short_name": "핫딜",
       "url": "/index.html",
-      "icons": [{ "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "가지딜 쓰기",
       "short_name": "글쓰기",
       "url": "/indexcreate.html",
-      "icons": [{ "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "키워드 알림",
       "short_name": "알림",
       "url": "/keywords.html",
-      "icons": [{ "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

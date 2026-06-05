@@ -8,10 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 class PwaAndFavoritePersistenceTests(unittest.TestCase):
     def test_manifest_and_service_worker_are_registered_on_core_pages(self):
         manifest = json.loads((ROOT / 'manifest.webmanifest').read_text(encoding='utf-8'))
+        self.assertEqual(manifest['name'], '가지')
+        self.assertEqual(manifest['short_name'], '가지')
         self.assertEqual(manifest['display'], 'standalone')
         self.assertEqual(manifest['scope'], '/')
         icon_srcs = [icon['src'] for icon in manifest['icons']]
-        self.assertIn('/assets/favicon.svg', icon_srcs)
+        self.assertIn('/assets/hotdeal-android-icon.svg', icon_srcs)
         self.assertIn('/assets/pwa-icon-192.png', icon_srcs)
         self.assertIn('/assets/pwa-icon-512.png', icon_srcs)
 
