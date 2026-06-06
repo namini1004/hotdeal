@@ -66,6 +66,41 @@ class DetailConversionUxTests(unittest.TestCase):
         self.assertIn('const userReady = loadMe()', html)
         self.assertIn('? renderRichText(item.desc)', html)
 
+    def test_detail_action_menu_reports_for_users_and_admin_controls_for_admin(self):
+        html = DETAIL_HTML.read_text(encoding='utf-8')
+        api = (ROOT / 'api' / 'deals.js').read_text(encoding='utf-8')
+
+        self.assertIn('class="sheet-btn edit admin-only"', html)
+        self.assertIn('class="sheet-btn delete admin-only"', html)
+        self.assertIn('id="reportBtn"', html)
+        self.assertIn('function loadAdmin()', html)
+        self.assertIn("fetch(`/api/auth?action=admin", html)
+        self.assertIn('function refreshActionMenu()', html)
+        self.assertIn("fetch(`${DEALS_API}?action=report`", html)
+        self.assertIn("document.getElementById('reportBtn').addEventListener('click', reportCurrentDeal);", html)
+        self.assertIn("showToast('관리자만 삭제할 수 있습니다.');", html)
+        self.assertIn("showToast('관리자만 편집할 수 있습니다.');", html)
+
+        self.assertIn('async function handleReportRequest(req, res)', api)
+        self.assertIn("target_type: 'deal'", api)
+        self.assertIn('admin_reports?target_type=eq.deal', api)
+        self.assertIn('if (reportCount >= 5)', api)
+        self.assertIn('deleted_at: now', api)
+
+    def test_detail_home_icon_sits_next_to_back_icon(self):
+        html = DETAIL_HTML.read_text(encoding='utf-8')
+
+        self.assertIn('.nav-actions{display:flex;gap:6px}', html)
+        self.assertIn('<div class="nav-actions">', html)
+        self.assertRegex(
+            html,
+            r'<div class="nav-actions">\s*<a class="icon-link" href="index\.html" aria-label="뒤로가기".*?</a>\s*<a class="icon-link" href="index\.html" aria-label="홈"',
+        )
+        top_actions = re.search(r'<div class="top-actions">(.*?)</div>', html, re.S)
+        self.assertIsNotNone(top_actions)
+        assert top_actions is not None
+        self.assertNotIn('aria-label="홈"', top_actions.group(1))
+
     def test_list_first_view_images_are_eager_and_rest_lazy(self):
         html = INDEX_HTML.read_text(encoding='utf-8')
 

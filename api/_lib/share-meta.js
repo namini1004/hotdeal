@@ -6,7 +6,7 @@ const SOURCE_LABELS = {
   quasar: '퀘딜',
   fmkorea: '펨딜',
   ruliweb: '루딜',
-  user: '가지딜',
+  user: '가지',
   feed: '핫딜',
 };
 
@@ -60,11 +60,11 @@ function buildShareMeta(item = {}, origin = DEFAULT_ORIGIN) {
   const base = normalizeOrigin(origin);
   const id = String(item.id || '').trim();
   const safeId = encodeId(id);
-  const cleanTitle = stripTags(item.title || '가지딜');
+  const cleanTitle = stripTags(item.title || '가지');
   const price = stripTags(item.price || '').trim();
   const category = stripTags(item.category || '핫딜');
   const sourceLabel = getSourceLabel(item.source || '');
-  const title = truncate(`[가지딜] ${cleanTitle}${price ? ` ${price}` : ''}`, 90);
+  const title = truncate(`[가지] ${cleanTitle}${price ? ` ${price}` : ''}`, 90);
   const descSource = stripTags(item.desc || '');
   const description = truncate(
     [category, sourceLabel, price].filter(Boolean).join(' · ') || descSource || '커뮤니티 핫딜과 특가 정보를 가지에서 확인해보세요.',
@@ -82,7 +82,7 @@ function buildShareMeta(item = {}, origin = DEFAULT_ORIGIN) {
 }
 
 function renderShareHtml(meta = {}) {
-  const title = escapeHtml(meta.title || '[가지딜] 핫딜 상세');
+  const title = escapeHtml(meta.title || '[가지] 핫딜 상세');
   const description = escapeHtml(meta.description || '커뮤니티 핫딜과 특가 정보를 가지에서 확인해보세요.');
   const image = escapeHtml(meta.image || FALLBACK_IMAGE);
   const canonicalUrl = escapeHtml(meta.canonicalUrl || DEFAULT_ORIGIN);
@@ -100,7 +100,7 @@ function renderShareHtml(meta = {}) {
   <meta name="description" content="${description}" />
   <link rel="canonical" href="${canonicalUrl}" />
   <meta property="og:type" content="product" />
-  <meta property="og:site_name" content="가지딜" />
+  <meta property="og:site_name" content="가지" />
   <meta property="og:title" content="${title}" />
   <meta property="og:description" content="${description}" />
   <meta property="og:image" content="${image}" />
@@ -112,7 +112,7 @@ function renderShareHtml(meta = {}) {
   <meta http-equiv="refresh" content="0;url=${detailUrl}" />
 </head>
 <body>
-  <p><a href="${detailUrl}">가지딜 상세페이지로 이동합니다.</a></p>
+  <p><a href="${detailUrl}">가지 상세페이지로 이동합니다.</a></p>
   <script>window.location.replace(${detailUrlJson});</script>
 </body>
 </html>`;

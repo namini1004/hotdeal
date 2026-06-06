@@ -58,6 +58,15 @@ class UserPreferenceUiTests(unittest.TestCase):
         self.assertNotIn('<option value="mydeals">', create)
         self.assertIn("const category = 'tips';", create)
 
+    def test_hotdeal_create_has_manual_temperature_field(self):
+        html = (ROOT / 'indexcreate.html').read_text(encoding='utf-8')
+
+        self.assertIn('id="temperature"', html)
+        self.assertIn('value="100"', html)
+        self.assertIn('const temperature = Math.max(0, Math.min(100', html)
+        self.assertIn('manualTemperature: temperature', html)
+        self.assertIn('temperature,', html)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -284,6 +284,8 @@ function normalizeFeedDbRow(row = {}) {
     dislikes: Number(row.dislikes || 0),
     views: Number(row.views || 0),
     comments: Number(row.comments || 0),
+    temperature: Number(row.manual_temperature ?? row.temperature ?? 100),
+    manualTemperature: Number(row.manual_temperature ?? row.temperature ?? 100),
     commentSignalScore: Number(row.comment_signal_score || 0),
     positiveCommentSignals: Number(row.positive_comment_signals || 0),
     negativeCommentSignals: Number(row.negative_comment_signals || 0),
@@ -345,6 +347,7 @@ async function readFeedItems() {
 function normalizeUserRow(row) {
   const img = normalizeUserImageUrl(row.img || '');
   const detailImg = normalizeUserImageUrl(row.detail_img || row.img || '');
+  const manualTemperature = Math.max(0, Math.min(100, Number(row.manual_temperature ?? row.temperature ?? 100) || 100));
   const base = {
     id: `user-${row.id}`,
     title: row.title || '제목 없음',
@@ -362,6 +365,8 @@ function normalizeUserRow(row) {
     dislikes: Number(row.dislikes || 0),
     views: Number(row.views || 0),
     comments: Number(row.comments || 0),
+    temperature: manualTemperature,
+    manualTemperature,
     commentSignalScore: Number(row.comment_signal_score || 0),
     positiveCommentSignals: Number(row.positive_comment_signals || 0),
     negativeCommentSignals: Number(row.negative_comment_signals || 0),
@@ -371,7 +376,7 @@ function normalizeUserRow(row) {
     edited: Boolean(row.edited),
     updatedAt: row.updated_at || '',
   };
-  return applyTemperatureNormalization([base])[0];
+  return { ...applyTemperatureNormalization([base])[0], temperature: manualTemperature, manualTemperature };
 }
 
 function parseUserId(rawId = '') {
@@ -427,6 +432,7 @@ function mapPayload(body = {}) {
     time: String(body.time || '방금 전').trim(),
     views: Number(body.views || 0),
     comments: Number(body.comments || 0),
+    manual_temperature: Math.max(0, Math.min(100, Number(body.manualTemperature ?? body.manual_temperature ?? body.temperature ?? 100) || 100)),
     date: String(body.date || new Date().toISOString().slice(0, 10)).trim(),
     registered_at: body.registeredAt || new Date().toISOString(),
     edited: Boolean(body.edited),

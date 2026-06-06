@@ -11,6 +11,7 @@ def run_node(script: str):
         ["node", "-e", script],
         cwd=ROOT,
         text=True,
+        encoding='utf-8',
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=True,
@@ -35,7 +36,7 @@ class ShareSeoTests(unittest.TestCase):
         """
         meta = json.loads(run_node(script))
 
-        self.assertEqual(meta['title'], '[가지딜] 에어팟 프로 초특가 229,000원')
+        self.assertEqual(meta['title'], '[가지] 에어팟 프로 초특가 229,000원')
         self.assertNotIn('<', meta['title'])
         self.assertTrue(meta['description'].startswith('디지털 · 뽐딜 · 229,000원'))
         self.assertEqual(meta['image'], 'https://example.com/a.webp')
@@ -50,7 +51,7 @@ class ShareSeoTests(unittest.TestCase):
         """
         html = run_node(script)
 
-        self.assertIn('<meta property="og:title" content="[가지딜] 테스트딜 무료" />', html)
+        self.assertIn('<meta property="og:title" content="[가지] 테스트딜 무료" />', html)
         self.assertIn('<meta property="og:type" content="product" />', html)
         self.assertIn('<meta name="twitter:card" content="summary_large_image" />', html)
         self.assertIn('<link rel="canonical" href="https://gaji.run/d/abc" />', html)

@@ -115,6 +115,12 @@
         <input id="price" inputmode="numeric" placeholder="가격을 입력해주세요. (비워두면 0원)" />
       </div>
 
+      <div class="field">
+        <label for="temperature">온도</label>
+        <input id="temperature" inputmode="numeric" min="0" max="100" placeholder="100" value="100" />
+        <div class="hint">0~100 사이 숫자로 입력해주세요. 비워두면 100도로 저장됩니다.</div>
+      </div>
+
     </form>
   </div>
 
@@ -164,6 +170,8 @@
         buyLink: item.buyLink || '',
         views: Number(item.views || 0),
         comments: Number(item.comments || 0),
+        temperature: Number(item.temperature ?? item.manualTemperature ?? 100),
+        manualTemperature: Number(item.manualTemperature ?? item.temperature ?? 100),
         date: item.date || '',
         registeredAt: item.registeredAt || '',
         source: item.source || '',
@@ -390,6 +398,7 @@
       document.getElementById('title').value = item.title || '';
       document.getElementById('desc').value = item.desc || '';
       document.getElementById('price').value = String(item.price || '').replace(/[^0-9]/g, '');
+      document.getElementById('temperature').value = String(item.manualTemperature ?? item.temperature ?? 100).replace(/[^0-9]/g, '') || '100';
       document.getElementById('dealUrl').value = item.buyLink || item.sourceLink || '';
       setActiveCategory(item.category || '디지털');
       if(item.img) setPhotoPreview(item.img);
@@ -421,6 +430,7 @@
       const title = document.getElementById('title').value.trim();
       const desc = document.getElementById('desc').value.trim();
       const price = formatPrice(document.getElementById('price').value);
+      const temperature = Math.max(0, Math.min(100, Number(String(document.getElementById('temperature').value || '100').replace(/[^0-9]/g, '')) || 100));
       const dealUrl = normalizeDealUrl(document.getElementById('dealUrl').value);
       if(!title) return;
       if(dealUrl && !isHttpUrl(dealUrl)){
@@ -468,6 +478,8 @@
           likes: editItem?.likes || 0,
           views: editItem?.views || 0,
           comments: editItem?.comments || 0,
+          temperature,
+          manualTemperature: temperature,
           category:selectedCategory,
           desc,
           img,

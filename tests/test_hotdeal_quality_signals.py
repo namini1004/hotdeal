@@ -112,3 +112,23 @@ def test_temperature_caps_at_50_when_negative_comments_or_dislikes_reach_three()
     data = json.loads(out)
     assert data['negative-comments'] <= 50
     assert data['disliked'] <= 50
+
+
+def test_user_row_keeps_manual_temperature():
+    script = f'''
+      const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});
+      const item = deals.normalizeUserRow({{
+        id: 7,
+        title: 'manual temp',
+        price: '1,000원',
+        source: 'user',
+        manual_temperature: 87,
+        views: 0,
+        comments: 0
+      }});
+      console.log(JSON.stringify({{ temperature: item.temperature, manualTemperature: item.manualTemperature }}));
+    '''
+    out = subprocess.check_output(['node', '-e', script], cwd=ROOT, text=True, encoding='utf-8')
+    data = json.loads(out)
+    assert data['temperature'] == 87
+    assert data['manualTemperature'] == 87

@@ -55,6 +55,20 @@ function cleanCommentString(value = '', max = 500) {
   return String(value || '').trim().slice(0, max);
 }
 
+function reportValue(value = '', max = 500) {
+  return String(value || '').trim().slice(0, max);
+}
+
+function missingManualTemperatureColumn(error) {
+  return /manual_temperature/i.test(String(error?.message || error || ''));
+}
+
+function withoutManualTemperature(row = {}) {
+  const next = { ...row };
+  delete next.manual_temperature;
+  return next;
+}
+
 const REPLY_MARKER_RE = /^<!--gaji-reply:([^>]+)-->\n?/;
 
 function cleanParentCommentId(value = '') {
@@ -131,6 +145,52 @@ async function handleCommentRequest(req, res) {
 
   res.setHeader('Allow', 'GET, POST, DELETE');
   return json(res, 405, { error: 'Method not allowed' });
+}
+
+async function handleReportRequest(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return json(res, 405, { error: 'Method not allowed' });
+  }
+
+  const targetId = reportValue(req.body?.targetId || req.body?.id || '', 120);
+  if (!targetId) return json(res, 400, { error: 'targetId is required' });
+
+  const actor = getActor(req, req.body || {}, readSession(req));
+  const reporter = reportValue(getActorId(actor) || req.headers['x-gaji-device-id'] || 'anonymous', 120);
+  const now = new Date().toISOString();
+  const payload = {
+    target_type: 'deal',
+    target_id: targetId,
+    reason: reportValue(req.body?.reason || 'user_report', 200),
+    memo: reportValue(req.body?.memo || '', 2000),
+    reporter,
+    status: 'pending',
+    created_at: now,
+    updated_at: now,
+  };
+
+  const rows = await supabaseRequest('admin_reports', {
+    method: 'POST',
+    body: JSON.stringify([payload]),
+  });
+
+  const reports = await supabaseRequest(
+    `admin_reports?target_type=eq.deal&target_id=eq.${encodeURIComponent(targetId)}&status=eq.pending&select=id&limit=5`
+  );
+  const reportCount = Array.isArray(reports) ? reports.length : 0;
+  let deleted = false;
+
+  if (reportCount >= 5) {
+    await supabaseRequest(`deals?id=eq.${encodeURIComponent(parseUserId(targetId))}&deleted_at=is.null`, {
+      method: 'PATCH',
+      body: JSON.stringify({ deleted_at: now, updated_at: now }),
+      headers: { Prefer: 'return=minimal' },
+    });
+    deleted = true;
+  }
+
+  return json(res, 201, { ok: true, reportCount, deleted, item: rows?.[0] || payload });
 }
 
 async function handleFavoriteRequest(req, res) {
@@ -211,12 +271,21 @@ async function handleItemRequest(req, res, id) {
   if (req.method === 'PATCH') {
     const userId = parseUserId(id);
     const payload = { ...mapPayload(req.body || {}), edited: true, updated_at: new Date().toISOString() };
-    const rows = await supabaseRequest(`deals?id=eq.${encodeURIComponent(userId)}&deleted_at=is.null`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    });
+    let rows;
+    try {
+      rows = await supabaseRequest(`deals?id=eq.${encodeURIComponent(userId)}&deleted_at=is.null`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      if (!missingManualTemperatureColumn(error)) throw error;
+      rows = await supabaseRequest(`deals?id=eq.${encodeURIComponent(userId)}&deleted_at=is.null`, {
+        method: 'PATCH',
+        body: JSON.stringify(withoutManualTemperature(payload)),
+      });
+    }
     if (!rows?.length) return json(res, 404, { error: 'not found' });
-    return json(res, 200, { item: normalizeUserRow(rows[0]) });
+    return json(res, 200, { item: { ...normalizeUserRow(rows[0]), temperature: payload.manual_temperature, manualTemperature: payload.manual_temperature } });
   }
 
   if (req.method === 'DELETE') {
@@ -287,6 +356,7 @@ module.exports = async (req, res) => {
       const action = url.searchParams.get('action') || req.query?.action || '';
       if (action === 'favorite') return handleFavoriteRequest(req, res);
       if (action === 'comments') return handleCommentRequest(req, res);
+      if (action === 'report') return handleReportRequest(req, res);
 
       const actor = getActor(req, req.body || {}, readSession(req));
       if (!actor) return json(res, 401, { error: 'identity required' });
@@ -295,20 +365,29 @@ module.exports = async (req, res) => {
       if (!payload.title) return json(res, 400, { error: 'title is required' });
       const now = new Date().toISOString();
       const insertRow = { ...payload, source: 'user', registered_at: now, created_at: now, updated_at: now };
-      const rows = await supabaseRequest('deals', {
-        method: 'POST',
-        body: JSON.stringify([insertRow]),
-      });
+      let rows;
+      try {
+        rows = await supabaseRequest('deals', {
+          method: 'POST',
+          body: JSON.stringify([insertRow]),
+        });
+      } catch (error) {
+        if (!missingManualTemperatureColumn(error)) throw error;
+        rows = await supabaseRequest('deals', {
+          method: 'POST',
+          body: JSON.stringify([withoutManualTemperature(insertRow)]),
+        });
+      }
       const createdRow = rows?.[0] || insertRow;
 
       try {
         await ingestHandler.processRows([createdRow]);
       } catch (pushError) {
         // 작성 자체는 성공 처리하고, 푸시 실패 원인은 응답에 포함
-        return json(res, 201, { item: normalizeUserRow(createdRow), pushWarning: String(pushError?.message || 'push failed') });
+        return json(res, 201, { item: { ...normalizeUserRow(createdRow), temperature: payload.manual_temperature, manualTemperature: payload.manual_temperature }, pushWarning: String(pushError?.message || 'push failed') });
       }
 
-      return json(res, 201, { item: normalizeUserRow(createdRow) });
+      return json(res, 201, { item: { ...normalizeUserRow(createdRow), temperature: payload.manual_temperature, manualTemperature: payload.manual_temperature } });
     }
 
     res.setHeader('Allow', 'GET, POST, PATCH, DELETE');

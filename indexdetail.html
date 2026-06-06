@@ -8,13 +8,13 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="theme-color" content="#7c3aed" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="가지딜" />
-  <title>가지딜 - 핫딜 상세</title>
+  <meta name="apple-mobile-web-app-title" content="가지" />
+  <title>가지 - 핫딜 상세</title>
   <meta name="description" content="커뮤니티 핫딜과 특가 정보를 가지에서 빠르게 확인하세요." />
   <meta name="robots" content="index,follow" />
-  <meta property="og:site_name" content="가지딜" />
+  <meta property="og:site_name" content="가지" />
   <meta property="og:type" content="product" />
-  <meta property="og:title" content="가지딜 - 핫딜 상세" />
+  <meta property="og:title" content="가지 - 핫딜 상세" />
   <meta property="og:description" content="커뮤니티 핫딜과 특가 정보를 가지에서 빠르게 확인하세요." />
   <meta property="og:image" content="https://gaji.run/assets/gaji-eggplant.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -31,6 +31,7 @@
     .hero-fav-badge{position:absolute;right:14px;bottom:14px;width:30px;height:30px;border-radius:999px;background:rgba(255,255,255,.92);display:none;place-items:center;color:#ef4444;font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
     .topbtns{position:absolute;left:12px;right:12px;top:12px;display:flex;align-items:center;justify-content:space-between;color:#fff}
     .icon-link,.icon-btn{width:36px;height:36px;display:grid;place-items:center;border:none;border-radius:999px;background:rgba(17,24,39,.42);color:#fff;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer}
+    .nav-actions{display:flex;gap:6px}
     .top-actions{display:flex;gap:6px}
 
     .content{padding:18px 16px;border-top:1px solid var(--line);background:#fff}
@@ -120,9 +121,11 @@
       <img id="img" alt="상품 이미지" decoding="async" fetchpriority="high">
       <div class="hero-fav-badge" id="heroFavBadge" aria-hidden="true">♥</div>
       <div class="topbtns">
-        <a class="icon-link" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
-        <div class="top-actions">
+        <div class="nav-actions">
+          <a class="icon-link" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
           <a class="icon-link" href="index.html" aria-label="홈"><span class="material-symbols-outlined" aria-hidden="true">home</span></a>
+        </div>
+        <div class="top-actions">
           <button class="icon-btn" id="shareBtn" type="button" aria-label="공유"><span class="material-symbols-outlined" aria-hidden="true">share</span></button>
           <button class="icon-btn" id="moreBtn" type="button" aria-label="더보기"><span class="material-symbols-outlined" aria-hidden="true">more_vert</span></button>
         </div>
@@ -165,8 +168,9 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="sheet-backdrop" id="sheetBackdrop"></div>
   <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-label="게시물 메뉴">
-    <button class="sheet-btn edit" id="editBtn" type="button">편집하기</button>
-    <button class="sheet-btn delete" id="deleteBtn" type="button">삭제하기</button>
+    <button class="sheet-btn edit admin-only" id="editBtn" type="button" style="display:none">편집하기</button>
+    <button class="sheet-btn delete admin-only" id="deleteBtn" type="button" style="display:none">삭제하기</button>
+    <button class="sheet-btn delete user-only" id="reportBtn" type="button">신고하기</button>
     <button class="sheet-btn" id="closeSheetBtn" type="button">닫기</button>
   </div>
 
@@ -184,6 +188,7 @@
     const DEALS_API = '/api/deals';
     let currentItem = null;
     let currentUser = null;
+    let currentAdmin = null;
     let currentComments = [];
 
     function normalizeItems(items){
@@ -480,7 +485,7 @@
       const shouldLoadComments = options.loadComments !== false;
       const shouldSaveCache = options.saveCache !== false;
       if(item?.id && shouldSaveCache) saveCachedDetail(item);
-      document.title = item?.title ? `${item.title} - 가지딜` : '가지딜 - 핫딜 상세';
+      document.title = item?.title ? `${item.title} - 가지` : '가지 - 핫딜 상세';
       document.getElementById('title').textContent = item.title;
       document.getElementById('price').textContent = item.price;
       document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.relativeTime || item.time || '날짜 없음'}`;
@@ -876,6 +881,29 @@
       }
     }
 
+    async function loadAdmin(){
+      try{
+        const res = await fetch(`/api/auth?action=admin&_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
+        if(!res.ok) return null;
+        const data = await res.json();
+        currentAdmin = data.admin || null;
+        return currentAdmin;
+      }catch(_){
+        currentAdmin = null;
+        return null;
+      }
+    }
+
+    function refreshActionMenu(){
+      const isAdmin = Boolean(currentAdmin);
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = isAdmin ? 'block' : 'none';
+      });
+      document.querySelectorAll('.user-only').forEach(el => {
+        el.style.display = isAdmin ? 'none' : 'block';
+      });
+    }
+
     function showToast(message){
       const toast = document.getElementById('toast');
       toast.textContent = message;
@@ -896,6 +924,11 @@
 
     async function deleteCurrentDeal(){
       if(!currentItem) return;
+      if(!currentAdmin){
+        showToast('관리자만 삭제할 수 있습니다.');
+        closeSheet();
+        return;
+      }
       const key = getDealKey(currentItem);
       if(String(currentItem.id || '').startsWith('user-')){
         try{
@@ -919,8 +952,48 @@
 
     function editCurrentDeal(){
       if(!currentItem) return;
+      if(!currentAdmin){
+        showToast('관리자만 편집할 수 있습니다.');
+        closeSheet();
+        return;
+      }
       closeSheet();
       location.href = `indexcreate.html?editId=${encodeURIComponent(currentItem.id)}`;
+    }
+
+    async function reportCurrentDeal(){
+      if(!currentItem) return;
+      const reportBtn = document.getElementById('reportBtn');
+      reportBtn.disabled = true;
+      try{
+        const res = await fetch(`${DEALS_API}?action=report`, {
+          method:'POST',
+          credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            targetId:String(currentItem.id || ''),
+            reason:'user_report',
+            memo:currentItem.title || ''
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok) throw new Error(data.error || 'report failed');
+        closeSheet();
+        if(data.deleted){
+          saveDeletedKey(getDealKey(currentItem));
+          removeDeletedFromCache(getDealKey(currentItem));
+          showToast('신고가 접수되어 글이 삭제되었습니다.');
+          setTimeout(() => {
+            location.href = 'index.html';
+          }, 600);
+          return;
+        }
+        showToast('신고가 접수되었습니다.');
+      }catch(_){
+        showToast('신고 접수에 실패했습니다.');
+      }finally{
+        reportBtn.disabled = false;
+      }
     }
 
     async function copyShareUrl(url){
@@ -946,9 +1019,9 @@
     }
 
     function getShareText(){
-      if(!currentItem) return '가지딜에서 핫딜을 확인해보세요.';
+      if(!currentItem) return '가지에서 핫딜을 확인해보세요.';
       const price = currentItem.price && currentItem.price !== '-' ? ` ${currentItem.price}` : '';
-      return `[가지딜] ${currentItem.title}${price}`;
+      return `[가지] ${currentItem.title}${price}`;
     }
 
     async function shareCurrentDeal(){
@@ -1004,6 +1077,9 @@
         .then(() => loadRemoteFavorites())
         .then(() => refreshFavoriteUI())
         .catch(() => refreshFavoriteUI());
+      loadAdmin()
+        .then(() => refreshActionMenu())
+        .catch(() => refreshActionMenu());
 
       if(!id){
         if(!item){
@@ -1052,6 +1128,7 @@
     document.getElementById('closeSheetBtn').addEventListener('click', closeSheet);
     document.getElementById('deleteBtn').addEventListener('click', deleteCurrentDeal);
     document.getElementById('editBtn').addEventListener('click', editCurrentDeal);
+    document.getElementById('reportBtn').addEventListener('click', reportCurrentDeal);
     document.getElementById('favToggleBtn').addEventListener('click', async () => {
       if(!currentItem) return;
       if(!currentUser){
