@@ -490,7 +490,9 @@
       if(shouldRenderDesc){
         descEl.innerHTML = renderRichText(item.desc);
       }else if(!descEl.innerHTML){
-        descEl.innerHTML = '<p class="detail-loading">상세 내용을 불러오는 중입니다.</p>';
+        descEl.innerHTML = item.desc
+          ? renderRichText(item.desc)
+          : '<p class="detail-loading">상세 내용을 불러오는 중입니다.</p>';
       }
 
       const sourceBottom = document.getElementById('sourceBottom');
@@ -975,8 +977,6 @@
 
     async function init(){
       bindCommentForm();
-      await loadMe();
-      await loadRemoteFavorites();
       const id = new URLSearchParams(location.search).get('id');
       const cachedItems = getCachedItems();
       const bootstrapItem = readDetailBootstrap(id);
@@ -1000,16 +1000,23 @@
         renderItem(fallback, { loadComments: false });
       }
 
+      const userReady = loadMe()
+        .then(() => loadRemoteFavorites())
+        .then(() => refreshFavoriteUI())
+        .catch(() => refreshFavoriteUI());
+
       if(!id){
         if(!item){
           const first = cachedItems[0] || {title:'상품 없음',price:'-',desc:'등록된 상품이 없습니다.',img:''};
           currentItem = first;
           renderItem(first);
         }
+        await userReady;
         return;
       }
 
       if(cachedDetail){
+        await userReady;
         return;
       }
 
@@ -1036,6 +1043,7 @@
         }
       }catch(_){
       }
+      await userReady;
     }
 
     document.getElementById('shareBtn').addEventListener('click', shareCurrentDeal);

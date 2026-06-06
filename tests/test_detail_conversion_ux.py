@@ -59,6 +59,12 @@ class DetailConversionUxTests(unittest.TestCase):
         self.assertIn('if(cachedDetail){', html)
         self.assertNotIn('if(item){\n        return;\n      }\n\n      try{', html)
         self.assertIn('renderItem(latest, { loadComments: false, renderDesc: true });', html)
+        init_before_id = re.search(r'async function init\(\)\{(.*?)const id = new URLSearchParams', html, re.S)
+        self.assertIsNotNone(init_before_id)
+        assert init_before_id is not None
+        self.assertNotIn('await loadMe();', init_before_id.group(1))
+        self.assertIn('const userReady = loadMe()', html)
+        self.assertIn('? renderRichText(item.desc)', html)
 
     def test_list_first_view_images_are_eager_and_rest_lazy(self):
         html = INDEX_HTML.read_text(encoding='utf-8')
