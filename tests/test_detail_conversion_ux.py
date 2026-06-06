@@ -40,6 +40,26 @@ class DetailConversionUxTests(unittest.TestCase):
         self.assertNotIn('function saveLocalComments', html)
         self.assertNotIn('localStorage.setItem(commentStorageKey', html)
 
+    def test_list_click_passes_bootstrap_item_to_detail_page(self):
+        html = INDEX_HTML.read_text(encoding='utf-8')
+
+        self.assertIn("const DETAIL_BOOTSTRAP_KEY = 'hotdeal_detail_bootstrap_v1';", html)
+        self.assertIn('function saveDetailBootstrapItem(item)', html)
+        self.assertIn('sessionStorage.setItem(DETAIL_BOOTSTRAP_KEY, JSON.stringify({', html)
+        self.assertIn('saveDetailBootstrapItem(item);', html)
+
+    def test_detail_renders_bootstrap_before_loading_full_detail(self):
+        html = DETAIL_HTML.read_text(encoding='utf-8')
+
+        self.assertIn("const DETAIL_BOOTSTRAP_KEY = 'hotdeal_detail_bootstrap_v1';", html)
+        self.assertIn('function readDetailBootstrap(id)', html)
+        self.assertIn('let item = cachedDetail || bootstrapItem || cachedItems.find', html)
+        self.assertIn('renderItem(item, { loadComments: false, renderDesc: !isBootstrapOnly, saveCache: !isBootstrapOnly });', html)
+        self.assertIn('requestAnimationFrame(() => loadComments(item));', html)
+        self.assertIn('if(cachedDetail){', html)
+        self.assertNotIn('if(item){\n        return;\n      }\n\n      try{', html)
+        self.assertIn('renderItem(latest, { loadComments: false, renderDesc: true });', html)
+
     def test_list_first_view_images_are_eager_and_rest_lazy(self):
         html = INDEX_HTML.read_text(encoding='utf-8')
 

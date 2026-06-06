@@ -38,6 +38,7 @@
     .price{margin-top:8px;font-size:24px;font-weight:700;letter-spacing:-.02em}
     .meta{font-size:12px;color:var(--muted);margin:8px 0 14px}
     .desc{font-size:15px;line-height:1.45;letter-spacing:-.005em;white-space:normal}
+    .detail-loading{color:var(--muted)}
     .desc p{margin:.22em 0}
     .desc h1{margin:.7em 0 .34em;font-size:1.16em;line-height:1.35;font-weight:900}
     .desc h2{margin:.62em 0 .3em;font-size:1.06em;line-height:1.35;font-weight:900}
@@ -179,6 +180,7 @@
     const READ_KEY = 'hotdeal_read_keys_v1';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const DETAIL_CACHE_PREFIX = 'gaji_deal_detail_v1:';
+    const DETAIL_BOOTSTRAP_KEY = 'hotdeal_detail_bootstrap_v1';
     const DEALS_API = '/api/deals';
     let currentItem = null;
     let currentUser = null;
@@ -439,6 +441,21 @@
       }
     }
 
+    function readDetailBootstrap(id){
+      try{
+        const raw = sessionStorage.getItem(DETAIL_BOOTSTRAP_KEY);
+        if(!raw) return null;
+        const payload = JSON.parse(raw);
+        const item = payload?.item;
+        const savedAt = Number(payload?.savedAt || 0);
+        if(!item || !id || String(item.id) !== String(id)) return null;
+        if(savedAt && Date.now() - savedAt > 5 * 60 * 1000) return null;
+        return normalizeItems([item])[0] || null;
+      }catch(_){
+        return null;
+      }
+    }
+
     function saveCachedDetail(item){
       if(!item?.id) return;
       localStorage.setItem(detailCacheKey(item.id), JSON.stringify(item));
@@ -458,15 +475,23 @@
       return Boolean(item.sourceLink && item.buyLink === item.sourceLink);
     }
 
-    function renderItem(item){
-      if(item?.id) saveCachedDetail(item);
+    function renderItem(item, options = {}){
+      const shouldRenderDesc = options.renderDesc !== false;
+      const shouldLoadComments = options.loadComments !== false;
+      const shouldSaveCache = options.saveCache !== false;
+      if(item?.id && shouldSaveCache) saveCachedDetail(item);
       document.title = item?.title ? `${item.title} - 가지딜` : '가지딜 - 핫딜 상세';
       document.getElementById('title').textContent = item.title;
       document.getElementById('price').textContent = item.price;
       document.getElementById('meta').textContent = `${item.category || '핫딜'} · ${item.relativeTime || item.time || '날짜 없음'}`;
       const imgEl = document.getElementById('img');
       applyProgressiveDetailImage(imgEl, item);
-      document.getElementById('desc').innerHTML = renderRichText(item.desc);
+      const descEl = document.getElementById('desc');
+      if(shouldRenderDesc){
+        descEl.innerHTML = renderRichText(item.desc);
+      }else if(!descEl.innerHTML){
+        descEl.innerHTML = '<p class="detail-loading">상세 내용을 불러오는 중입니다.</p>';
+      }
 
       const sourceBottom = document.getElementById('sourceBottom');
       const buyBottom = document.getElementById('buyBottom');
@@ -479,7 +504,7 @@
       sourceBottom.href = '#';
       buyBottom.href = '#';
 
-      loadComments(item);
+      if(shouldLoadComments) loadComments(item);
 
       if(item.sourceLink || item.buyLink){
         const singleSourceCta = shouldUseSingleSourceCta(item);
@@ -954,7 +979,10 @@
       await loadRemoteFavorites();
       const id = new URLSearchParams(location.search).get('id');
       const cachedItems = getCachedItems();
-      let item = readCachedDetail(id) || cachedItems.find(v => String(v.id) === String(id)) || null;
+      const bootstrapItem = readDetailBootstrap(id);
+      const cachedDetail = readCachedDetail(id);
+      let item = cachedDetail || bootstrapItem || cachedItems.find(v => String(v.id) === String(id)) || null;
+      const isBootstrapOnly = Boolean(!cachedDetail && bootstrapItem && item === bootstrapItem);
 
       if(item && isDeleted(item)){
         location.replace('index.html');
@@ -964,11 +992,12 @@
       if(item){
         currentItem = item;
         markAsRead(item);
-        renderItem(item);
+        renderItem(item, { loadComments: false, renderDesc: !isBootstrapOnly, saveCache: !isBootstrapOnly });
+        requestAnimationFrame(() => loadComments(item));
         refreshFavoriteUI();
       }else{
         const fallback = {title:'로딩 중...',price:'-',desc:'상품 정보를 불러오는 중입니다.',img:'',category:'핫딜',time:''};
-        renderItem(fallback);
+        renderItem(fallback, { loadComments: false });
       }
 
       if(!id){
@@ -980,7 +1009,7 @@
         return;
       }
 
-      if(item){
+      if(cachedDetail){
         return;
       }
 
@@ -989,8 +1018,11 @@
         if(latest && !isDeleted(latest)){
           currentItem = latest;
           markAsRead(latest);
-          if(!sameRenderableItem(item, latest)){
-            renderItem(latest);
+          if(!sameRenderableItem(item, latest) || isBootstrapOnly){
+            renderItem(latest, { loadComments: false, renderDesc: true });
+          }
+          if(!item){
+            loadComments(latest);
           }
           refreshFavoriteUI();
           const existingIdx = cachedItems.findIndex(v => String(v.id) === String(latest.id));

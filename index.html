@@ -311,6 +311,7 @@
     const LAST_SORT_KEY = 'hotdeal_sort_mode_v1';
     const SCROLL_Y_KEY = 'hotdeal_list_scroll_y_v1';
     const SCROLL_RESTORE_PENDING_KEY = 'hotdeal_list_scroll_restore_pending_v1';
+    const DETAIL_BOOTSTRAP_KEY = 'hotdeal_detail_bootstrap_v1';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const VIEW_MODE_KEY = 'hotdeal_web_view_mode_v1';
     const LAST_FEED_SYNC_KEY = 'hotdeal_last_feed_sync_at_v1';
@@ -870,6 +871,16 @@
       window.addEventListener('pageshow', () => render());
     }
 
+    function saveDetailBootstrapItem(item){
+      if(!item) return;
+      try{
+        sessionStorage.setItem(DETAIL_BOOTSTRAP_KEY, JSON.stringify({
+          savedAt: Date.now(),
+          item
+        }));
+      }catch(_){}
+    }
+
     function bindReadTracking(){
       const list = document.getElementById('list');
       list.addEventListener('click', (e) => {
@@ -879,7 +890,10 @@
         sessionStorage.setItem(SCROLL_RESTORE_PENDING_KEY, '1');
         const idParam = new URL(a.href, location.href).searchParams.get('id');
         const item = state.allItems.find(v => String(v.id) === String(idParam));
-        if(item) markAsRead(item);
+        if(item){
+          markAsRead(item);
+          saveDetailBootstrapItem(item);
+        }
       });
     }
 
