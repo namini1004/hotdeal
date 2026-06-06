@@ -46,6 +46,32 @@ class UserPreferenceUiTests(unittest.TestCase):
         self.assertIn("new BroadcastChannel('gaji_read_highlight_pref_v1')", index)
         self.assertIn("window.addEventListener('pageshow',", index)
         self.assertIn("window.addEventListener('storage',", index)
+
+    def test_home_settings_sheet_replaces_profile_chip_and_exposes_my_gaji_menu(self):
+        html = (ROOT / 'index.html').read_text(encoding='utf-8')
+
+        self.assertNotIn('id="profileChip"', html)
+        self.assertIn('id="settingsToggle"', html)
+        self.assertIn('id="settingsSheet"', html)
+        self.assertIn('href="nickname.html"', html)
+        self.assertIn('href="keywords.html"', html)
+        self.assertIn('href="favorites.html"', html)
+        self.assertIn('id="settingsReadToggle"', html)
+        self.assertIn('id="settingsDarkToggle"', html)
+        self.assertIn('id="settingsAdminLink"', html)
+        self.assertIn('function bindSettingsSheet()', html)
+        self.assertIn("window.GajiTheme?.apply?.(event.target.checked ? 'dark' : 'light');", html)
+
+    def test_theme_script_is_loaded_on_html_pages(self):
+        for path in ROOT.glob('*.html'):
+            html = path.read_text(encoding='utf-8')
+            self.assertIn('assets/theme.js', html, path.name)
+
+        theme = (ROOT / 'assets' / 'theme.js').read_text(encoding='utf-8')
+        self.assertIn("const KEY = 'gaji_theme_mode_v1';", theme)
+        self.assertIn('window.GajiTheme', theme)
+        self.assertIn('html[data-theme="dark"]', theme)
+
     def test_gajigaji_hides_category_tabs_and_shows_tips_only(self):
         board = (ROOT / 'board.html').read_text(encoding='utf-8')
         create = (ROOT / 'boardcreate.html').read_text(encoding='utf-8')
@@ -63,9 +89,18 @@ class UserPreferenceUiTests(unittest.TestCase):
 
         self.assertIn('id="temperature"', html)
         self.assertIn('value="100"', html)
+        self.assertIn('0~100 사이 온도를 적어주세요.', html)
         self.assertIn('const temperature = Math.max(0, Math.min(100', html)
         self.assertIn('manualTemperature: temperature', html)
         self.assertIn('temperature,', html)
+
+    def test_hotdeal_create_has_short_desc_hint_and_misc_category(self):
+        html = (ROOT / 'indexcreate.html').read_text(encoding='utf-8')
+
+        self.assertIn('허위 과장 정보는 제한될 수 있습니다.<br>마크다운 문법을 지원합니다.', html)
+        self.assertIn('data-cat="기타">기타</button>', html)
+        self.assertNotIn('줄바꿈/링크/마크다운 지원', html)
+        self.assertNotIn('/n 은 줄바꿈으로 처리되지 않으며', html)
 
 
 if __name__ == '__main__':

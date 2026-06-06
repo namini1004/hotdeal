@@ -65,6 +65,7 @@
       .submit{height:54px}
     }
   </style>
+  <script src="assets/theme.js"></script>
 </head>
 <body>
   <div class="app">
@@ -97,7 +98,7 @@
       <div class="field">
         <label for="desc">자세한 설명</label>
         <textarea id="desc" placeholder="상품 상태, 구성품, 거래 조건 등을 자세히 적어주세요."></textarea>
-        <div class="hint">서로 믿고 거래할 수 있도록 자세히 적어주세요.<br>허위 과장 정보는 제한될 수 있습니다.<br>줄바꿈/링크/마크다운 지원: #/##/### 제목, **굵게**, *기울임*, [텍스트](https://...), 표(|---|)<br>/n 은 줄바꿈으로 처리되지 않으며 Enter(또는 \n)만 줄바꿈으로 적용됩니다.</div>
+        <div class="hint">허위 과장 정보는 제한될 수 있습니다.<br>마크다운 문법을 지원합니다.</div>
       </div>
 
       <div class="field">
@@ -107,6 +108,7 @@
           <button type="button" class="chip" data-cat="생활가전">생활가전</button>
           <button type="button" class="chip" data-cat="주방">주방</button>
           <button type="button" class="chip" data-cat="패션">패션</button>
+          <button type="button" class="chip" data-cat="기타">기타</button>
         </div>
       </div>
 
@@ -118,7 +120,7 @@
       <div class="field">
         <label for="temperature">온도</label>
         <input id="temperature" inputmode="numeric" min="0" max="100" placeholder="100" value="100" />
-        <div class="hint">0~100 사이 숫자로 입력해주세요. 비워두면 100도로 저장됩니다.</div>
+        <div class="hint">0~100 사이 온도를 적어주세요.</div>
       </div>
 
     </form>
