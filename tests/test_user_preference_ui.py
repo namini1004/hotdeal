@@ -62,19 +62,6 @@ class UserPreferenceUiTests(unittest.TestCase):
         self.assertIn('function bindSettingsSheet()', html)
         self.assertIn("window.GajiTheme?.apply?.(event.target.checked ? 'dark' : 'light');", html)
 
-    def test_home_sort_control_is_header_icon_not_popup_sheet(self):
-        html = (ROOT / 'index.html').read_text(encoding='utf-8')
-        actions_start = html.index('<div class="top-actions">')
-        actions_end = html.index('</div>', actions_start)
-        actions = html[actions_start:actions_end]
-
-        self.assertIn('id="sortToggle"', actions)
-        self.assertLess(actions.index('id="sortToggle"'), actions.index('id="searchToggle"'))
-        self.assertNotIn('id="sortSheet"', html)
-        self.assertNotIn('id="sortSheetBackdrop"', html)
-        self.assertNotIn('function openSortSheet()', html)
-        self.assertIn('function toggleSortMode()', html)
-
     def test_theme_script_is_loaded_on_html_pages(self):
         for path in ROOT.glob('*.html'):
             html = path.read_text(encoding='utf-8')

@@ -132,6 +132,10 @@
     .fab.is-compact{width:56px;min-width:56px;height:56px;padding:0;border-radius:50%;box-shadow:0 10px 24px rgba(var(--brand-rgb),.38);display:flex;align-items:center;justify-content:center;gap:0}
     .fab.is-compact .fab-plus{font-size:30px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;margin:0;transform:none}
     .fab.is-compact .fab-text{display:none}
+    .sort-sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:40}
+    .sort-sheet-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
+    .sort-sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(calc(100% + 48px));padding:10px 14px calc(env(safe-area-inset-bottom) + 14px);background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease,visibility 0s linear .22s;z-index:41}
+    .sort-sheet.show{visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);transition:transform .22s ease}
     .temp-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:50}
     .temp-modal-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
     .temp-modal{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(calc(100% + 48px));padding:12px 26px calc(env(safe-area-inset-bottom) + 22px);background:#fff;border-radius:28px 28px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease,visibility 0s linear .22s;z-index:51;text-align:center}
@@ -267,6 +271,12 @@
       <button class="pwa-install-btn" id="pwaInstallBtn" type="button">설치</button>
       <button class="pwa-install-close" id="pwaInstallClose" type="button" aria-label="설치 안내 닫기">×</button>
     </div>
+  </div>
+  <div class="sort-sheet-backdrop" id="sortSheetBackdrop"></div>
+  <div class="sort-sheet" id="sortSheet" role="dialog" aria-modal="true" aria-label="정렬 선택">
+    <button class="sheet-btn" id="sortLatestBtn" type="button">최신순</button>
+    <button class="sheet-btn" id="sortTempBtn" type="button">가지온도순</button>
+    <button class="sheet-btn" id="sortCloseBtn" type="button">닫기</button>
   </div>
   <div class="settings-sheet-backdrop" id="settingsSheetBackdrop"></div>
   <div class="settings-sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-label="설정 메뉴">
@@ -869,27 +879,42 @@
 
     function renderSortIcon(){
       const wrap = document.getElementById('sortIconWrap');
-      const button = document.getElementById('sortToggle');
       const icon = state.sortMode === 'temperature'
         ? '<svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V5a2 2 0 1 0-4 0v9.76a4 4 0 1 0 4 0Z"></path><path d="M12 7v8"></path></svg>'
         : '<svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>';
       wrap.innerHTML = icon;
-      if(button){
-        const label = state.sortMode === 'temperature' ? '가지온도순 정렬' : '최신순 정렬';
-        button.setAttribute('aria-label', label);
-        button.setAttribute('title', label);
-      }
     }
 
-    function toggleSortMode(){
-      state.sortMode = state.sortMode === 'temperature' ? 'latest' : 'temperature';
-      persistLastSort();
-      renderSortIcon();
-      render();
+    function openSortSheet(){
+      document.getElementById('sortSheetBackdrop').classList.add('show');
+      document.getElementById('sortSheet').classList.add('show');
+      document.getElementById('sortLatestBtn').classList.toggle('active', state.sortMode === 'latest');
+      document.getElementById('sortTempBtn').classList.toggle('active', state.sortMode === 'temperature');
+    }
+
+    function closeSortSheet(){
+      document.getElementById('sortSheetBackdrop').classList.remove('show');
+      document.getElementById('sortSheet').classList.remove('show');
     }
 
     function bindSortSheet(){
-      document.getElementById('sortToggle')?.addEventListener('click', toggleSortMode);
+      document.getElementById('sortToggle').addEventListener('click', openSortSheet);
+      document.getElementById('sortSheetBackdrop').addEventListener('click', closeSortSheet);
+      document.getElementById('sortCloseBtn').addEventListener('click', closeSortSheet);
+      document.getElementById('sortLatestBtn').addEventListener('click', () => {
+        state.sortMode = 'latest';
+        persistLastSort();
+        renderSortIcon();
+        render();
+        closeSortSheet();
+      });
+      document.getElementById('sortTempBtn').addEventListener('click', () => {
+        state.sortMode = 'temperature';
+        persistLastSort();
+        renderSortIcon();
+        render();
+        closeSortSheet();
+      });
       renderSortIcon();
     }
 
