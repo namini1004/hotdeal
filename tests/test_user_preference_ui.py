@@ -47,20 +47,30 @@ class UserPreferenceUiTests(unittest.TestCase):
         self.assertIn("window.addEventListener('pageshow',", index)
         self.assertIn("window.addEventListener('storage',", index)
 
-    def test_home_settings_sheet_replaces_profile_chip_and_exposes_my_gaji_menu(self):
+    def test_home_settings_sheet_is_compact_menu_without_sort_row(self):
         html = (ROOT / 'index.html').read_text(encoding='utf-8')
 
         self.assertNotIn('id="profileChip"', html)
         self.assertIn('id="settingsToggle"', html)
         self.assertIn('id="settingsSheet"', html)
-        self.assertIn('href="nickname.html"', html)
-        self.assertIn('href="keywords.html"', html)
-        self.assertIn('href="favorites.html"', html)
+        self.assertNotIn('id="settingsSortButton"', html)
         self.assertIn('id="settingsReadToggle"', html)
         self.assertIn('id="settingsDarkToggle"', html)
-        self.assertIn('id="settingsAdminLink"', html)
+        self.assertIn('id="settingsPageLink"', html)
         self.assertIn('function bindSettingsSheet()', html)
         self.assertIn("window.GajiTheme?.apply?.(event.target.checked ? 'dark' : 'light');", html)
+
+    def test_home_sort_control_is_header_icon_left_of_search(self):
+        html = (ROOT / 'index.html').read_text(encoding='utf-8')
+        actions_start = html.index('<div class="top-actions">')
+        actions_end = html.index('</div>', actions_start)
+        actions = html[actions_start:actions_end]
+
+        self.assertIn('id="sortToggle"', actions)
+        self.assertIn('id="sortIconWrap"', actions)
+        self.assertLess(actions.index('id="sortToggle"'), actions.index('id="searchToggle"'))
+        self.assertNotIn('#sortToggle{display:none}', html)
+        self.assertIn('function getSortIconSvg', html)
 
     def test_theme_script_is_loaded_on_html_pages(self):
         for path in ROOT.glob('*.html'):
@@ -89,7 +99,7 @@ class UserPreferenceUiTests(unittest.TestCase):
 
         self.assertIn('id="temperature"', html)
         self.assertIn('value="100"', html)
-        self.assertIn('0~100 사이 온도를 적어주세요.', html)
+        self.assertIn('id="temperatureRange"', html)
         self.assertIn('const temperature = Math.max(0, Math.min(100', html)
         self.assertIn('manualTemperature: temperature', html)
         self.assertIn('temperature,', html)

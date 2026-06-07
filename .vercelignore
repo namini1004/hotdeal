@@ -4,3 +4,9 @@
 node_modules
 firebase/functions/node_modules
 firebase/functions/lib
+gaji_github_token.txt
+pat.txt
+supabase_jwt.txt
+supabase_service_role_key.txt
+supabase_url.txt
+supabase_usagetoken.txt
