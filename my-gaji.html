@@ -12,17 +12,17 @@
   <title>내 가지</title>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
-    :root{--bg:#fff;--page:#f7f4ff;--ink:#171325;--muted:#747c8b;--line:#eee9f8;--brand:#7c3aed;--brand-deep:#4c1d95;--brand-soft:#f3edff;--card:#fff;--shadow:0 18px 50px rgba(42,25,82,.09)}
+    :root{--bg:#fff;--page:#fff;--ink:#171325;--muted:#747c8b;--line:#eee9f8;--brand:#7c3aed;--brand-deep:#4c1d95;--brand-soft:#f3edff;--card:#fff;--shadow:0 18px 50px rgba(42,25,82,.09)}
     *{box-sizing:border-box}
-    body{margin:0;background:var(--page);color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+    body{margin:0;background:#fff;color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
     a{color:inherit}
-    .shell{width:min(1120px,100%);min-height:100vh;margin:0 auto;padding:22px 18px 56px}
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+    .shell{width:min(720px,100%);min-height:100vh;margin:0 auto;padding:0 16px 48px;background:#fff}
+    .topbar{height:56px;position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 -16px 14px;padding:0 16px 0 0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px)}
     .brandmark{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:950;letter-spacing:-.04em;font-size:24px}
     .brand-icon{width:38px;height:38px;border-radius:14px;background:linear-gradient(145deg,#8b5cf6,#5b21b6);display:grid;place-items:center;box-shadow:0 12px 28px rgba(124,58,237,.28)}
     .brand-icon img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.16))}
     .brand-word{color:var(--brand);letter-spacing:-.08em}.title-rest{color:var(--ink);letter-spacing:-.045em;margin-left:1px}
-    .top-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+    .top-actions{display:none}
     .desktop-nav{display:none;align-items:center;gap:8px;padding:6px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.76);box-shadow:0 10px 30px rgba(42,25,82,.05)}
     .desktop-nav a{height:38px;display:flex;align-items:center;gap:7px;padding:0 14px;border-radius:999px;color:#667085;text-decoration:none;font-size:13px;font-weight:850;letter-spacing:-.01em}
     .desktop-nav a.active{background:var(--brand);color:#fff;box-shadow:0 10px 24px rgba(124,58,237,.22)}
@@ -56,27 +56,27 @@
     .menu-left{display:flex;align-items:center;gap:12px;min-width:0}.menu-icon{width:44px;height:44px;border-radius:16px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-deep);font-size:20px;font-weight:950;flex:0 0 auto}.menu-icon.profile-menu-avatar{object-fit:cover;background:#fff}.menu-copy{min-width:0}
     .fav-card-title,.nickname-card-name{font-size:16px;font-weight:950;letter-spacing:-.02em}.nickname-card-label{font-size:11px;color:#9aa2b1;font-weight:850;letter-spacing:-.01em}.fav-card-desc,.nickname-card-help{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.42}.fav-card-arrow{font-size:24px;color:#a6adba;font-weight:900}
     .setting-card{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px}.read-toggle-label{font-size:14px;font-weight:900;color:#374151;letter-spacing:-.01em}.read-toggle-help{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.42}.switch{position:relative;width:48px;height:30px;display:inline-block;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:#d1d5db;border-radius:999px;transition:.2s}.slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.switch input:checked + .slider{background:var(--brand)}.switch input:checked + .slider:before{transform:translateX(18px)}
-    @media (min-width:768px){.shell{padding:28px 28px 56px}.desktop-nav{display:flex}.topbar{margin-bottom:22px}.profile-chip{height:36px;max-width:154px;border:1px solid var(--line);padding-right:11px}.profile-avatar{width:28px;height:28px}.layout{grid-template-columns:minmax(340px,420px) minmax(0,1fr);align-items:start}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-card,.menu-card,.setting-card{border-radius:26px}.account-card{position:sticky;top:28px;min-height:242px;padding:28px}.menu-card,.setting-card{min-height:116px;padding:18px}}
+    @media (min-width:768px){.shell{padding:0 20px 56px}.desktop-nav{display:none}.topbar{margin-bottom:22px}.profile-chip{display:none}.profile-avatar{width:28px;height:28px}.layout{grid-template-columns:minmax(340px,420px) minmax(0,1fr);align-items:start}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.account-card,.menu-card,.setting-card{border-radius:26px}.account-card{position:sticky;top:28px;min-height:242px;padding:28px}.menu-card,.setting-card{min-height:116px;padding:18px}}
+
+    .settings-heading{display:flex;align-items:center;gap:10px;min-width:0}
+    .settings-heading h1{margin:0;font-size:22px;line-height:1;font-weight:950;letter-spacing:-.04em}
+    .back-btn{width:36px;height:36px;display:grid;place-items:center;border-radius:999px;background:#fff;border:1px solid transparent;color:#171325;text-decoration:none;font-size:30px;font-weight:700;line-height:1;transform:translateY(-1px)}.back-btn:active{background:#f4f6f8;border-color:var(--line)}
+    .layout{max-width:720px;margin:0 auto}
+    .account-card{min-height:124px;padding:16px 18px;border-radius:18px;box-shadow:0 14px 34px rgba(76,29,149,.2)}
+    .account-card .card-head{margin-bottom:10px}.account-card .card-title{font-size:16px}.account-card .card-sub,.account-card .hint{display:none}
+    .google-btn,.logout-btn{height:44px;border-radius:14px;font-size:14px}.google-icon{width:18px;height:18px}
+    .profile{gap:10px}.avatar{width:44px;height:44px;border-radius:15px;font-size:18px}.name{font-size:16px}.email{font-size:11px}.provider{margin-top:5px;padding:4px 8px;font-size:10px}
+    .actions{margin-top:10px}.status{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:12px}
+    .menu-grid{display:grid;gap:8px}.menu-card,.setting-card{min-height:58px;padding:11px 14px;border-radius:14px;box-shadow:0 8px 22px rgba(42,25,82,.045)}
+    .menu-icon{width:34px;height:34px;border-radius:12px;font-size:15px}.menu-left{gap:10px}.fav-card-title,.nickname-card-name,.read-toggle-label{font-size:14px}.nickname-card-label{display:none}.fav-card-desc,.nickname-card-help,.read-toggle-help{display:none}.fav-card-arrow{font-size:20px}.switch{width:42px;height:26px}.slider:before{width:20px;height:20px}.switch input:checked + .slider:before{transform:translateX(16px)}
+    @media (min-width:768px){.shell{padding:0 20px 56px}.desktop-nav{display:none}.topbar{margin-bottom:18px}.profile-chip{display:none}.profile-avatar{width:28px;height:28px}.layout{grid-template-columns:1fr;align-items:start}.menu-grid{grid-template-columns:1fr}.account-card{position:static;top:auto;min-height:124px;padding:18px}.menu-card,.setting-card{min-height:58px;padding:12px 14px;border-radius:14px}}
   </style>
   <script src="assets/theme.js"></script>
 </head>
 <body>
   <div class="shell">
     <header class="topbar">
-      <a class="brandmark" href="index.html" aria-label="가지딜 홈">
-        <span class="brand-icon"><img src="assets/gaji-eggplant-transparent.png" alt="" aria-hidden="true"></span>
-        <span><span class="brand-word">가지</span><span class="title-rest">고 싶다</span></span>
-      </a>
-      <div class="top-actions">
-        <nav class="desktop-nav" aria-label="주요 메뉴">
-          <a href="index.html"><span class="nav-ico">⌂</span><span>홈</span></a>
-          <a href="gajigaji.html"><img class="nav-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
-        </nav>
-        <button class="profile-chip" id="profileChip" type="button" aria-label="닉네임 변경">
-          <img class="profile-avatar" id="profileAvatar" alt="" aria-hidden="true">
-          <span class="profile-name" id="profileName"></span>
-        </button>
-      </div>
+      <div class="settings-heading"><a class="back-btn" href="index.html" aria-label="뒤로가기">‹</a><h1>설정</h1></div>
     </header>
 
     <main class="layout">
@@ -115,11 +115,10 @@
       <section class="menu-grid" aria-label="내 가지 메뉴">
         <a class="menu-card" id="nicknameCard" href="nickname.html" aria-label="닉네임 설정">
           <div class="menu-left">
-            <img class="menu-icon profile-menu-avatar" id="nicknameCardAvatar" alt="" aria-hidden="true">
+            <img class="menu-icon profile-menu-avatar" id="nicknameMenuAvatar" alt="" aria-hidden="true">
             <div class="menu-copy">
-              <div class="nickname-card-label">닉네임 설정</div>
-              <div class="nickname-card-name" id="nicknameCardDesc">현재 닉네임</div>
-              <div class="nickname-card-help">눌러서 닉네임을 변경할 수 있어요</div>
+              <div class="fav-card-title">닉네임변경</div>
+              <div class="fav-card-desc">닉네임과 프로필을 관리합니다.</div>
             </div>
           </div>
           <span class="fav-card-arrow">›</span>
@@ -146,20 +145,6 @@
           </div>
           <span class="fav-card-arrow">›</span>
         </a>
-
-        <div class="setting-card" aria-label="읽은 글 흐리게 표시">
-          <div class="menu-left">
-            <span class="menu-icon">◐</span>
-            <div class="menu-copy">
-              <div class="read-toggle-label">읽은글 흐리게 표시</div>
-              <div class="read-toggle-help">홈 목록에서 이미 본 딜을 차분하게 낮춰 보여줘요.</div>
-            </div>
-          </div>
-          <label class="switch" for="readHighlightToggle">
-            <input id="readHighlightToggle" type="checkbox" />
-            <span class="slider"></span>
-          </label>
-        </div>
 
         <a class="menu-card admin-menu-card" id="adminCard" href="admin.html" aria-label="관리자 페이지로 이동">
           <div class="menu-left">
@@ -249,14 +234,13 @@
     function updateNicknameSurfaces(user = loadCachedUser()){
       const nickname = nicknameForDisplay();
       const avatarUrl = window.GajiIdentity?.getAvatarUrl?.(nickname) || '';
+      const displayAvatar = String(user?.avatar || '').trim() || avatarUrl;
       const profileName = document.getElementById('profileName');
       const profileAvatar = document.getElementById('profileAvatar');
-      const nicknameDesc = document.getElementById('nicknameCardDesc');
-      const nicknameAvatar = document.getElementById('nicknameCardAvatar');
+      const nicknameMenuAvatar = document.getElementById('nicknameMenuAvatar');
       if(profileName) profileName.textContent = nickname;
-      if(profileAvatar) profileAvatar.src = avatarUrl;
-      if(nicknameDesc) nicknameDesc.textContent = nickname;
-      if(nicknameAvatar) nicknameAvatar.src = avatarUrl;
+      if(profileAvatar) profileAvatar.src = displayAvatar;
+      if(nicknameMenuAvatar) nicknameMenuAvatar.src = displayAvatar;
     }
 
     function isAdminUser(user){
@@ -394,6 +378,18 @@
       });
     }
 
+    function initDarkModeToggle(){
+      const toggle = document.getElementById('darkModeToggle');
+      if(!toggle) return;
+      toggle.checked = window.GajiTheme?.getMode?.() === 'dark';
+      toggle.addEventListener('change', () => {
+        window.GajiTheme?.apply?.(toggle.checked ? 'dark' : 'light');
+      });
+      window.addEventListener('gaji:theme-change', (event) => {
+        toggle.checked = event.detail?.mode === 'dark';
+      });
+    }
+
     function bindProfileChip(){
       const chip = document.getElementById('profileChip');
       const modal = document.getElementById('nickModal');
@@ -415,7 +411,6 @@
     }
 
     loadConfig();
-    initReadHighlightToggle();
     bindProfileChip();
     bindKeywordLoginGate();
     loadMe();

@@ -54,17 +54,19 @@
     .comments-panel{padding:16px;background:#fff;border-top:1px solid var(--line);overflow-x:hidden}
     .comments-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
     .comments-title{font-size:18px;font-weight:950;letter-spacing:-.03em}.comments-count{color:var(--muted);font-size:13px;font-weight:850}
-    .comment-list{display:grid;gap:18px;padding-bottom:18px;overflow-x:hidden}.comment-thread{position:relative;min-width:0}.comment-thread.has-replies::before{content:"";position:absolute;left:18px;top:var(--thread-line-top,36px);bottom:var(--thread-line-bottom,15px);border-left:1px solid #d8d5df;z-index:0}.comment-item{position:relative;display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px;min-width:0;z-index:1}.comment-item.reply{grid-template-columns:30px minmax(0,1fr);margin-left:46px}.reply-list{position:relative;display:grid;gap:12px;margin-top:12px}.reply-list::before{display:none}.comment-item.reply::before{content:"";position:absolute;left:-28px;top:15px;width:27px;height:0;border-bottom:1px solid #d8d5df}.comment-avatar{width:36px;height:36px;border-radius:999px;background:#f3edff;color:#5b21b6;display:grid;place-items:center;font-size:13px;font-weight:950;overflow:hidden;position:relative;z-index:1}.comment-item.reply .comment-avatar{width:30px;height:30px}.comment-avatar img{width:100%;height:100%;display:block;object-fit:cover}.comment-main{min-width:0;overflow-wrap:anywhere}.comment-meta{display:flex;align-items:center;gap:6px;color:#8b95a1;font-size:12px;font-weight:800;min-width:0}.comment-name{color:#4b5563;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58%}.comment-body{margin-top:4px;color:#111827;font-size:14px;line-height:1.5;word-break:break-word;overflow-wrap:anywhere;white-space:pre-wrap}.comment-actions{margin-top:8px;display:flex;align-items:center;gap:12px}.reply-btn,.comment-delete-btn{border:none;background:transparent;color:#6b7280;font-size:12px;font-weight:900;padding:0;cursor:pointer}.comment-delete-btn{color:#dc2626}.comment-empty{padding:20px 0;color:#8b95a1;font-size:14px;text-align:center}.comment-composer{--composer-avatar:none;position:sticky;bottom:60px;display:flex;align-items:flex-end;gap:8px;padding:10px 0 0;background:#fff;overflow-x:hidden}.comment-composer:before,.reply-composer:before{content:"";width:38px;height:38px;border-radius:999px;flex:0 0 auto;background:#f3edff var(--composer-avatar) center/cover no-repeat}.comment-input{flex:1;min-width:0;min-height:44px;max-height:118px;border:1px solid #e5e7eb;border-radius:22px;background:#f4f4f5;padding:12px 14px;font:inherit;font-size:14px;line-height:20px;outline:none;resize:none;overflow-y:hidden;overflow-x:hidden}.comment-input.is-scrollable{overflow-y:auto}.comment-input:focus{border-color:#d8c7ff;background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.08)}.comment-send{width:44px;height:44px;flex:0 0 44px;border:1px solid #eadfff;border-radius:999px;background:#fff;color:#7c3aed;font-size:0;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px rgba(124,58,237,.1);position:relative}.comment-send:before{content:"↵";font-size:23px;line-height:1;font-weight:950;display:block}.comment-send:disabled{opacity:.38;cursor:not-allowed}.reply-composer{--composer-avatar:none;display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;margin:12px 0 2px 46px;padding-left:0}.reply-composer:before{width:30px;height:30px}.reply-box{min-width:0}.reply-composer .comment-input{width:100%;min-height:40px;max-height:118px;border-radius:0;border-width:0 0 2px 0;background:#fff;padding:8px 2px}.reply-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px}.reply-cancel{height:38px;border:none;background:transparent;color:#374151;font-size:14px;font-weight:900;cursor:pointer;padding:0 8px}.reply-submit{height:38px;min-width:64px;border:none;border-radius:999px;background:#f1f1f1;color:#9ca3af;padding:0 17px;font-size:14px;font-weight:900;cursor:pointer}.reply-submit.ready{background:#2563eb;color:#fff}.comment-note{margin-top:8px;color:#9ca3af;font-size:11px;line-height:1.35}.comment-note a{color:#7c3aed;font-weight:950;text-decoration:none}
+    .comment-list{display:grid;gap:18px;padding-bottom:18px;overflow-x:hidden}.comment-thread{position:relative;min-width:0}.comment-thread.has-replies::before{content:"";position:absolute;left:18px;top:var(--thread-line-top,36px);bottom:var(--thread-line-bottom,15px);border-left:1px solid #d8d5df;z-index:0}.comment-item{position:relative;display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px;min-width:0;z-index:1}.comment-item.reply{grid-template-columns:30px minmax(0,1fr);margin-left:46px}.reply-list{position:relative;display:grid;gap:12px;margin-top:12px}.reply-list::before{display:none}.comment-item.reply::before{content:"";position:absolute;left:-28px;top:15px;width:27px;height:0;border-bottom:1px solid #d8d5df}.comment-avatar{width:36px;height:36px;border-radius:999px;background:#f3edff;color:#5b21b6;display:grid;place-items:center;font-size:13px;font-weight:950;overflow:hidden;position:relative;z-index:1}.comment-item.reply .comment-avatar{width:30px;height:30px}.comment-avatar img{width:100%;height:100%;display:block;object-fit:cover}.comment-main{min-width:0;overflow-wrap:anywhere}.comment-meta{display:flex;align-items:center;gap:6px;color:#8b95a1;font-size:12px;font-weight:800;min-width:0}.comment-name{color:#4b5563;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:58%}.comment-body{margin-top:4px;color:#111827;font-size:14px;line-height:1.5;word-break:break-word;overflow-wrap:anywhere;white-space:pre-wrap}.comment-actions{margin-top:8px;display:flex;align-items:center;gap:12px}.reply-btn,.comment-delete-btn{border:none;background:transparent;color:#6b7280;font-size:12px;font-weight:900;padding:0;cursor:pointer}.comment-delete-btn{color:#dc2626}.comment-empty{padding:20px 0;color:#8b95a1;font-size:14px;text-align:center}.comment-composer{--composer-avatar:none;position:sticky;bottom:60px;display:flex;align-items:flex-end;gap:8px;padding:10px 0 0;background:#fff;overflow-x:hidden}.comment-composer:before,.reply-composer:before{content:"";width:38px;height:38px;border-radius:999px;flex:0 0 auto;background:#f3edff var(--composer-avatar) center/cover no-repeat}.comment-input{flex:1;min-width:0;min-height:44px;max-height:118px;border:1px solid #e5e7eb;border-radius:22px;background:#f4f4f5;padding:12px 14px;font:inherit;font-size:14px;line-height:20px;outline:none;resize:none;overflow-y:hidden;overflow-x:hidden}.comment-input.is-scrollable{overflow-y:auto}.comment-input:focus{border-color:#d8c7ff;background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.08)}.comment-send{width:44px;height:44px;flex:0 0 44px;border:none;border-radius:999px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;font-size:0;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 18px rgba(124,58,237,.24);position:relative;transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease}.comment-send:before{content:"";width:13px;height:13px;display:block;border-top:3px solid currentColor;border-right:3px solid currentColor;transform:translateX(-1px) rotate(45deg);border-radius:1px}.comment-send:active{transform:scale(.96);box-shadow:0 5px 12px rgba(124,58,237,.2)}.comment-send:disabled{opacity:.38;cursor:not-allowed}.reply-composer{--composer-avatar:none;display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;margin:12px 0 2px 46px;padding-left:0}.reply-composer:before{width:30px;height:30px}.reply-box{min-width:0}.reply-composer .comment-input{width:100%;min-height:40px;max-height:118px;border-radius:0;border-width:0 0 2px 0;background:#fff;padding:8px 2px}.reply-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px}.reply-cancel{height:38px;border:none;background:transparent;color:#374151;font-size:14px;font-weight:900;cursor:pointer;padding:0 8px}.reply-submit{height:38px;min-width:64px;border:none;border-radius:999px;background:#f1f1f1;color:#9ca3af;padding:0 17px;font-size:14px;font-weight:900;cursor:pointer}.reply-submit.ready{background:#2563eb;color:#fff}.comment-note{margin-top:8px;color:#9ca3af;font-size:11px;line-height:1.35}.comment-note a{color:#7c3aed;font-weight:950;text-decoration:none}
     .toast{position:fixed;left:50%;bottom:72px;transform:translateX(-50%) translateY(12px);padding:10px 14px;border-radius:999px;background:rgba(17,24,39,.88);color:#fff;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-    .sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.36);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:30}
-    .sheet-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
-    .action-sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(calc(100% + 48px));padding:10px 14px calc(env(safe-area-inset-bottom) + 14px);background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease,visibility 0s linear .22s;z-index:31}
-    .action-sheet.show{visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);transition:transform .22s ease}
-    .sheet-btn{width:100%;height:52px;border:none;border-radius:12px;background:#f4f6f8;color:#111827;font-size:16px;font-weight:800;cursor:pointer}
-    .sheet-btn + .sheet-btn{margin-top:8px}
-    .sheet-btn.edit{background:var(--brand);color:#fff}
-    .sheet-btn.delete{background:#fff1f2;color:#dc2626}
+    .sheet-backdrop{position:fixed;inset:0;background:transparent;opacity:0;visibility:hidden;pointer-events:none;z-index:30}
+    .sheet-backdrop.show{opacity:1;visibility:visible;pointer-events:auto}
+    .action-sheet{position:fixed;top:56px;right:12px;width:168px;max-width:calc(100vw - 24px);visibility:hidden;opacity:0;pointer-events:none;transform:translateY(-6px) scale(.98);transform-origin:top right;padding:6px;background:#fff;border:1px solid rgba(238,233,248,.95);border-radius:14px;box-shadow:0 14px 34px rgba(17,24,39,.18);transition:opacity .16s ease,transform .16s ease,visibility 0s linear .16s;z-index:31}
+    .action-sheet.show{visibility:visible;opacity:1;pointer-events:auto;transform:translateY(0) scale(1);transition:opacity .16s ease,transform .16s ease}
+    .sheet-btn{width:100%;height:42px;display:flex;align-items:center;justify-content:flex-start;border:none;border-radius:10px;background:transparent;color:#111827;padding:0 12px;font-size:14px;font-weight:900;text-align:left;cursor:pointer}
+    .sheet-btn:hover,.sheet-btn:focus-visible{background:#f4f1fb;outline:none}
+    .sheet-btn + .sheet-btn{margin-top:2px}
+    .sheet-btn.edit{background:transparent;color:var(--brand)}
+    .sheet-btn.delete{background:transparent;color:#dc2626}
+    #closeSheetBtn{display:none}
     .bottom-cta{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:3px 16px calc(env(safe-area-inset-bottom) + 3px);background:#fff;border-top:none;z-index:10}
     .cta-row{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px}
     .cta-btn{height:43px;display:flex;align-items:center;justify-content:center;border-radius:12px;text-decoration:none;font-size:15px;font-weight:900}
@@ -94,8 +96,8 @@
       .meta{font-size:13px;margin:10px 0 18px}
       .desc{font-size:16px;line-height:1.5}
       .toast{bottom:96px}
-      .sheet-backdrop{display:grid;place-items:end center}
-      .action-sheet{max-width:420px;margin-bottom:24px;border-radius:18px;box-shadow:0 18px 50px rgba(17,24,39,.18)}
+
+      .action-sheet{width:176px;max-width:176px;margin-bottom:0;border-radius:14px;box-shadow:0 14px 34px rgba(17,24,39,.18)}
       .buy-bottom{height:43px}
       .cta-btn{font-size:15px}
       .bottom-cta{max-width:1080px;padding:3px 20px 0;background:#fff;box-shadow:none;bottom:0}
@@ -128,7 +130,7 @@
         </div>
         <div class="top-actions">
           <button class="icon-btn" id="shareBtn" type="button" aria-label="공유"><span class="material-symbols-outlined" aria-hidden="true">share</span></button>
-          <button class="icon-btn" id="moreBtn" type="button" aria-label="더보기"><span class="material-symbols-outlined" aria-hidden="true">more_vert</span></button>
+          <button class="icon-btn" id="moreBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="더보기"><span class="material-symbols-outlined" aria-hidden="true">more_vert</span></button>
         </div>
       </div>
     </section>
@@ -148,7 +150,7 @@
       <div class="comment-list" id="commentList"></div>
       <form class="comment-composer" id="commentForm">
         <textarea class="comment-input" id="commentInput" maxlength="500" rows="1" placeholder="댓글 올리기..." autocomplete="off"></textarea>
-        <button class="comment-send" id="commentSend" type="submit" aria-label="댓글 등록">›</button>
+        <button class="comment-send" id="commentSend" type="submit" aria-label="댓글 등록"></button>
       </form>
       <div class="comment-note" id="commentNicknameNote"></div>
     </aside>
@@ -168,7 +170,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="sheet-backdrop" id="sheetBackdrop"></div>
-  <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-label="게시물 메뉴">
+  <div class="action-sheet" id="actionSheet" role="menu" aria-label="게시물 메뉴">
     <button class="sheet-btn edit admin-only" id="editBtn" type="button" style="display:none">편집하기</button>
     <button class="sheet-btn delete admin-only" id="deleteBtn" type="button" style="display:none">삭제하기</button>
     <button class="sheet-btn delete user-only" id="reportBtn" type="button">신고하기</button>
@@ -237,26 +239,52 @@
       localStorage.removeItem(LEGACY_STORAGE_KEY);
     }
 
-    function getDealKey(item){
-      if(item?.sourceLink) return item.sourceLink;
-      if(item?.id) return `id:${item.id}:${item.date || ''}`;
-      return `title:${item?.title || ''}:${item?.date || ''}`;
+    function canonicalDealKey(item = {}){
+      const source = item?.source || 'feed';
+      const sourceLink = String(item?.sourceLink || '').trim();
+      if(source === 'ppomppu'){
+        const noMatch = sourceLink.match(/[?&]no=(\d+)/);
+        if(noMatch) return source + '::no:' + noMatch[1];
+      }
+      if(source === 'fmkorea'){
+        const idMatch = sourceLink.match(/fmkorea\.com\/(\d+)/);
+        if(idMatch) return source + '::doc:' + idMatch[1];
+      }
+      if(source === 'quasar'){
+        const idMatch = sourceLink.match(/\/views\/(\d+)/);
+        if(idMatch) return source + '::view:' + idMatch[1];
+      }
+      if(source === 'ruliweb'){
+        const idMatch = sourceLink.match(/\/read\/(\d+)/);
+        if(idMatch) return source + '::read:' + idMatch[1];
+      }
+      return sourceLink ? source + '::' + sourceLink : '';
     }
 
+    function getDealKey(item){
+      const canonicalKey = canonicalDealKey(item);
+      if(canonicalKey) return canonicalKey;
+      if(item?.id) return 'id:' + item.id + ':' + (item.date || '');
+      return 'title:' + (item?.title || '') + ':' + (item?.date || '');
+    }
+
+    function getFavoriteDealKeys(item){
+      return [...new Set([
+        getDealKey(item),
+        canonicalDealKey(item),
+        item?.sourceLink || '',
+        item?.id ? 'id:' + item.id + ':' + (item.date || '') : '',
+        item?.title ? 'title:' + item.title + ':' + (item.date || '') : ''
+      ].filter(Boolean))];
+    }
     function uniqueValues(values){
       return [...new Set((values || []).map(value => String(value || '').trim()).filter(Boolean))];
     }
 
     function getCommentDealKeys(item){
       if(!item) return [];
-      return uniqueValues([
-        getDealKey(item),
-        item.sourceLink || '',
-        item.id ? `id:${item.id}:${item.date || ''}` : '',
-        item.title ? `title:${item.title}:${item.date || ''}` : ''
-      ]);
+      return uniqueValues(getFavoriteDealKeys(item));
     }
-
     function getDeletedKeys(){
       try{
         return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) || '[]'));
@@ -315,17 +343,17 @@
     }
 
     function isFavorited(item){
-      return getFavoriteKeys().has(getDealKey(item));
+      const set = getFavoriteKeys();
+      return getFavoriteDealKeys(item).some(key => set.has(key));
     }
 
     function setFavorited(item, on){
-      const key = getDealKey(item);
-      if(!key) return;
+      const keys = getFavoriteDealKeys(item);
+      if(!keys.length) return;
       const set = getFavoriteKeys();
-      if(on) set.add(key); else set.delete(key);
+      keys.forEach(key => on ? set.add(key) : set.delete(key));
       localStorage.setItem(favoriteStorageKey(), JSON.stringify([...set]));
     }
-
     async function loadRemoteFavorites(){
       if(!currentUser) return;
       try{
@@ -913,16 +941,33 @@
       showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
     }
 
+    function positionActionMenu(){
+      const button = document.getElementById('moreBtn');
+      const menu = document.getElementById('actionSheet');
+      const rect = button.getBoundingClientRect();
+      const gap = 8;
+      const margin = 8;
+      const menuWidth = menu.offsetWidth || 168;
+      const menuHeight = menu.offsetHeight || 132;
+      const left = Math.max(margin, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - margin));
+      const top = Math.max(margin, Math.min(rect.bottom + gap, window.innerHeight - menuHeight - margin));
+      menu.style.left = `${left}px`;
+      menu.style.right = 'auto';
+      menu.style.top = `${top}px`;
+    }
+
     function openSheet(){
+      positionActionMenu();
       document.getElementById('sheetBackdrop').classList.add('show');
       document.getElementById('actionSheet').classList.add('show');
+      document.getElementById('moreBtn').setAttribute('aria-expanded', 'true');
     }
 
     function closeSheet(){
       document.getElementById('sheetBackdrop').classList.remove('show');
       document.getElementById('actionSheet').classList.remove('show');
+      document.getElementById('moreBtn').setAttribute('aria-expanded', 'false');
     }
-
     async function deleteCurrentDeal(){
       if(!currentItem) return;
       if(!currentAdmin){

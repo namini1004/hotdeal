@@ -19,11 +19,12 @@
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:24px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
     .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:104px}
-    .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px 10px}
+    .top{position:sticky;top:0;z-index:5;background:#fff;padding:14px 16px 10px 6px}
     .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .left{display:flex;align-items:center;gap:8px;min-width:0}
-    .back,.icon-btn{width:34px;height:34px;place-items:center;border:none;border-radius:999px;background:transparent;color:#111827;text-decoration:none;cursor:pointer}
-    .back{display:none}
+    .left{display:flex;align-items:center;gap:6px;min-width:0}
+    .back,.icon-btn{width:34px;height:34px;place-items:center;border:none;border-radius:999px;background:transparent;color:#111827;text-decoration:none;cursor:pointer}.back{width:42px;height:42px;font-size:42px;font-weight:650;line-height:1;transform:translateY(-1px)}
+    .back{display:grid}
+    .web-tabs,.mobile-tabs{display:none!important}
     .icon-btn{display:grid}
     .back:active,.icon-btn:active{background:#f4f6f8}
     .board-title{display:flex;align-items:baseline;font-size:24px;font-weight:800;letter-spacing:-.03em;white-space:nowrap;min-width:0}
@@ -53,6 +54,7 @@
     .thumb.empty{display:grid;place-items:center;background:var(--chip);color:var(--brand)}
     .post-title{font-size:15px;font-weight:500;line-height:1.38;letter-spacing:-.015em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .excerpt{margin-top:4px;color:#4b5563;font-size:12px;line-height:1.42;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .post-author{margin-top:6px;display:flex;align-items:center;gap:6px;color:#4b5563;font-size:12px;font-weight:850}.post-author-avatar{width:20px;height:20px;border-radius:999px;display:block;object-fit:cover;background:#f3edff}.post-author-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .meta{margin-top:6px;color:var(--muted);font-size:11px;font-weight:500}
     .empty-list{padding:64px 16px;text-align:center;color:#6b7280;font-size:14px;line-height:1.6}
     .fab{position:fixed;right:max(16px,calc((100vw - 430px) / 2 + 16px));bottom:16px;min-width:86px;height:47px;display:flex;align-items:center;justify-content:center;gap:5px;border:none;background:var(--brand);color:#fff;border-radius:999px;padding:0 14px;font-size:13px;font-weight:700;box-shadow:0 10px 24px rgba(var(--brand-rgb),.34);cursor:pointer}
@@ -93,13 +95,13 @@
     .body .md-table th{background:#f8fafc;font-weight:800}
 
     @media (max-width:767px){
-      html:not(.app-webview) .fab{bottom:calc(env(safe-area-inset-bottom) + 78px)}
+      html:not(.app-webview) .fab{bottom:calc(env(safe-area-inset-bottom) + 16px)}
     }
 
     @media (min-width:768px){
       body{background:var(--page)}
       .app{max-width:1120px;padding:0 28px 96px}
-      .top{top:16px;margin:16px 0 18px;padding:18px 20px 14px;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 32px rgba(17,24,39,.06)}
+      .top{top:16px;margin:16px 0 18px;padding:18px 20px 14px 8px;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 32px rgba(17,24,39,.06)}
       .top-row{display:grid;grid-template-columns:minmax(190px,1fr) auto minmax(190px,1fr);gap:18px;align-items:center}
       .web-tabs{display:flex;justify-content:center;padding:5px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 10px 28px rgba(42,25,82,.045)}
       .mobile-tabs{display:none}
@@ -134,12 +136,12 @@
     <header class="top">
       <div class="top-row">
         <div class="left">
-          <a class="back" id="backBtn" href="board.html" aria-label="목록으로"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
+          <a class="back" id="backBtn" href="index.html" aria-label="뒤로가기">‹</a>
           <div class="board-title"><span class="brand-word">가지</span><span class="title-rest">가지 한다</span></div>
         </div>
         <nav class="web-tabs" aria-label="주요 메뉴">
           <a class="web-tab" href="index.html"><span aria-hidden="true">⌂</span><span>홈</span></a>
-          <a class="web-tab active" href="gajigaji.html" aria-current="page"><img class="web-tab-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
+          <a class="web-tab active" href="board.html" aria-current="page"><img class="web-tab-eggplant" src="assets/gaji-outline.svg" alt="" aria-hidden="true"><span>가지가지</span></a>
         </nav>
         <div class="top-actions">
           <button class="profile-chip" id="profileChip" type="button" aria-label="닉네임 변경">
@@ -147,7 +149,6 @@
             <span class="profile-name" id="profileName"></span>
           </button>
           <button class="icon-btn" id="searchToggle" type="button" aria-label="검색"><svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg></button>
-          <a class="icon-btn" href="my-gaji.html" aria-label="내 가지"><svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6l-.09.09a2 2 0 1 1-3.82 0L10 20a1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1l-.09-.09a2 2 0 1 1 0-3.82L4 10a1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.6l.09-.09a2 2 0 1 1 3.82 0L14 4a1.65 1.65 0 0 0 1 .6 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.35.34.68.6 1l.09.09a2 2 0 1 1 0 3.82L20 14c-.26.32-.46.65-.6 1Z"></path></svg></a>
         </div>
       </div>
       <div class="search-wrap" id="searchWrap">
@@ -188,7 +189,7 @@
         <div class="field">
           <label for="body">내용</label>
           <textarea id="body" placeholder="공유하고 싶은 이야기를 적어주세요."></textarea>
-          <div class="hint">줄바꿈/링크/마크다운 지원: #/##/### 제목, **굵게**, *기울임*, [텍스트](https://...), 표(|---|)<br>/n 은 줄바꿈으로 처리되지 않으며 Enter(또는 \n)만 줄바꿈으로 적용됩니다.</div>
+          <div class="hint">마크다운 문법을 지원합니다.</div>
         </div>
       </form>
       <div class="bottom">
@@ -242,6 +243,12 @@
 
     function getCategoryLabel(category){
       return normalizeBoardCategory(category) === 'mydeals' ? '내가올린 핫딜' : '여러 가지 팁';
+    }
+
+    function authorAvatarUrl(author){
+      const name = String(author || '익명 가지').trim() || '익명 가지';
+      if(window.GajiIdentity?.getAvatarUrl) return window.GajiIdentity.getAvatarUrl(name);
+      return '';
     }
 
     function syncCategoryTabs(){
@@ -313,8 +320,8 @@
       document.getElementById('searchToggle').style.display = name === 'list' ? 'grid' : 'none';
       document.getElementById('searchWrap').classList.remove('show');
       if(name === 'list'){
-        back.style.display = 'none';
-        back.href = 'board.html';
+        back.style.display = 'grid';
+        back.href = 'index.html';
       }else{
         back.style.display = 'grid';
         back.href = 'board.html';
@@ -342,8 +349,9 @@
           ${post.img ? `<img class="thumb" src="${post.img}" alt="">` : `<div class="thumb empty"><span class="material-symbols-outlined">article</span></div>`}
           <div>
             <div class="post-title">${escapeHtml(post.title)}</div>
+            <div class="post-author"><img class="post-author-avatar" src="${authorAvatarUrl(post.author)}" alt="" aria-hidden="true"><span class="post-author-name">${escapeHtml(post.author || '익명 가지')}</span></div>
             <div class="excerpt">${renderExcerpt(post.body || '내용 없음')}</div>
-            <div class="meta">${getCategoryLabel(post.category)} · ${escapeHtml(post.author)} · ${formatTime(post.createdAt)}</div>
+            <div class="meta">${getCategoryLabel(post.category)} · ${formatTime(post.createdAt)}</div>
           </div>
         </a>
       `).join('');

@@ -16,10 +16,10 @@
     .back .material-symbols-outlined{font-size:19px}
     .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:96px}
 
-    .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+    .top{position:sticky;top:0;z-index:5;background:#fff;padding:12px 14px 12px 0;display:flex;align-items:center;justify-content:space-between}
     .title{font-size:19px;font-weight:800;letter-spacing:-.02em}
     .top-spacer{width:48px;height:48px}
-    .back{width:48px;height:48px;display:grid;place-items:center;border-radius:999px;color:#111;text-decoration:none}
+    .back{width:48px;height:48px;display:grid;place-items:center;border-radius:999px;color:#111;text-decoration:none;font-size:38px;font-weight:650;line-height:1;transform:translateY(-1px)}
     .back:active{background:#f4f6f8}
 
     .wrap{padding:14px 16px}
@@ -37,6 +37,7 @@
     input,textarea,select{width:100%;border:none;outline:none;font:inherit;font-size:16px;color:#111;background:#fff}
     textarea{min-height:120px;line-height:1.6;resize:none}
     .hint{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.5}
+    .range{margin-top:12px;accent-color:var(--brand);cursor:pointer}
     .url-row{display:flex;gap:8px;align-items:center}
     .url-row input{flex:1}
     .fill-btn{height:40px;padding:0 14px;border:1px solid #d8c7ff;border-radius:10px;background:#f3edff;color:#5b21b6;font-size:14px;font-weight:800;white-space:nowrap;cursor:pointer}
@@ -51,7 +52,7 @@
     @media (min-width:768px){
       body{background:var(--page)}
       .app{max-width:720px;min-height:auto;margin:32px auto 110px;padding-bottom:0;background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(17,24,39,.08)}
-      .top{position:static;padding:16px 20px}
+      .top{position:static;padding:16px 20px 16px 0}
       .title{font-size:21px}
       .back{width:52px;height:52px}
       .top-spacer{width:52px;height:52px}
@@ -70,7 +71,7 @@
 <body>
   <div class="app">
     <header class="top">
-      <a class="back" href="index.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
+      <a class="back" href="index.html" aria-label="뒤로가기">‹</a>
       <div class="title" id="pageTitle">오늘의 핫딜 작성</div>
       <div class="top-spacer" aria-hidden="true"></div>
     </header>
@@ -114,13 +115,13 @@
 
       <div class="field">
         <label for="price">가격</label>
-        <input id="price" inputmode="numeric" placeholder="가격을 입력해주세요. (비워두면 0원)" />
+        <input id="price" inputmode="numeric" value="0" />
       </div>
 
       <div class="field">
         <label for="temperature">온도</label>
-        <input id="temperature" inputmode="numeric" min="0" max="100" placeholder="100" value="100" />
-        <div class="hint">0~100 사이 온도를 적어주세요.</div>
+        <input id="temperature" inputmode="numeric" min="0" max="100" value="100" />
+        <input class="range" id="temperatureRange" type="range" min="0" max="100" value="100" aria-label="온도 조절" />
       </div>
 
     </form>
@@ -150,6 +151,17 @@
       btn.classList.add('active');
       selectedCategory = btn.dataset.cat;
     });
+
+    function syncTemperatureInputs(value){
+      const next = Math.max(0, Math.min(100, Number(String(value || '0').replace(/[^0-9]/g, '')) || 0));
+      const input = document.getElementById('temperature');
+      const range = document.getElementById('temperatureRange');
+      if(input) input.value = String(next);
+      if(range) range.value = String(next);
+    }
+
+    document.getElementById('temperature')?.addEventListener('input', (event) => syncTemperatureInputs(event.target.value));
+    document.getElementById('temperatureRange')?.addEventListener('input', (event) => syncTemperatureInputs(event.target.value));
 
     function formatPrice(value){
       const num = Number(String(value).replace(/[^0-9]/g,''));
@@ -261,7 +273,7 @@
       const description = data.desc || data.description || '';
       if(description && !desc.value) desc.value = description;
       const priceText = data.price || extractPriceText(`${data.title || ''} ${description}`);
-      if(priceText && !price.value) price.value = priceText;
+      if(priceText && (!price.value || price.value === '0')) price.value = priceText;
       if(data.image && !selectedImage) setPhotoPreview(data.image);
     }
 
@@ -399,8 +411,8 @@
       document.querySelector('.submit').textContent = '수정 완료';
       document.getElementById('title').value = item.title || '';
       document.getElementById('desc').value = item.desc || '';
-      document.getElementById('price').value = String(item.price || '').replace(/[^0-9]/g, '');
-      document.getElementById('temperature').value = String(item.manualTemperature ?? item.temperature ?? 100).replace(/[^0-9]/g, '') || '100';
+      document.getElementById('price').value = String(item.price || '0').replace(/[^0-9]/g, '') || '0';
+      syncTemperatureInputs(String(item.manualTemperature ?? item.temperature ?? 100).replace(/[^0-9]/g, '') || '100');
       document.getElementById('dealUrl').value = item.buyLink || item.sourceLink || '';
       setActiveCategory(item.category || '디지털');
       if(item.img) setPhotoPreview(item.img);

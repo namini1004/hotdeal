@@ -15,10 +15,10 @@
     .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:500;font-style:normal;font-size:28px;line-height:1;font-feature-settings:'liga';-webkit-font-smoothing:antialiased}
     .back .material-symbols-outlined{font-size:19px}
     .app{max-width:720px;margin:0 auto;min-height:100vh;padding-bottom:96px}
-    .top{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+    .top{position:sticky;top:0;z-index:5;background:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
     .title{font-size:19px;font-weight:800;letter-spacing:-.02em}
     .top-spacer{width:48px;height:48px}
-    .back{width:48px;height:48px;display:grid;place-items:center;border-radius:999px;color:#111;text-decoration:none}
+    .back{width:48px;height:48px;display:grid;place-items:center;border-radius:999px;color:#111;text-decoration:none;font-size:38px;font-weight:650;line-height:1;transform:translateY(-1px)}
     .back:active{background:#f4f6f8}
     .wrap{padding:14px 16px}
     .field{border-top:1px solid var(--line);padding:14px 0}
@@ -44,7 +44,7 @@
 <body>
   <div class="app">
     <header class="top">
-      <a class="back" href="board.html" aria-label="뒤로가기"><span class="material-symbols-outlined" aria-hidden="true">arrow_back_ios_new</span></a>
+      <a class="back" href="board.html" aria-label="뒤로가기">‹</a>
       <div class="title">게시글 작성</div>
       <div class="top-spacer" aria-hidden="true"></div>
     </header>
@@ -71,7 +71,7 @@
       <div class="field">
         <label for="body">내용</label>
         <textarea id="body" placeholder="공유하고 싶은 이야기를 적어주세요."></textarea>
-        <div class="hint">줄바꿈/링크/마크다운 지원: #/##/### 제목, **굵게**, *기울임*, [텍스트](https://...), 표(|---|)<br>/n 은 줄바꿈으로 처리되지 않으며 Enter(또는 \n)만 줄바꿈으로 적용됩니다.</div>
+        <div class="hint">마크다운 문법을 지원합니다.</div>
       </div>
     </form>
   </div>
@@ -91,6 +91,10 @@
 
     function normalizeBoardCategory(value){
       return ['tips', 'mydeals'].includes(String(value || '').trim()) ? String(value || '').trim() : 'tips';
+    }
+
+    function getPostAuthor(){
+      return window.GajiIdentity?.getNickname?.() || window.GajiIdentity?.getUser?.()?.nickname || '익명 가지';
     }
 
     function getBoardCategoryFromBody(body){
@@ -265,7 +269,7 @@
         body,
         img,
         sourceLink:'',
-        author: editPost?.author,
+        author: editPost?.author || getPostAuthor(),
         createdAt: editPost?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };

@@ -5,32 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
   <link rel="shortcut icon" href="/assets/favicon.svg" />
-  <title>닉네임 설정</title>
+  <title>닉네임변경</title>
   <style>
-    body{margin:0;font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111827}
-    .app{max-width:430px;margin:0 auto;padding:16px}
-    .top{display:flex;align-items:center;gap:10px;margin:10px 0 14px}
-    .back{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;border:1px solid #eee9f8;text-decoration:none;color:#374151;font-size:22px;font-weight:800;line-height:1}
-    .title{font-size:20px;font-weight:700;letter-spacing:-.02em}
-    .card{border:1px solid #e5e7eb;border-radius:14px;padding:14px}
-    .current{font-size:14px;color:#374151;margin-bottom:10px}
-    input{width:100%;height:46px;border:1px solid #d1d5db;border-radius:10px;padding:0 12px;font-size:15px}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-    button{height:46px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
-    .primary{background:#7c3aed;color:#fff}
-    .ghost{background:#f3f4f6;color:#111827}
-    .msg{margin-top:12px;font-size:13px;color:#4b5563;min-height:18px}
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+    :root{--line:#eee9f8;--brand:#7c3aed;--muted:#7c8594;--soft:#f7f4ff}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111827}
+    .app{max-width:430px;margin:0 auto;min-height:100vh;padding:0 18px 48px;background:#fff}
+    .top{height:56px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;margin:0 -18px 18px;padding:0 18px 0 0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px)}
+    .back{width:36px;height:36px;display:grid;place-items:center;border-radius:999px;border:1px solid transparent;text-decoration:none;color:#111827;font-size:30px;font-weight:650;line-height:1;transform:translateY(-1px)}
+    .back:active{background:#f4f6f8;border-color:var(--line)}
+    .title{font-size:20px;font-weight:950;letter-spacing:-.035em}
+    .profile-preview{display:grid;place-items:center;gap:10px;padding:18px 0 16px}
+    .avatar{width:72px;height:72px;border-radius:24px;background:var(--soft);display:grid;place-items:center;color:var(--brand);font-size:25px;font-weight:950;overflow:hidden}
+    .avatar img{width:100%;height:100%;display:block;object-fit:cover}
+    .current{color:var(--muted);font-size:13px;font-weight:800}
+    .card{border:1px solid var(--line);border-radius:18px;padding:16px;background:#fff;box-shadow:0 10px 28px rgba(42,25,82,.055)}
+    label{display:block;margin-bottom:8px;font-size:13px;font-weight:900;color:#374151}
+    input{width:100%;height:48px;border:1px solid #ddd6fe;border-radius:14px;padding:0 14px;font-size:16px;outline:none;background:#fff}
+    input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    button{height:46px;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer}
+    .primary{background:var(--brand);color:#fff}
+    .ghost{background:#f4f1fb;color:#4c1d95}
+    .msg{margin-top:12px;min-height:18px;color:#6b7280;font-size:13px;font-weight:750;line-height:1.4}
   </style>
   <script src="assets/theme.js"></script>
 </head>
 <body>
   <main class="app">
-    <div class="top"><a class="back" href="my-gaji.html" aria-label="뒤로가기">‹</a><div class="title">닉네임 설정</div></div>
+    <div class="top"><a class="back" href="my-gaji.html" aria-label="뒤로가기">‹</a><div class="title">닉네임변경</div></div>
+    <section class="profile-preview">
+      <div class="avatar" id="avatarPreview">가</div>
+      <div class="current" id="current">-</div>
+    </section>
     <section class="card">
-      <div class="current" id="current">현재 닉네임: -</div>
-      <input id="nicknameInput" maxlength="24" placeholder="예) 반짝이는 보라 가지" />
+      <label for="nicknameInput">새 닉네임</label>
+      <input id="nicknameInput" maxlength="24" placeholder="예: 반짝이는 보라 가지" />
       <div class="row">
-        <button class="ghost" id="autoBtn" type="button">자동 생성</button>
+        <button class="ghost" id="autoBtn" type="button">자동생성</button>
         <button class="primary" id="saveBtn" type="button">저장</button>
       </div>
       <div class="msg" id="msg"></div>
@@ -42,6 +55,7 @@
     const input = document.getElementById('nicknameInput');
     const current = document.getElementById('current');
     const msg = document.getElementById('msg');
+    const avatar = document.getElementById('avatarPreview');
 
     function setMsg(text){ msg.textContent = text || ''; }
 
@@ -52,9 +66,16 @@
       return user;
     }
 
+    function renderAvatar(nickname){
+      const value = String(nickname || '').trim();
+      const avatarUrl = window.GajiIdentity?.getAvatarUrl?.(value) || '';
+      avatar.innerHTML = avatarUrl ? `<img src="${avatarUrl}" alt="">` : (value || '가').charAt(0);
+    }
+
     function applyNickname(nickname, message){
       const value = String(nickname || '').trim();
-      current.textContent = `현재 닉네임: ${value || '-'}`;
+      current.textContent = value || '-';
+      renderAvatar(value);
       if(value) input.value = value;
       if(message) setMsg(message);
     }
@@ -64,17 +85,17 @@
     }
 
     document.getElementById('autoBtn').addEventListener('click', () => {
-      setMsg('자동 생성 중...');
+      setMsg('새 닉네임을 만들고 있어요...');
       const user = window.GajiIdentity?.regenerateNickname?.() || window.GajiIdentity?.setNickname?.(window.GajiIdentity?.generateNickname?.());
-      applyNickname(window.GajiIdentity?.getNickname?.() || user?.nickname || input.value, '자동 생성 닉네임을 적용했어요.');
+      applyNickname(window.GajiIdentity?.getNickname?.() || user?.nickname || input.value, '자동생성 닉네임을 적용했어요.');
     });
 
     document.getElementById('saveBtn').addEventListener('click', () => {
       const nickname = input.value.trim();
-      if(!nickname){ setMsg('닉네임을 입력해 주세요.'); return; }
+      if(!nickname){ setMsg('닉네임을 입력해주세요.'); return; }
       setMsg('저장 중...');
       syncSavedNickname(nickname);
-      applyNickname(nickname, '닉네임으로 저장되었습니다.');
+      applyNickname(nickname, '닉네임으로 저장됐습니다.');
       setTimeout(() => { location.href = 'my-gaji.html?profile=updated'; }, 450);
     });
 
