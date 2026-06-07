@@ -1,6 +1,7 @@
 node_modules/
 firebase/functions/node_modules/
 firebase/functions/lib/
+.tools/
 secrets/
 *.pem
 *.key
