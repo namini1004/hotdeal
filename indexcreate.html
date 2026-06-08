@@ -42,8 +42,8 @@
     .url-row input{flex:1}
     .fill-btn{height:40px;padding:0 14px;border:1px solid #d8c7ff;border-radius:10px;background:#f3edff;color:#5b21b6;font-size:14px;font-weight:800;white-space:nowrap;cursor:pointer}
 
-    .row{display:flex;gap:8px}
-    .chip{padding:10px 14px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-size:14px;font-weight:600;color:#4b5563;cursor:pointer}
+    .row{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{flex:0 0 auto;min-width:max-content;padding:10px 14px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-size:14px;font-weight:600;color:#4b5563;cursor:pointer;white-space:nowrap;word-break:keep-all}
     .chip.active{background:#f3edff;color:#5b21b6;border-color:#d8c7ff}
 
     .bottom{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;padding:12px 14px calc(env(safe-area-inset-bottom) + 12px);background:#fff;border-top:1px solid var(--line)}
@@ -109,6 +109,10 @@
           <button type="button" class="chip" data-cat="생활가전">생활가전</button>
           <button type="button" class="chip" data-cat="주방">주방</button>
           <button type="button" class="chip" data-cat="패션">패션</button>
+          <button type="button" class="chip" data-cat="식품">식품</button>
+          <button type="button" class="chip" data-cat="뷰티">뷰티</button>
+          <button type="button" class="chip" data-cat="육아">육아</button>
+          <button type="button" class="chip" data-cat="스포츠">스포츠</button>
           <button type="button" class="chip" data-cat="기타">기타</button>
         </div>
       </div>

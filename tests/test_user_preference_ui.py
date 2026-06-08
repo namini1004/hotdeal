@@ -112,6 +112,14 @@ class UserPreferenceUiTests(unittest.TestCase):
         self.assertNotIn('줄바꿈/링크/마크다운 지원', html)
         self.assertNotIn('/n 은 줄바꿈으로 처리되지 않으며', html)
 
+    def test_hotdeal_create_category_chips_wrap_between_items_not_inside_text(self):
+        html = (ROOT / 'indexcreate.html').read_text(encoding='utf-8')
+
+        self.assertIn('.row{display:flex;flex-wrap:wrap;gap:8px}', html)
+        self.assertIn('white-space:nowrap;word-break:keep-all', html)
+        for category in ('식품', '뷰티', '육아', '스포츠'):
+            self.assertIn(f'data-cat="{category}">{category}</button>', html)
+
 
 if __name__ == '__main__':
     unittest.main()
