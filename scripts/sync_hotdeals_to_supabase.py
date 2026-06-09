@@ -413,7 +413,9 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
         for row in rows:
             key = f"{row.get('source', '')}::{row.get('source_link', '')}"
             if row.get("source") and row.get("source_link"):
-                existing[key] = row
+                prev = existing.get(key)
+                if not prev or existing_row_score(row) >= existing_row_score(prev):
+                    existing[key] = row
 
         if len(rows) < page_size:
             break
@@ -422,11 +424,72 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
     return existing
 
 
+def existing_row_score(row: Dict):
+    has_image = 1 if (row.get("img") or row.get("detail_img") or "").strip() else 0
+    dt = parse_iso_datetime(row.get("updated_at") or row.get("registered_at") or row.get("created_at") or "")
+    return has_image, dt.timestamp() if dt else 0
+
+
 def strip_quality_signal_fields(rows: List[Dict]) -> List[Dict]:
     return [
         {k: v for k, v in row.items() if k not in QUALITY_SIGNAL_FIELDS}
         for row in rows
     ]
+
+
+def strip_quality_signal_body(body):
+    if isinstance(body, list):
+        return strip_quality_signal_fields(body)
+    if isinstance(body, dict):
+        return {k: v for k, v in body.items() if k not in QUALITY_SIGNAL_FIELDS}
+    return body
+
+
+def request_with_quality_signal_fallback(method: str, endpoint: str, headers: Dict, body, timeout: int = 60):
+    res = requests.request(method, endpoint, headers=headers, json=body, timeout=timeout)
+    if not res.ok and res.status_code == 400 and any(field in (res.text or "") for field in QUALITY_SIGNAL_FIELDS):
+        print("WARN_QUALITY_SIGNAL_COLUMNS_MISSING retry_without_quality_signal_fields")
+        res = requests.request(method, endpoint, headers=headers, json=strip_quality_signal_body(body), timeout=timeout)
+    return res
+
+
+def patch_feed_row_by_key(row: Dict, supabase_url: str, headers: Dict):
+    patch_endpoint = (
+        f"{supabase_url}/rest/v1/deals"
+        f"?source=eq.{quote(row['source'], safe='')}"
+        f"&source_link=eq.{quote(row['source_link'], safe='')}"
+    )
+    return request_with_quality_signal_fallback(
+        "PATCH",
+        patch_endpoint,
+        {**headers, "Prefer": "return=minimal"},
+        row,
+        timeout=60,
+    )
+
+
+def write_rows_without_upsert(rows: List[Dict], existing_map: Dict[str, Dict], supabase_url: str, endpoint_insert: str, headers: Dict) -> int:
+    written = 0
+    for row in rows:
+        key = f"{row['source']}::{row['source_link']}"
+        if key in existing_map:
+            res = patch_feed_row_by_key(row, supabase_url, headers)
+            action = "patch"
+        else:
+            res = request_with_quality_signal_fallback(
+                "POST",
+                endpoint_insert,
+                {**headers, "Prefer": "return=minimal"},
+                [row],
+                timeout=60,
+            )
+            action = "insert"
+            if res.ok:
+                existing_map[key] = row
+        if not res.ok:
+            raise SystemExit(f"Supabase {action} fallback failed ({res.status_code}): {res.text}")
+        written += 1
+    return written
 
 
 def send_push_ingest(changed_rows: List[Dict]):
@@ -612,20 +675,15 @@ def main():
     if changed_rows:
         use_insert_fallback = False
         for batch in chunked(changed_rows, 400):
-            endpoint = endpoint_insert if use_insert_fallback else endpoint_upsert
-            res = requests.post(endpoint, headers=headers, json=batch, timeout=60)
-            if not res.ok and (res.status_code == 400 and "42P10" in (res.text or "")):
-                use_insert_fallback = True
-                headers["Prefer"] = "return=minimal"
-                res = requests.post(endpoint_insert, headers=headers, json=batch, timeout=60)
+            if use_insert_fallback:
+                written += write_rows_without_upsert(batch, existing_map, supabase_url, endpoint_insert, headers)
+                continue
 
-            if not res.ok and res.status_code == 400 and any(field in (res.text or "") for field in QUALITY_SIGNAL_FIELDS):
-                # 운영 DB에 새 품질 지표 컬럼이 아직 적용되지 않은 경우 피드 동기화 전체가 멈추지 않게
-                # 기존 컬럼만 우선 저장한다. supabase_hotdeal_schema.sql 적용 후에는 자동으로 지표까지 저장된다.
-                print("WARN_QUALITY_SIGNAL_COLUMNS_MISSING retry_without_quality_signal_fields")
-                fallback_batch = strip_quality_signal_fields(batch)
-                retry_endpoint = endpoint_insert if use_insert_fallback else endpoint
-                res = requests.post(retry_endpoint, headers=headers, json=fallback_batch, timeout=60)
+            res = request_with_quality_signal_fallback("POST", endpoint_upsert, headers, batch, timeout=60)
+            if not res.ok and res.status_code == 400 and "42P10" in (res.text or ""):
+                use_insert_fallback = True
+                written += write_rows_without_upsert(batch, existing_map, supabase_url, endpoint_insert, headers)
+                continue
 
             if not res.ok:
                 raise SystemExit(f"Supabase upsert failed ({res.status_code}): {res.text}")
@@ -641,10 +699,11 @@ def main():
                 f"?source=eq.{quote(source, safe='')}"
                 f"&source_link=eq.{quote(source_link, safe='')}"
             )
-            res = requests.patch(
+            res = request_with_quality_signal_fallback(
+                "PATCH",
                 patch_endpoint,
-                headers={**headers, "Prefer": "return=minimal"},
-                json={"deleted_at": row["deleted_at"], "updated_at": row["updated_at"]},
+                {**headers, "Prefer": "return=minimal"},
+                {"deleted_at": row["deleted_at"], "updated_at": row["updated_at"]},
                 timeout=60,
             )
             if not res.ok:

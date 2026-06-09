@@ -321,6 +321,20 @@ function canonicalFeedKey(item = {}) {
   return `${source}::${sourceLink}`;
 }
 
+function feedImageScore(item = {}) {
+  return (item.img || item.detailImg) ? 1 : 0;
+}
+
+function shouldReplaceFeedDuplicate(prev = {}, item = {}) {
+  const prevImageScore = feedImageScore(prev);
+  const curImageScore = feedImageScore(item);
+  if (curImageScore !== prevImageScore) return curImageScore > prevImageScore;
+
+  const prevMs = parseDateMs(prev.updatedAt || prev.registeredAt || prev.date || '');
+  const curMs = parseDateMs(item.updatedAt || item.registeredAt || item.date || '');
+  return curMs >= prevMs;
+}
+
 async function readFeedItems() {
   try {
     const batches = await Promise.all(FEED_SOURCES.map((source) =>
@@ -339,9 +353,7 @@ async function readFeedItems() {
           dedupMap.set(key, item);
           continue;
         }
-        const prevMs = parseDateMs(prev.updatedAt || prev.registeredAt || prev.date || '');
-        const curMs = parseDateMs(item.updatedAt || item.registeredAt || item.date || '');
-        if (curMs >= prevMs) dedupMap.set(key, item);
+        if (shouldReplaceFeedDuplicate(prev, item)) dedupMap.set(key, item);
       }
       return applyTemperatureNormalization([...dedupMap.values()]);
     }
@@ -454,6 +466,7 @@ module.exports = {
   computeHotScore,
   applyTemperatureNormalization,
   canonicalFeedKey,
+  shouldReplaceFeedDuplicate,
   supabaseRequest,
   mapPayload,
 };

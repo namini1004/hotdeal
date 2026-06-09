@@ -82,6 +82,33 @@ def test_api_canonical_feed_key_dedupes_ppomppu_page_variants():
     assert data['a'] == data['b']
 
 
+def test_api_feed_duplicate_prefers_row_with_image_over_newer_blank():
+    script = f'''
+      const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});
+      const withImage = {{
+        source: 'quasar',
+        sourceLink: 'https://quasarzone.com/bbs/qb_saleinfo/views/98765',
+        img: 'https://img.example/thumb.webp',
+        updatedAt: '2026-06-09T01:00:00Z'
+      }};
+      const blankNewer = {{
+        source: 'quasar',
+        sourceLink: 'https://quasarzone.com/bbs/qb_saleinfo/views/98765',
+        img: '',
+        detailImg: '',
+        updatedAt: '2026-06-09T02:00:00Z'
+      }};
+      console.log(JSON.stringify({{
+        replaceImageWithBlank: deals.shouldReplaceFeedDuplicate(withImage, blankNewer),
+        replaceBlankWithImage: deals.shouldReplaceFeedDuplicate(blankNewer, withImage)
+      }}));
+    '''
+    out = subprocess.check_output(['node', '-e', script], cwd=ROOT, text=True)
+    data = json.loads(out)
+    assert data['replaceImageWithBlank'] is False
+    assert data['replaceBlankWithImage'] is True
+
+
 def test_temperature_weights_recommendations_dislikes_and_comment_signals():
     script = f'''
       const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});
