@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, unquote, urljoin, urlparse
 import requests
 try:
     from playwright.sync_api import sync_playwright
-except ModuleNotFoundError:
+except Exception:
     sync_playwright = None
 try:
     from hotdeal_quality_signals import analyze_comment_quality
