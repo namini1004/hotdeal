@@ -260,6 +260,20 @@ def test_ppomppu_page_tail_seen_by_previous_bbs_no():
     assert ppomppu.row_exists_in_previous(row, previous_keys) is True
 
 
+def test_ppomppu_page_tail_sample_seen_by_previous_bbs_no():
+    previous_keys = ppomppu.build_previous_link_keys([
+        {"sourceLink": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=708779"}
+    ])
+    rows = [
+        {"href": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=708781"},
+        {"href": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=708780"},
+        {"href": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=708779"},
+        {"href": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=708778"},
+    ]
+
+    assert ppomppu.page_tail_seen_in_previous(rows, previous_keys) is True
+
+
 def test_quasar_page_tail_seen_by_previous_post_id():
     previous_keys = quasar.build_previous_link_keys([
         {"id": "98765", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98765"}
@@ -267,6 +281,20 @@ def test_quasar_page_tail_seen_by_previous_post_id():
     row = {"id": "98765", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98765?page=2"}
 
     assert quasar.row_exists_in_previous(row, previous_keys) is True
+
+
+def test_quasar_page_tail_sample_seen_by_previous_post_id():
+    previous_keys = quasar.build_previous_link_keys([
+        {"id": "98764", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98764"}
+    ])
+    rows = [
+        {"id": "98766", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98766"},
+        {"id": "98765", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98765"},
+        {"id": "98764", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98764"},
+        {"id": "98763", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98763"},
+    ]
+
+    assert quasar.page_tail_seen_in_previous(rows, previous_keys) is True
 
 
 def test_ruliweb_page_tail_seen_by_previous_source_link():
@@ -278,6 +306,22 @@ def test_ruliweb_page_tail_seen_by_previous_source_link():
     row = {"sourceLink": "https://m.ruliweb.com/market/board/1020/read/123456"}
 
     assert ruliweb.row_exists_in_previous(row, previous_keys) is True
+
+
+def test_ruliweb_page_tail_sample_seen_by_previous_source_link():
+    from scripts import update_ruliweb_feed as ruliweb
+
+    previous_keys = ruliweb.build_previous_link_keys([
+        {"sourceLink": "https://m.ruliweb.com/market/board/1020/read/123455"}
+    ])
+    rows = [
+        {"sourceLink": "https://m.ruliweb.com/market/board/1020/read/123457"},
+        {"sourceLink": "https://m.ruliweb.com/market/board/1020/read/123456"},
+        {"sourceLink": "https://m.ruliweb.com/market/board/1020/read/123455"},
+        {"sourceLink": "https://m.ruliweb.com/market/board/1020/read/123454"},
+    ]
+
+    assert ruliweb.page_tail_seen_in_previous(rows, previous_keys) is True
 
 
 def test_ppomppu_reuses_cached_detail_fields_by_bbs_no():

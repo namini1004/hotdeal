@@ -17,6 +17,7 @@ except ModuleNotFoundError:
 LIST_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"
 BASE = "https://www.ppomppu.co.kr"
 MAX_PAGES = 10
+INCREMENTAL_TAIL_SAMPLE_SIZE = int(os.environ.get("HOTDEAL_PPOMPPU_INCREMENTAL_TAIL_SAMPLE_SIZE", "3"))
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "ppomppu_hotdeals_2days.json"
 HIDDEN_PATH = ROOT / "assets" / "hidden_hotdeals.json"
@@ -263,6 +264,13 @@ def row_exists_in_previous(row, previous_keys) -> bool:
     return bool(keys & previous_keys)
 
 
+def page_tail_seen_in_previous(rows, previous_keys) -> bool:
+    if not rows or not previous_keys:
+        return False
+    sample_size = max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)
+    return any(row_exists_in_previous(row, previous_keys) for row in rows[-sample_size:])
+
+
 def apply_cached_detail_fields(row: dict, lookup: dict) -> bool:
     href = row.get('href') or ''
     cached = lookup.get(f"no:{bbs_no_from_url(href)}") or lookup.get(f"source:{href}")
@@ -393,8 +401,8 @@ def parse_items():
 
         if new_in_page == 0:
             break
-        if rows and row_exists_in_previous(rows[-1], previous_keys):
-            print(f"PPOMPPU_INCREMENTAL_STOP reason=page_tail_seen page={page}")
+        if rows and page_tail_seen_in_previous(rows, previous_keys):
+            print(f"PPOMPPU_INCREMENTAL_STOP reason=page_tail_seen page={page} sample={max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)}")
             break
 
     items = []

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import html
 import json
+import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -15,6 +16,7 @@ except ModuleNotFoundError:
 LIST_URL = "https://m.ruliweb.com/market/board/1020"
 BASE = "https://bbs.ruliweb.com"
 MAX_PAGES = 12
+INCREMENTAL_TAIL_SAMPLE_SIZE = int(os.environ.get("HOTDEAL_RULIWEB_INCREMENTAL_TAIL_SAMPLE_SIZE", "3"))
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "ruliweb_hotdeals_1day.json"
 KST = timezone(timedelta(hours=9))
@@ -46,6 +48,13 @@ def build_previous_link_keys(items):
 def row_exists_in_previous(row, previous_keys) -> bool:
     source_link = str(row.get('sourceLink') or '').strip()
     return bool(source_link and source_link in previous_keys)
+
+
+def page_tail_seen_in_previous(rows, previous_keys) -> bool:
+    if not rows or not previous_keys:
+        return False
+    sample_size = max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)
+    return any(row_exists_in_previous(row, previous_keys) for row in rows[-sample_size:])
 
 
 def to_mobile_read_url(source_link: str, post_id: str) -> str:
@@ -325,8 +334,8 @@ def main():
         # 최근 글부터 정렬되어 있으므로, 페이지 전체가 오래된 글이면 종료
         if older_streak >= len(rows):
             break
-        if rows and row_exists_in_previous(rows[-1], previous_keys):
-            print(f"RULIWEB_INCREMENTAL_STOP reason=page_tail_seen page={page}")
+        if rows and page_tail_seen_in_previous(rows, previous_keys):
+            print(f"RULIWEB_INCREMENTAL_STOP reason=page_tail_seen page={page} sample={max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)}")
             break
 
     out = {

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import html
 import json
+import os
 import re
 from collections import Counter
 from datetime import datetime, timedelta, timezone
@@ -17,6 +18,7 @@ except ModuleNotFoundError:
 LIST_URL = "https://quasarzone.com/bbs/qb_saleinfo"
 BASE = "https://quasarzone.com"
 MAX_PAGES = 8
+INCREMENTAL_TAIL_SAMPLE_SIZE = int(os.environ.get("HOTDEAL_QUASAR_INCREMENTAL_TAIL_SAMPLE_SIZE", "3"))
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "quasar_hotdeals_2days.json"
 KST = timezone(timedelta(hours=9))
@@ -598,6 +600,13 @@ def row_exists_in_previous(row: Dict, previous_keys: set) -> bool:
     return bool(keys & previous_keys)
 
 
+def page_tail_seen_in_previous(rows: List[Dict], previous_keys: set) -> bool:
+    if not rows or not previous_keys:
+        return False
+    sample_size = max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)
+    return any(row_exists_in_previous(row, previous_keys) for row in rows[-sample_size:])
+
+
 def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
     post_id = str(row.get("id") or "").strip() or extract_post_id_from_link(row.get("sourceLink") or "")
     source_link = normalize_source_link(row.get("sourceLink") or "")
@@ -716,8 +725,8 @@ def main():
 
         if old_count == len(rows):
             break
-        if rows and row_exists_in_previous(rows[-1], previous_keys):
-            print(f"QUASAR_INCREMENTAL_STOP reason=page_tail_seen page={page}")
+        if rows and page_tail_seen_in_previous(rows, previous_keys):
+            print(f"QUASAR_INCREMENTAL_STOP reason=page_tail_seen page={page} sample={max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)}")
             break
 
     filtered = dedupe_items_by_title(filtered)
