@@ -240,6 +240,29 @@ def build_previous_detail_lookup(items):
     return lookup
 
 
+def build_previous_link_keys(items):
+    keys = set()
+    for item in items or []:
+        source_link = (item.get('sourceLink') or '').strip()
+        no = bbs_no_from_url(source_link)
+        if no:
+            keys.add(f'no:{no}')
+        if source_link:
+            keys.add(f'source:{source_link}')
+    return keys
+
+
+def row_exists_in_previous(row, previous_keys) -> bool:
+    href = row.get('href') or ''
+    keys = set()
+    no = bbs_no_from_url(href)
+    if no:
+        keys.add(f'no:{no}')
+    if href:
+        keys.add(f'source:{href}')
+    return bool(keys & previous_keys)
+
+
 def apply_cached_detail_fields(row: dict, lookup: dict) -> bool:
     href = row.get('href') or ''
     cached = lookup.get(f"no:{bbs_no_from_url(href)}") or lookup.get(f"source:{href}")
@@ -345,7 +368,9 @@ def parse_list_rows(list_html: str):
 def parse_items():
     s = requests.Session()
     s.headers.update(HEADERS)
-    previous_lookup = build_previous_detail_lookup(load_previous_items())
+    previous_items = load_previous_items()
+    previous_lookup = build_previous_detail_lookup(previous_items)
+    previous_keys = build_previous_link_keys(previous_items)
 
     # 페이지를 순회해서(더보기 포함) 링크를 충분히 수집
     link_rows = []
@@ -367,6 +392,9 @@ def parse_items():
             link_rows.append(row)
 
         if new_in_page == 0:
+            break
+        if rows and row_exists_in_previous(rows[-1], previous_keys):
+            print(f"PPOMPPU_INCREMENTAL_STOP reason=page_tail_seen page={page}")
             break
 
     items = []

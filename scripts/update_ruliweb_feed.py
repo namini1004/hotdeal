@@ -25,6 +25,29 @@ def clean(s: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(s or "")).strip()
 
 
+def load_previous_items():
+    if not JSON_PATH.exists():
+        return []
+    try:
+        data = json.loads(JSON_PATH.read_text(encoding='utf-8'))
+        return list(data.get('items') or [])
+    except Exception:
+        return []
+
+
+def build_previous_link_keys(items):
+    return {
+        str(item.get('sourceLink') or '').strip()
+        for item in items or []
+        if str(item.get('sourceLink') or '').strip()
+    }
+
+
+def row_exists_in_previous(row, previous_keys) -> bool:
+    source_link = str(row.get('sourceLink') or '').strip()
+    return bool(source_link and source_link in previous_keys)
+
+
 def to_mobile_read_url(source_link: str, post_id: str) -> str:
     if post_id and str(post_id).isdigit():
         return f"https://m.ruliweb.com/market/board/1020/read/{post_id}"
@@ -246,6 +269,7 @@ def extract_primary_image(detail_html: str) -> str:
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
+    previous_keys = build_previous_link_keys(load_previous_items())
     s = requests.Session()
     s.headers.update(HEADERS)
 
@@ -300,6 +324,9 @@ def main():
 
         # 최근 글부터 정렬되어 있으므로, 페이지 전체가 오래된 글이면 종료
         if older_streak >= len(rows):
+            break
+        if rows and row_exists_in_previous(rows[-1], previous_keys):
+            print(f"RULIWEB_INCREMENTAL_STOP reason=page_tail_seen page={page}")
             break
 
     out = {

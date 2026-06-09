@@ -2,7 +2,9 @@
 import html
 import json
 import os
+import random
 import re
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
@@ -24,14 +26,92 @@ LIST_URL_CANDIDATES = [
     "https://www.fmkorea.com/index.php?mid=hotdeal&listStyle=webzine",
 ]
 MAX_PAGES = 10
+INCREMENTAL_MAX_PAGES = int(os.environ.get("HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES", "2"))
+PAGE_DELAY_SECONDS = float(os.environ.get("HOTDEAL_FMKOREA_PAGE_DELAY_SECONDS", "8"))
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "fmkorea_hotdeals_2days.json"
+BACKOFF_STATE_PATH = Path(os.environ.get("HOTDEAL_FMKOREA_BACKOFF_STATE", str(ROOT / ".artifacts" / "fmkorea_backoff_state.json")))
+BACKOFF_BASE_SECONDS = int(os.environ.get("HOTDEAL_FMKOREA_BACKOFF_BASE_SECONDS", "3600"))
+BACKOFF_MAX_SECONDS = int(os.environ.get("HOTDEAL_FMKOREA_BACKOFF_MAX_SECONDS", "86400"))
+BACKOFF_JITTER_RATIO = float(os.environ.get("HOTDEAL_FMKOREA_BACKOFF_JITTER_RATIO", "0.15"))
 KST = timezone(timedelta(hours=9))
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 FMKOREA_DIAGNOSTIC_DIR = os.environ.get("FMKOREA_DIAGNOSTIC_DIR", "").strip()
+
+
+def env_bool(name: str, default: bool = True) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw not in {"0", "false", "no", "off"}
+
+
+def load_backoff_state() -> Dict:
+    try:
+        if BACKOFF_STATE_PATH.exists():
+            data = json.loads(BACKOFF_STATE_PATH.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+    return {}
+
+
+def save_backoff_state(state: Dict):
+    BACKOFF_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    BACKOFF_STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def parse_iso_datetime(value: str):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).astimezone(KST)
+    except Exception:
+        return None
+
+
+def backoff_delay_seconds(failures: int) -> int:
+    base = min(BACKOFF_BASE_SECONDS * (2 ** max(0, failures - 1)), BACKOFF_MAX_SECONDS)
+    jitter = random.uniform(0, max(0, base * BACKOFF_JITTER_RATIO))
+    return int(min(base + jitter, BACKOFF_MAX_SECONDS))
+
+
+def backoff_remaining_seconds(now: datetime):
+    state = load_backoff_state()
+    next_allowed = parse_iso_datetime(state.get("nextAllowedAt") or "")
+    if not next_allowed or now >= next_allowed:
+        return 0, state
+    return int((next_allowed - now).total_seconds()), state
+
+
+def record_security_backoff(now: datetime):
+    state = load_backoff_state()
+    failures = int(state.get("failures") or 0) + 1
+    delay = backoff_delay_seconds(failures)
+    next_allowed = now + timedelta(seconds=delay)
+    state.update(
+        {
+            "failures": failures,
+            "lastBlockedAt": now.isoformat(),
+            "nextAllowedAt": next_allowed.isoformat(),
+            "delaySeconds": delay,
+        }
+    )
+    save_backoff_state(state)
+    print(f"FMKOREA_BACKOFF_SET failures={failures} delaySeconds={delay} nextAllowedAt={next_allowed.isoformat()}")
+
+
+def clear_backoff_state():
+    state = load_backoff_state()
+    if not state:
+        return
+    failures = int(state.get("failures") or 0)
+    if failures > 0:
+        print(f"FMKOREA_BACKOFF_RECOVERED previousFailures={failures}")
+    save_backoff_state({"failures": 0, "lastSuccessAt": datetime.now(KST).isoformat()})
 
 
 def parse_time_token(token: str, now: datetime):
@@ -211,16 +291,26 @@ def parse_static_html_rows(page_html: str, base_url: str) -> List[Dict]:
     return rows
 
 
-def fetch_static_page_rows(url: str) -> List[Dict]:
+def is_security_response(status_code: int, text: str) -> bool:
+    return status_code == 430 or "에펨코리아 보안 시스템" in (text or "")
+
+
+def fetch_static_page(url: str):
     try:
         res = requests.get(url, headers=HEADERS, timeout=25)
         text = res.text or ""
         rows = parse_static_html_rows(text, res.url or url)
-        print(f"FMKOREA_STATIC_LIST url={url} status={res.status_code} rows={len(rows)} security={'에펨코리아 보안 시스템' in text}")
-        return rows
+        security = is_security_response(res.status_code, text)
+        print(f"FMKOREA_STATIC_LIST url={url} status={res.status_code} rows={len(rows)} security={security}")
+        return rows, security
     except Exception as exc:
         print(f"WARN_FMKOREA_STATIC_LIST_FAILED url={url} reason={exc}")
-        return []
+        return [], False
+
+
+def fetch_static_page_rows(url: str) -> List[Dict]:
+    rows, _security = fetch_static_page(url)
+    return rows
 
 
 def write_fmkorea_diagnostics(page, url: str, rows: List[Dict], label: str):
@@ -248,19 +338,26 @@ def write_fmkorea_diagnostics(page, url: str, rows: List[Dict], label: str):
         print(f"WARN_FMKOREA_DIAGNOSTIC_FAILED label={label} reason={exc}")
 
 
-def collect_recent_rows(page, now: datetime, since: datetime) -> List[Dict]:
+def collect_recent_rows(page, now: datetime, since: datetime, previous_items: List[Dict] = None):
     collected = []
     seen = set()
     last_rows = []
     last_url = ""
+    previous_keys = previous_item_keys(previous_items or [])
+    incremental = env_bool("HOTDEAL_FMKOREA_INCREMENTAL", True)
+    max_pages = max(1, INCREMENTAL_MAX_PAGES if incremental else MAX_PAGES)
+    security_blocked = False
 
     for base_url in LIST_URL_CANDIDATES:
         source_rows = []
         source_seen = set()
-        for pg in range(1, MAX_PAGES + 1):
+        for pg in range(1, max_pages + 1):
             separator = "&" if "?" in base_url else "?"
             url = f"{base_url}{separator}page={pg}"
-            rows = fetch_static_page_rows(url)
+            rows, security = fetch_static_page(url)
+            if security:
+                security_blocked = True
+                break
             if not rows and page is not None:
                 rows = run_page_extract(page, url)
             last_rows = rows
@@ -278,6 +375,16 @@ def collect_recent_rows(page, now: datetime, since: datetime) -> List[Dict]:
                 source_rows.append(r)
             if rows and page_kept == 0:
                 break
+            if incremental:
+                if pg == 1:
+                    if rows and row_exists_in_previous(rows[-1], previous_keys):
+                        print("FMKOREA_INCREMENTAL_STOP reason=page1_tail_seen")
+                        break
+                    if pg < max_pages:
+                        print(f"FMKOREA_INCREMENTAL_CONTINUE reason=page1_tail_unseen delay={PAGE_DELAY_SECONDS:g}s")
+                        time.sleep(PAGE_DELAY_SECONDS)
+                elif pg >= max_pages:
+                    print(f"FMKOREA_INCREMENTAL_STOP reason=max_pages pages={max_pages}")
         print(f"FMKOREA_LIST_CANDIDATE url={base_url} rows={len(source_rows)}")
         if source_rows:
             for r in source_rows:
@@ -287,10 +394,12 @@ def collect_recent_rows(page, now: datetime, since: datetime) -> List[Dict]:
                 seen.add(key)
                 collected.append(r)
             break
+        if security_blocked:
+            break
 
     if not collected and page is not None:
         write_fmkorea_diagnostics(page, last_url or LIST_URL, last_rows, "zero-list-rows")
-    return collected
+    return collected, security_blocked
 
 
 def is_low_quality_fmkorea_thumbnail(src: str) -> bool:
@@ -455,10 +564,38 @@ def load_previous_items() -> List[Dict]:
         return []
 
 
+def previous_item_keys(items: List[Dict]) -> set:
+    keys = set()
+    for item in items or []:
+        source_link = canonical_fmkorea_source_link(item.get("sourceLink") or "")
+        doc_id = str(item.get("id") or "").strip() or extract_document_id_from_link(source_link)
+        if doc_id:
+            keys.add(f"id:{doc_id}")
+        if source_link:
+            keys.add(f"source:{source_link}")
+    return keys
+
+
 def extract_document_id_from_link(link: str) -> str:
     raw = link or ""
     m = re.search(r"[?&]document_srl=(\d+)", raw)
     return m.group(1) if m else ""
+
+
+def row_identity_keys(row: Dict) -> set:
+    href = row.get("href") or ""
+    source_link = canonical_fmkorea_source_link(href)
+    doc_id = extract_document_id_from_link(href)
+    keys = set()
+    if doc_id:
+        keys.add(f"id:{doc_id}")
+    if source_link:
+        keys.add(f"source:{source_link}")
+    return keys
+
+
+def row_exists_in_previous(row: Dict, previous_keys: set) -> bool:
+    return bool(row_identity_keys(row) & previous_keys)
 
 
 def extract_row_meta(row: Dict, now: datetime) -> Dict:
@@ -531,18 +668,63 @@ def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
     return not is_low_quality_fmkorea_thumbnail(row.get("img") or "")
 
 
+def write_feed_output(items: List[Dict], stale_fallback: bool, now: datetime, since: datetime):
+    out = {
+        "source": LIST_URL,
+        "sourceKey": "fmkorea",
+        "staleFallback": stale_fallback,
+        "generatedAt": now.isoformat(),
+        "rangeHours": 48,
+        "since": since.isoformat(),
+        "today": str(now.date()),
+        "yesterday": str((now - timedelta(days=1)).date()),
+        "counts": {"today": len(items), "yesterday": 0, "total": len(items)},
+        "items": items,
+        "grouped": {"today": items, "yesterday": []},
+    }
+
+    JSON_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"saved: {JSON_PATH} ({len(items)} items)")
+
+
+def item_is_within_window(item: Dict, now: datetime, since: datetime) -> bool:
+    raw = (item.get("registeredAt") or item.get("date") or "").strip()
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except Exception:
+        return True
+    return not (dt.astimezone(KST) < since and dt.astimezone(KST).date() != since.date())
+
+
+def filter_items_within_window(items: List[Dict], now: datetime, since: datetime) -> List[Dict]:
+    return [item for item in items or [] if item_is_within_window(item, now, since)]
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
-    previous_lookup = build_previous_detail_lookup(load_previous_items())
+    previous_items = filter_items_within_window(load_previous_items(), now, since)
+    remaining, backoff_state = backoff_remaining_seconds(now)
+    if remaining > 0:
+        print(
+            "FMKOREA_BACKOFF_SKIP "
+            f"remainingSeconds={remaining} "
+            f"nextAllowedAt={backoff_state.get('nextAllowedAt', '')} "
+            f"failures={int(backoff_state.get('failures') or 0)}"
+        )
+        write_feed_output(previous_items, bool(previous_items), now, since)
+        return
+
+    previous_lookup = build_previous_detail_lookup(previous_items)
     s = requests.Session()
     s.headers.update(HEADERS)
 
     all_rows = []
+    security_blocked = False
 
     if sync_playwright is None:
         print("WARN_FMKOREA_PLAYWRIGHT_UNAVAILABLE using_static_requests_only")
-        all_rows = collect_recent_rows(None, now, since)
+        all_rows, security_blocked = collect_recent_rows(None, now, since, previous_items)
         for r in all_rows:
             if apply_cached_detail_fields(r, previous_lookup):
                 continue
@@ -568,7 +750,7 @@ def main():
                 timezone_id="Asia/Seoul",
             )
             page = context.new_page()
-            all_rows = collect_recent_rows(page, now, since)
+            all_rows, security_blocked = collect_recent_rows(page, now, since, previous_items)
 
             detail_page = context.new_page()
             for r in all_rows:
@@ -717,7 +899,6 @@ def main():
 
     stale_fallback = False
     if sync_playwright is None:
-        previous_items = load_previous_items()
         if previous_items and items and len(items) < int(len(previous_items) * 0.8):
             merged = {}
             for it in items + previous_items:
@@ -726,31 +907,22 @@ def main():
                     merged[key] = it
             print(f"WARN_FMKOREA_PARTIAL_STATIC_KEEP_PREVIOUS current={len(items)} previous={len(previous_items)} merged={len(merged)}")
             items = list(merged.values())
+            stale_fallback = security_blocked
     if not items:
-        previous_items = load_previous_items()
         if previous_items:
             items = previous_items
             stale_fallback = True
             print(f"WARN_FMKOREA_ZERO_ITEMS_KEEP_PREVIOUS previous={len(previous_items)} all_rows={len(all_rows)}")
         else:
             print(f"WARN_FMKOREA_ZERO_ITEMS_NO_PREVIOUS all_rows={len(all_rows)}")
+    if security_blocked:
+        stale_fallback = True
 
-    out = {
-        "source": LIST_URL,
-        "sourceKey": "fmkorea",
-        "staleFallback": stale_fallback,
-        "generatedAt": now.isoformat(),
-        "rangeHours": 48,
-        "since": since.isoformat(),
-        "today": str(now.date()),
-        "yesterday": str((now - timedelta(days=1)).date()),
-        "counts": {"today": len(items), "yesterday": 0, "total": len(items)},
-        "items": items,
-        "grouped": {"today": items, "yesterday": []},
-    }
-
-    JSON_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"saved: {JSON_PATH} ({len(items)} items)")
+    write_feed_output(items, stale_fallback, now, since)
+    if security_blocked:
+        record_security_backoff(now)
+    else:
+        clear_backoff_state()
 
 
 if __name__ == "__main__":

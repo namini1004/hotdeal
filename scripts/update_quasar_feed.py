@@ -574,6 +574,30 @@ def build_previous_detail_lookup(items: List[Dict]) -> Dict[str, Dict]:
     return lookup
 
 
+def build_previous_link_keys(items: List[Dict]) -> set:
+    keys = set()
+    for item in items or []:
+        item_id = str(item.get("id") or "").strip()
+        source_link = str(item.get("sourceLink") or "").strip()
+        post_id = item_id or extract_post_id_from_link(source_link)
+        if post_id:
+            keys.add(f"id:{post_id}")
+        if source_link:
+            keys.add(f"source:{normalize_source_link(source_link)}")
+    return keys
+
+
+def row_exists_in_previous(row: Dict, previous_keys: set) -> bool:
+    post_id = str(row.get("id") or "").strip() or extract_post_id_from_link(row.get("sourceLink") or "")
+    source_link = normalize_source_link(row.get("sourceLink") or "")
+    keys = set()
+    if post_id:
+        keys.add(f"id:{post_id}")
+    if source_link:
+        keys.add(f"source:{source_link}")
+    return bool(keys & previous_keys)
+
+
 def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
     post_id = str(row.get("id") or "").strip() or extract_post_id_from_link(row.get("sourceLink") or "")
     source_link = normalize_source_link(row.get("sourceLink") or "")
@@ -607,7 +631,9 @@ def dedupe_items_by_title(items: List[Dict]) -> List[Dict]:
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
-    previous_lookup = build_previous_detail_lookup(load_previous_items())
+    previous_items = load_previous_items()
+    previous_lookup = build_previous_detail_lookup(previous_items)
+    previous_keys = build_previous_link_keys(previous_items)
     sess = requests.Session()
     sess.headers.update(HEADERS)
 
@@ -689,6 +715,9 @@ def main():
             filtered.append(row)
 
         if old_count == len(rows):
+            break
+        if rows and row_exists_in_previous(rows[-1], previous_keys):
+            print(f"QUASAR_INCREMENTAL_STOP reason=page_tail_seen page={page}")
             break
 
     filtered = dedupe_items_by_title(filtered)

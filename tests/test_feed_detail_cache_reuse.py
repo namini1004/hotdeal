@@ -64,6 +64,120 @@ def test_fmkorea_does_not_skip_when_cached_detail_is_incomplete():
     assert "buyLink" not in row
 
 
+def test_fmkorea_incremental_stops_after_page1_when_tail_is_known(monkeypatch):
+    now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+    calls = []
+
+    def fake_fetch(url):
+        calls.append(url)
+        return [
+            {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=101", "lines": [], "raw": ""},
+            {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=100", "lines": [], "raw": ""},
+        ], False
+
+    monkeypatch.setattr(fmkorea, "fetch_static_page", fake_fetch)
+    monkeypatch.setattr(fmkorea, "should_keep_row_by_time", lambda row, now, since: True)
+
+    rows, security_blocked = fmkorea.collect_recent_rows(
+        None,
+        now,
+        since,
+        [{"id": "100", "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=100"}],
+    )
+
+    assert len(rows) == 2
+    assert security_blocked is False
+    assert len(calls) == 1
+    assert "page=1" in calls[0]
+
+
+def test_fmkorea_incremental_fetches_page2_when_page1_tail_is_new(monkeypatch):
+    now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+    calls = []
+    sleeps = []
+
+    def fake_fetch(url):
+        calls.append(url)
+        if "page=1" in url:
+            return [
+                {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=102", "lines": [], "raw": ""},
+                {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=101", "lines": [], "raw": ""},
+            ], False
+        return [
+            {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=100", "lines": [], "raw": ""},
+        ], False
+
+    monkeypatch.setattr(fmkorea, "fetch_static_page", fake_fetch)
+    monkeypatch.setattr(fmkorea, "should_keep_row_by_time", lambda row, now, since: True)
+    monkeypatch.setattr(fmkorea.time, "sleep", lambda seconds: sleeps.append(seconds))
+
+    rows, security_blocked = fmkorea.collect_recent_rows(
+        None,
+        now,
+        since,
+        [{"id": "100", "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=100"}],
+    )
+
+    assert len(rows) == 3
+    assert security_blocked is False
+    assert len(calls) == 2
+    assert "page=1" in calls[0]
+    assert "page=2" in calls[1]
+    assert sleeps == [fmkorea.PAGE_DELAY_SECONDS]
+
+
+def test_fmkorea_incremental_stops_immediately_on_security_response(monkeypatch):
+    now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+    calls = []
+
+    def fake_fetch(url):
+        calls.append(url)
+        return [], True
+
+    monkeypatch.setattr(fmkorea, "fetch_static_page", fake_fetch)
+
+    rows, security_blocked = fmkorea.collect_recent_rows(None, now, since, [])
+
+    assert rows == []
+    assert security_blocked is True
+    assert len(calls) == 1
+
+
+def test_fmkorea_security_backoff_uses_exponential_delay_with_jitter(monkeypatch):
+    monkeypatch.setattr(fmkorea.random, "uniform", lambda low, high: 0)
+
+    assert fmkorea.backoff_delay_seconds(1) == 3600
+    assert fmkorea.backoff_delay_seconds(2) == 7200
+    assert fmkorea.backoff_delay_seconds(3) == 14400
+
+
+def test_fmkorea_clear_backoff_prints_recovery_signal(monkeypatch, tmp_path, capsys):
+    state_path = tmp_path / "fmkorea_backoff_state.json"
+    state_path.write_text('{"failures": 2}', encoding="utf-8")
+    monkeypatch.setattr(fmkorea, "BACKOFF_STATE_PATH", state_path)
+
+    fmkorea.clear_backoff_state()
+
+    captured = capsys.readouterr()
+    assert "FMKOREA_BACKOFF_RECOVERED previousFailures=2" in captured.out
+
+
+def test_fmkorea_filters_previous_items_outside_48_hour_window():
+    now = fmkorea.datetime(2026, 6, 9, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+    items = [
+        {"id": "recent", "registeredAt": "2026-06-08T10:00:00+09:00"},
+        {"id": "old", "registeredAt": "2026-06-05T10:00:00+09:00"},
+    ]
+
+    filtered = fmkorea.filter_items_within_window(items, now, since)
+
+    assert [item["id"] for item in filtered] == ["recent"]
+
+
 def test_quasar_reuses_cached_detail_fields_by_post_id():
     cached = {
         "id": "98765",
@@ -105,6 +219,35 @@ def test_quasar_does_not_skip_when_cached_registered_at_is_missing():
 
     assert quasar.apply_cached_detail_fields(row, lookup) is False
     assert "registeredAt" not in row
+
+
+def test_ppomppu_page_tail_seen_by_previous_bbs_no():
+    previous_keys = ppomppu.build_previous_link_keys([
+        {"sourceLink": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=708780"}
+    ])
+    row = {"href": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=2&no=708780"}
+
+    assert ppomppu.row_exists_in_previous(row, previous_keys) is True
+
+
+def test_quasar_page_tail_seen_by_previous_post_id():
+    previous_keys = quasar.build_previous_link_keys([
+        {"id": "98765", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98765"}
+    ])
+    row = {"id": "98765", "sourceLink": "https://quasarzone.com/bbs/qb_saleinfo/views/98765?page=2"}
+
+    assert quasar.row_exists_in_previous(row, previous_keys) is True
+
+
+def test_ruliweb_page_tail_seen_by_previous_source_link():
+    from scripts import update_ruliweb_feed as ruliweb
+
+    previous_keys = ruliweb.build_previous_link_keys([
+        {"sourceLink": "https://m.ruliweb.com/market/board/1020/read/123456"}
+    ])
+    row = {"sourceLink": "https://m.ruliweb.com/market/board/1020/read/123456"}
+
+    assert ruliweb.row_exists_in_previous(row, previous_keys) is True
 
 
 def test_ppomppu_reuses_cached_detail_fields_by_bbs_no():

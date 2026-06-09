@@ -4,7 +4,7 @@ import io
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import List, Dict, Optional
 from urllib.parse import parse_qs, quote, urlencode, urlparse
@@ -27,6 +27,7 @@ DEFAULT_FEED_FILES = [
     ROOT / "assets" / "ruliweb_hotdeals_1day.json",
 ]
 DEFAULT_EXPECTED_FEED_SOURCES = {"ppomppu", "quasar", "fmkorea", "ruliweb"}
+PRUNE_FEED_AGE_HOURS = int(os.environ.get("HOTDEAL_PRUNE_FEED_AGE_HOURS", "48"))
 
 
 def _configured_feed_files():
@@ -453,7 +454,23 @@ def send_push_ingest(changed_rows: List[Dict]):
     return "OK"
 
 
-def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: str, stale_fallback_sources=None):
+def parse_iso_datetime(value: str):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def is_older_than(row: Dict, cutoff: datetime) -> bool:
+    dt = parse_iso_datetime(row.get("registered_at") or row.get("created_at") or "")
+    if not dt:
+        return False
+    return dt.astimezone(timezone.utc) < cutoff.astimezone(timezone.utc)
+
+
+def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: str, stale_fallback_sources=None, prune_before=None):
     """변경 upsert 대상과 soft-delete 대상을 계산한다.
 
     특정 피드 소스가 이번 수집에서 0건이면 파서/원천 차단 실패로 보고,
@@ -471,8 +488,13 @@ def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: st
 
     for row in rows:
         key = f"{row['source']}::{row['source_link']}"
-        current_keys.add(key)
         prev = existing_map.get(key)
+        if prune_before is not None:
+            if is_older_than(row, prune_before):
+                continue
+            if prev and is_older_than(prev, prune_before):
+                continue
+        current_keys.add(key)
         if not prev:
             row["updated_at"] = now_iso
             changed_rows.append(row)
@@ -492,14 +514,28 @@ def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: st
     # 이번 수집 결과에 없는 기존 feed 글은 soft delete 처리하되,
     # 0건 수집된 소스는 파서 실패 가능성이 높으므로 기존 데이터를 유지한다.
     deleted_rows: List[Dict] = []
+    deleted_keys = set()
     for key, prev in existing_map.items():
-        if key in current_keys:
-            continue
         if prev.get("deleted_at"):
             continue
         source = str(prev.get("source") or "").strip()
         source_link = str(prev.get("source_link") or "").strip()
         if not source or not source_link:
+            continue
+        if prune_before is not None and is_older_than(prev, prune_before):
+            deleted_rows.append(
+                {
+                    "source": source,
+                    "source_link": source_link,
+                    "deleted_at": now_iso,
+                    "updated_at": now_iso,
+                }
+            )
+            deleted_keys.add(key)
+            continue
+        if key in current_keys:
+            continue
+        if key in deleted_keys:
             continue
         if source in skipped_delete_sources:
             continue
@@ -537,15 +573,23 @@ def main():
         dedup[canonical_key] = row
     rows = list(dedup.values())
 
-    if not rows:
-        print("NO_ROWS")
-        return
+    now_dt = datetime.now(timezone.utc)
+    now_iso = now_dt.isoformat()
+    prune_before = now_dt - timedelta(hours=PRUNE_FEED_AGE_HOURS)
+    sync_rows = [row for row in rows if not is_older_than(row, prune_before)]
 
     existing_map = fetch_existing_map(supabase_url, service_key)
-    mirror_feed_images(rows, existing_map, supabase_url, service_key)
-    now_iso = datetime.now(timezone.utc).isoformat()
-
-    changed_rows, deleted_rows, skipped_delete_sources = build_sync_plan(rows, existing_map, now_iso, stale_fallback_sources)
+    if sync_rows:
+        mirror_feed_images(sync_rows, existing_map, supabase_url, service_key)
+    elif not rows:
+        print("NO_ROWS")
+    changed_rows, deleted_rows, skipped_delete_sources = build_sync_plan(
+        sync_rows,
+        existing_map,
+        now_iso,
+        stale_fallback_sources,
+        prune_before=prune_before,
+    )
     if skipped_delete_sources:
         print(f"WARN_SOFT_DELETE_GUARD skipped_sources={','.join(sorted(skipped_delete_sources))}")
 

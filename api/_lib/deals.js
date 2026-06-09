@@ -7,6 +7,8 @@ const FEED_FILES = [
   path.join(process.cwd(), 'assets', 'fmkorea_hotdeals_2days.json'),
   path.join(process.cwd(), 'assets', 'ruliweb_hotdeals_1day.json'),
 ];
+const FEED_SOURCES = ['ppomppu', 'quasar', 'fmkorea', 'ruliweb'];
+const FEED_SOURCE_LIMIT = 900;
 
 const HOT_SCORE_CONFIG = {
   commentWeight: 1.8,
@@ -321,7 +323,12 @@ function canonicalFeedKey(item = {}) {
 
 async function readFeedItems() {
   try {
-    const rows = await supabaseRequest('deals?source=neq.user&deleted_at=is.null&select=*&order=registered_at.desc&limit=3000');
+    const batches = await Promise.all(FEED_SOURCES.map((source) =>
+      supabaseRequest(
+        `deals?source=eq.${encodeURIComponent(source)}&deleted_at=is.null&select=*&order=registered_at.desc&limit=${FEED_SOURCE_LIMIT}`
+      ).catch(() => [])
+    ));
+    const rows = batches.flat();
     const normalized = (rows || []).map(normalizeFeedDbRow).filter((v) => v.sourceLink);
     if (normalized.length) {
       const dedupMap = new Map();
