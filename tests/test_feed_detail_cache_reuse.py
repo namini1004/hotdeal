@@ -92,6 +92,36 @@ def test_fmkorea_incremental_stops_after_page1_when_tail_is_known(monkeypatch):
     assert "page=1" in calls[0]
 
 
+def test_fmkorea_incremental_stops_when_any_tail_sample_is_known(monkeypatch):
+    now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+    calls = []
+
+    def fake_fetch(url):
+        calls.append(url)
+        return [
+            {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=103", "lines": [], "raw": ""},
+            {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=102", "lines": [], "raw": ""},
+            {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=101", "lines": [], "raw": ""},
+            {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=100", "lines": [], "raw": ""},
+        ], False
+
+    monkeypatch.setattr(fmkorea, "fetch_static_page", fake_fetch)
+    monkeypatch.setattr(fmkorea, "should_keep_row_by_time", lambda row, now, since: True)
+
+    rows, security_blocked = fmkorea.collect_recent_rows(
+        None,
+        now,
+        since,
+        [{"id": "101", "sourceLink": "https://m.fmkorea.com/?mid=hotdeal&document_srl=101"}],
+    )
+
+    assert len(rows) == 4
+    assert security_blocked is False
+    assert len(calls) == 1
+    assert "page=1" in calls[0]
+
+
 def test_fmkorea_incremental_fetches_page2_when_page1_tail_is_new(monkeypatch):
     now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
     since = now - fmkorea.timedelta(hours=48)

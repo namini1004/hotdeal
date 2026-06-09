@@ -27,6 +27,7 @@ LIST_URL_CANDIDATES = [
 ]
 MAX_PAGES = 10
 INCREMENTAL_MAX_PAGES = int(os.environ.get("HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES", "2"))
+INCREMENTAL_TAIL_SAMPLE_SIZE = int(os.environ.get("HOTDEAL_FMKOREA_INCREMENTAL_TAIL_SAMPLE_SIZE", "3"))
 PAGE_DELAY_SECONDS = float(os.environ.get("HOTDEAL_FMKOREA_PAGE_DELAY_SECONDS", "8"))
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "fmkorea_hotdeals_2days.json"
@@ -376,10 +377,10 @@ def collect_recent_rows(page, now: datetime, since: datetime, previous_items: Li
             if rows and page_kept == 0:
                 break
             if incremental:
+                if rows and page_tail_seen_in_previous(rows, previous_keys):
+                    print(f"FMKOREA_INCREMENTAL_STOP reason=page_tail_seen page={pg} sample={max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)}")
+                    break
                 if pg == 1:
-                    if rows and row_exists_in_previous(rows[-1], previous_keys):
-                        print("FMKOREA_INCREMENTAL_STOP reason=page1_tail_seen")
-                        break
                     if pg < max_pages:
                         print(f"FMKOREA_INCREMENTAL_CONTINUE reason=page1_tail_unseen delay={PAGE_DELAY_SECONDS:g}s")
                         time.sleep(PAGE_DELAY_SECONDS)
@@ -596,6 +597,13 @@ def row_identity_keys(row: Dict) -> set:
 
 def row_exists_in_previous(row: Dict, previous_keys: set) -> bool:
     return bool(row_identity_keys(row) & previous_keys)
+
+
+def page_tail_seen_in_previous(rows: List[Dict], previous_keys: set) -> bool:
+    if not rows or not previous_keys:
+        return False
+    sample_size = max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)
+    return any(row_exists_in_previous(row, previous_keys) for row in rows[-sample_size:])
 
 
 def extract_row_meta(row: Dict, now: datetime) -> Dict:
