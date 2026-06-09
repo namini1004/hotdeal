@@ -1,0 +1,23 @@
+{
+  "name": "daily-gajigaji-shopping-tip-post",
+  "description": "Hermes cron definition archive for daily gaji.run shopping-tip posting job. This file is not active by itself.",
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 12 * * *",
+    "display": "0 12 * * *"
+  },
+  "schedule_display": "0 12 * * *",
+  "prompt": "매일 gaji.run의 가지가지 > 여러 가지 팁 글을 1개 작성해 등록한다. 이 작업은 사용자가 요청한 자동 작성/게시 작업이다.\n\n목표:\n- 하루에 한 번, gaji.run의 `board_posts`에 category `tips` 글 1개를 새로 올린다.\n- 기존 공개 tips 글 12개 이상의 스타일을 유지한다.\n- 참고 관점은 노써치, 귀곰, 잇섭, 정가거부 같은 실사용 리뷰/쇼핑 채널의 구매 판단 포인트다. 단, 본문은 출처 나열식이 아니라 독자가 바로 써먹는 짧은 쇼핑 인사이트로 쓴다.\n- 글마다 제목에 들어간 핵심 제품/제품군 이름을 찾아 그 주제에 맞는 대표 이미지를 `img`에 넣는다.\n\n기존 글 스타일 요약:\n- 제목은 짧고 주장형: `X는 A보다 B가 중요하다`, `X는 Y가 아니다`, `X보다 먼저 봐야 할 N가지`.\n- 본문 첫 줄에 제목과 같은 H1(`# 제목`)을 넣는다.\n- 길이는 대략 500~900자, 모바일에서 빠르게 읽히는 짧은 문단.\n- 과장/마케팅 톤 금지. “실제 만족도”, “손이 자주 가는지”, “우리 집/내 용도”, “조건표”, “귀찮음”처럼 생활 체감 중심.\n- 구조는 보통: 문제 제기 → 왜 그런지 2~3문단 → `구매 전 체크:` 또는 `확인할 것:` bullet 4~6개 → 마지막 `한 줄 팁:` 1문장.\n- 마크다운은 H1, 필요 시 `##`, bullet만 사용한다. 표는 되도록 피한다.\n- 본문 맨 앞에는 반드시 `<!--gaji-category:tips-->` marker를 넣는다.\n- author는 `가지딜`로 한다.\n\n제품 이미지 규칙:\n1. 제목을 확정한 뒤 제목에서 핵심 제품명/제품군을 추출한다. 예: `무선청소기는 흡입력보다 관리가 먼저다` → `무선청소기`, `커피머신은 스펙보다 세척이 먼저다` → `커피머신`.\n2. 그 제품명으로 안정적인 public 이미지 URL을 찾는다. 우선순위는 다음과 같다.\n   - 제조사/브랜드 공식 이미지, 공개 보도자료 이미지, Wikimedia/Unsplash/Pexels 등 hotlink가 안정적인 이미지\n   - 검색 결과 썸네일 CDN/로그인 필요한 이미지/만료 URL/외부 hotlink 차단 가능성이 높은 URL은 피한다.\n3. 이미지 URL은 게시 전 반드시 `curl -I` 또는 짧은 GET으로 검증한다.\n   - HTTP 200이어야 한다.\n   - `Content-Type`이 `image/`로 시작해야 한다.\n   - 너무 작은 플레이스홀더/경고 이미지가 아니어야 한다.\n4. 적절한 이미지를 찾으면 POST payload의 `img`에 넣는다.\n5. 확실한 이미지를 못 찾거나 검증 실패하면 `assets/gaji-eggplant.jpg`를 사용한다.\n6. 이미지 출처 URL은 본문에 푸터처럼 붙이지 않는다. 이미지는 `img` 필드에만 넣는다.\n\n주제 선택 규칙:\n1. 먼저 `https://gaji.run/api/board-posts?limit=100`을 조회해 기존 tips 글 제목을 확인한다.\n2. 이미 있는 주제/제목과 겹치지 않는 새 쇼핑팁 주제를 고른다.\n3. 우선순위 1: 참고 채널/사이트의 최근 콘텐츠.\n   - 노써치, 귀곰, 잇섭, 정가거부 및 비슷한 실사용 리뷰/쇼핑 채널에 최근 올라온 유튜브 영상이나 글이 있으면 그것을 우선 주제로 삼는다.\n   - 최근 콘텐츠의 핵심 제품/구매 판단 포인트를 흡수하되, 본문에는 raw URL/출처 푸터를 남기지 않는다.\n   - 채널명을 본문에 굳이 쓰지 않는다. 독자가 바로 쓰는 구매 기준으로 바꿔 쓴다.\n   - 예: 최근 영상이 `무선청소기 비교`라면 제목은 `무선청소기는 흡입력보다 관리가 먼저다`처럼 가지가지 스타일로 변환한다.\n4. 우선순위 2: 최근 콘텐츠가 마땅치 않으면 일반 쇼핑팁 주제를 고른다.\n   - 가능한 주제 예: 냉장고, 세탁기/건조기, 식기세척기, 전자레인지/오븐, 공기청정기, 모니터, 태블릿, 스마트워치, 무선이어폰, 보조배터리, 충전기, 키보드/마우스, 커피머신, 정수기, 매트리스, 의자, 백팩, 여행용 캐리어, 전기자전거, 캠핑용품, 식품/영양제, 생활소모품, 보험/구독/통신/쿠폰 조건 등.\n5. 노써치/귀곰/잇섭/정가거부 계열의 공개 콘텐츠나 웹 검색 결과를 참고해 실사용 포인트 2~4개를 뽑되, 사용자 글에는 raw URL/출처 푸터를 넣지 않는다.\n\n게시 절차:\n- POST `https://gaji.run/api/board-posts` with JSON:\n  `{ \"title\": \"...\", \"body\": \"<!--gaji-category:tips-->\\n# ...\\n\\n...\", \"category\": \"tips\", \"img\": \"검증된 제품 이미지 URL 또는 assets/gaji-eggplant.jpg\", \"author\": \"가지딜\" }`\n- API가 실패하면 로컬 저장소 `/mnt/c/Users/namin/hotdeal-site`에서 Supabase env/파일을 확인하고 direct insert를 시도하되, 비밀값은 출력하지 않는다.\n- 성공 후 다시 `https://gaji.run/api/board-posts?limit=20`을 조회해 새 제목이 tips로 보이는지, `img`가 비어 있지 않은지 검증한다.\n\n최종 보고 형식:\n- 오늘 올린 글 제목\n- 추출한 제품명/제품군\n- 사용한 이미지: 제품 이미지 URL 또는 기본 이미지 fallback 여부\n- 참고한 최근 콘텐츠가 있으면 주제 출처 유형만 간단히 표시: 예) `최근 유튜브 리뷰 흐름 참고` (URL/출처 푸터는 본문에는 넣지 않음)\n- 핵심 주제 1줄\n- 등록/검증 결과\n- 실패 시 실패 원인과 다음 조치\n\n주의:\n- Vercel production deploy는 절대 실행하지 않는다. 이 작업은 데이터 게시만 한다.\n- Git commit/push도 필요 없다. 코드 변경 금지.\n- 같은 제목/비슷한 주제가 이미 있으면 새 주제로 바꾼다.\n- 민감정보/API 키/토큰은 절대 출력하지 않는다.",
+  "skills": [],
+  "script": null,
+  "no_agent": false,
+  "enabled_toolsets": [
+    "web",
+    "terminal",
+    "file"
+  ],
+  "deliver": "origin",
+  "workdir": null,
+  "profile": null,
+  "source_note": "Exported before removing active Hermes cron jobs. Recreate manually only if this automation is needed again."
+}
