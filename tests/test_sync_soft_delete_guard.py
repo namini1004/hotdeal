@@ -225,6 +225,45 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
         self.assertEqual(deleted_rows[0]["id"], 1)
         self.assertEqual(deleted_rows[0]["source"], "fmkorea")
 
+    def test_prune_delete_rows_include_all_old_active_duplicate_ids(self):
+        rows = [
+            {
+                "id": 1,
+                "source": "quasar",
+                "source_link": "https://quasarzone.com/bbs/qb_saleinfo/views/1",
+                "registered_at": "2026-05-26T00:00:00+00:00",
+                "deleted_at": None,
+            },
+            {
+                "id": 2,
+                "source": "quasar",
+                "source_link": "https://quasarzone.com/bbs/qb_saleinfo/views/1",
+                "registered_at": "2026-05-26T01:00:00+00:00",
+                "deleted_at": None,
+            },
+        ]
+
+        deleted_rows = sync.build_prune_delete_rows(
+            rows,
+            "2026-05-29T01:00:00+00:00",
+            sync.datetime(2026, 5, 27, 0, 0, tzinfo=sync.timezone.utc),
+        )
+
+        self.assertEqual({row["id"] for row in deleted_rows}, {1, 2})
+
+    def test_append_id_delete_rows_dedupes_by_id_only(self):
+        deleted_rows = [{"id": 1, "source": "ppomppu", "source_link": "same"}]
+
+        sync.append_id_delete_rows(
+            deleted_rows,
+            [
+                {"id": 1, "source": "ppomppu", "source_link": "same"},
+                {"id": 2, "source": "ppomppu", "source_link": "same"},
+            ],
+        )
+
+        self.assertEqual([row["id"] for row in deleted_rows], [1, 2])
+
     def test_existing_map_prefers_active_row_over_deleted_newer_row(self):
         rows = [
             {
