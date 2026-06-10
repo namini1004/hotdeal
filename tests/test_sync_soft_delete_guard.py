@@ -149,6 +149,106 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
         self.assertEqual(deleted_rows[0]["source"], "fmkorea")
         self.assertIn("fmkorea", skipped_sources)
 
+    def test_fmkorea_only_sync_does_not_soft_delete_other_sources(self):
+        original_expected = sync.EXPECTED_FEED_SOURCES
+        sync.EXPECTED_FEED_SOURCES = {"fmkorea"}
+        try:
+            rows = [
+                {
+                    "source": "fmkorea",
+                    "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=456",
+                    "title": "new fmkorea",
+                    "img": "",
+                    "detail_img": "",
+                }
+            ]
+            existing_map = {
+                "ppomppu::https://m.ppomppu.co.kr/new/bbs_view.php?id=ppomppu&no=1": {
+                    "source": "ppomppu",
+                    "source_link": "https://m.ppomppu.co.kr/new/bbs_view.php?id=ppomppu&no=1",
+                    "title": "existing ppomppu",
+                    "img": "",
+                    "detail_img": "",
+                    "deleted_at": None,
+                },
+                "fmkorea::https://m.fmkorea.com/?mid=hotdeal&document_srl=123": {
+                    "source": "fmkorea",
+                    "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=123",
+                    "title": "old fmkorea",
+                    "img": "",
+                    "detail_img": "",
+                    "deleted_at": None,
+                },
+            }
+
+            changed_rows, deleted_rows, skipped_sources = sync.build_sync_plan(
+                rows,
+                existing_map,
+                "2026-05-29T00:00:00+00:00",
+            )
+
+            self.assertEqual(len(changed_rows), 1)
+            self.assertEqual(len(deleted_rows), 1)
+            self.assertEqual(deleted_rows[0]["source"], "fmkorea")
+            self.assertNotIn("ppomppu", {row["source"] for row in deleted_rows})
+            self.assertEqual(skipped_sources, set())
+        finally:
+            sync.EXPECTED_FEED_SOURCES = original_expected
+
+    def test_duplicate_active_rows_are_soft_deleted_by_id(self):
+        rows = [
+            {
+                "id": 1,
+                "source": "fmkorea",
+                "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=123",
+                "title": "without image",
+                "img": "",
+                "detail_img": "",
+                "updated_at": "2026-05-29T00:00:00+00:00",
+                "deleted_at": None,
+            },
+            {
+                "id": 2,
+                "source": "fmkorea",
+                "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=123",
+                "title": "with image",
+                "img": "https://example.com/thumb.webp",
+                "detail_img": "",
+                "updated_at": "2026-05-28T00:00:00+00:00",
+                "deleted_at": None,
+            },
+        ]
+
+        deleted_rows = sync.build_duplicate_delete_rows(rows, "2026-05-29T01:00:00+00:00")
+
+        self.assertEqual(len(deleted_rows), 1)
+        self.assertEqual(deleted_rows[0]["id"], 1)
+        self.assertEqual(deleted_rows[0]["source"], "fmkorea")
+
+    def test_existing_map_prefers_active_row_over_deleted_newer_row(self):
+        rows = [
+            {
+                "id": 1,
+                "source": "ppomppu",
+                "source_link": "https://m.ppomppu.co.kr/new/bbs_view.php?id=ppomppu&no=1",
+                "title": "active older",
+                "updated_at": "2026-05-28T00:00:00+00:00",
+                "deleted_at": None,
+            },
+            {
+                "id": 2,
+                "source": "ppomppu",
+                "source_link": "https://m.ppomppu.co.kr/new/bbs_view.php?id=ppomppu&no=1",
+                "title": "deleted newer",
+                "updated_at": "2026-05-29T00:00:00+00:00",
+                "deleted_at": "2026-05-29T00:00:00+00:00",
+            },
+        ]
+
+        existing_map = sync.build_existing_map(rows)
+
+        self.assertEqual(existing_map["ppomppu::https://m.ppomppu.co.kr/new/bbs_view.php?id=ppomppu&no=1"]["id"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

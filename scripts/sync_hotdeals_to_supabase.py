@@ -383,7 +383,7 @@ def mirror_feed_images(rows: List[Dict], existing_map: Dict[str, Dict], supabase
             print(f"WARN_IMAGE_MIRROR_SKIP source={row.get('source')} source_link={row.get('source_link')} reason={exc}")
 
 
-def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
+def fetch_existing_rows(supabase_url: str, service_key: str) -> List[Dict]:
     headers = {
         "apikey": service_key,
         "Authorization": f"Bearer {service_key}",
@@ -395,7 +395,7 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
         "&source=neq.user"
     )
 
-    existing: Dict[str, Dict] = {}
+    existing_rows: List[Dict] = []
     start = 0
     page_size = 1000
 
@@ -410,24 +410,66 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
         if not rows:
             break
 
-        for row in rows:
-            key = f"{row.get('source', '')}::{row.get('source_link', '')}"
-            if row.get("source") and row.get("source_link"):
-                prev = existing.get(key)
-                if not prev or existing_row_score(row) >= existing_row_score(prev):
-                    existing[key] = row
+        existing_rows.extend(rows)
 
         if len(rows) < page_size:
             break
         start += page_size
 
+    return existing_rows
+
+
+def build_existing_map(existing_rows: List[Dict]) -> Dict[str, Dict]:
+    existing: Dict[str, Dict] = {}
+    for row in existing_rows:
+        key = f"{row.get('source', '')}::{row.get('source_link', '')}"
+        if row.get("source") and row.get("source_link"):
+            prev = existing.get(key)
+            if not prev or existing_row_score(row) >= existing_row_score(prev):
+                existing[key] = row
     return existing
 
 
+def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
+    return build_existing_map(fetch_existing_rows(supabase_url, service_key))
+
+
+def build_duplicate_delete_rows(existing_rows: List[Dict], now_iso: str) -> List[Dict]:
+    groups: Dict[str, List[Dict]] = {}
+    for row in existing_rows:
+        if row.get("deleted_at"):
+            continue
+        source = str(row.get("source") or "").strip()
+        source_link = str(row.get("source_link") or "").strip()
+        if not source or not source_link or source not in EXPECTED_FEED_SOURCES:
+            continue
+        groups.setdefault(f"{source}::{source_link}", []).append(row)
+
+    deleted_rows: List[Dict] = []
+    for rows in groups.values():
+        if len(rows) < 2:
+            continue
+        rows.sort(key=existing_row_score, reverse=True)
+        for index, row in enumerate(rows):
+            if index == 0:
+                continue
+            deleted_rows.append(
+                {
+                    "id": row.get("id"),
+                    "source": row.get("source"),
+                    "source_link": row.get("source_link"),
+                    "deleted_at": now_iso,
+                    "updated_at": now_iso,
+                }
+            )
+    return deleted_rows
+
+
 def existing_row_score(row: Dict):
+    is_active = 0 if row.get("deleted_at") else 1
     has_image = 1 if (row.get("img") or row.get("detail_img") or "").strip() else 0
     dt = parse_iso_datetime(row.get("updated_at") or row.get("registered_at") or row.get("created_at") or "")
-    return has_image, dt.timestamp() if dt else 0
+    return is_active, has_image, dt.timestamp() if dt else 0
 
 
 def strip_quality_signal_fields(rows: List[Dict]) -> List[Dict]:
@@ -585,6 +627,8 @@ def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: st
         source_link = str(prev.get("source_link") or "").strip()
         if not source or not source_link:
             continue
+        if source not in EXPECTED_FEED_SOURCES:
+            continue
         if prune_before is not None and is_older_than(prev, prune_before):
             deleted_rows.append(
                 {
@@ -641,7 +685,8 @@ def main():
     prune_before = now_dt - timedelta(hours=PRUNE_FEED_AGE_HOURS)
     sync_rows = [row for row in rows if not is_older_than(row, prune_before)]
 
-    existing_map = fetch_existing_map(supabase_url, service_key)
+    existing_rows = fetch_existing_rows(supabase_url, service_key)
+    existing_map = build_existing_map(existing_rows)
     if sync_rows:
         mirror_feed_images(sync_rows, existing_map, supabase_url, service_key)
     elif not rows:
@@ -653,6 +698,19 @@ def main():
         stale_fallback_sources,
         prune_before=prune_before,
     )
+    duplicate_delete_rows = build_duplicate_delete_rows(existing_rows, now_iso)
+    if duplicate_delete_rows:
+        deleted_ids = {row.get("id") for row in deleted_rows if row.get("id")}
+        deleted_keys = {
+            f"{row.get('source')}::{row.get('source_link')}"
+            for row in deleted_rows
+            if row.get("source") and row.get("source_link") and not row.get("id")
+        }
+        for row in duplicate_delete_rows:
+            key = f"{row.get('source')}::{row.get('source_link')}"
+            if row.get("id") in deleted_ids or key in deleted_keys:
+                continue
+            deleted_rows.append(row)
     if skipped_delete_sources:
         print(f"WARN_SOFT_DELETE_GUARD skipped_sources={','.join(sorted(skipped_delete_sources))}")
 
@@ -692,13 +750,16 @@ def main():
     # 2) 수집에서 사라진 행은 PATCH로 soft delete
     if deleted_rows:
         for row in deleted_rows:
-            source = row["source"]
-            source_link = row["source_link"]
-            patch_endpoint = (
-                f"{supabase_url}/rest/v1/deals"
-                f"?source=eq.{quote(source, safe='')}"
-                f"&source_link=eq.{quote(source_link, safe='')}"
-            )
+            if row.get("id"):
+                patch_endpoint = f"{supabase_url}/rest/v1/deals?id=eq.{quote(str(row['id']), safe='')}"
+            else:
+                source = row["source"]
+                source_link = row["source_link"]
+                patch_endpoint = (
+                    f"{supabase_url}/rest/v1/deals"
+                    f"?source=eq.{quote(source, safe='')}"
+                    f"&source_link=eq.{quote(source_link, safe='')}"
+                )
             res = request_with_quality_signal_fallback(
                 "PATCH",
                 patch_endpoint,
