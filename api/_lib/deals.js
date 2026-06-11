@@ -9,6 +9,7 @@ const FEED_FILES = [
 ];
 const FEED_SOURCES = ['ppomppu', 'quasar', 'fmkorea', 'ruliweb'];
 const FEED_SOURCE_LIMIT = 900;
+const FEED_LOOKBACK_HOURS = 48;
 
 const HOT_SCORE_CONFIG = {
   commentWeight: 1.8,
@@ -281,6 +282,7 @@ function normalizeFeedDbRow(row = {}) {
     img: row.img || '',
     detailImg: row.detail_img || row.img || '',
     sourceLink: row.source_link || '',
+    sourcePostId: row.source_post_id || '',
     buyLink: row.buy_link || '',
     likes: Number(row.likes || 0),
     dislikes: Number(row.dislikes || 0),
@@ -302,11 +304,14 @@ function normalizeFeedDbRow(row = {}) {
 function canonicalFeedKey(item = {}) {
   const source = item.source || 'feed';
   const sourceLink = item.sourceLink || '';
+  if (item.sourcePostId) return `${source}::post:${item.sourcePostId}`;
   if (source === 'ppomppu') {
     const noMatch = String(sourceLink).match(/[?&]no=(\d+)/);
     if (noMatch) return `${source}::no:${noMatch[1]}`;
   }
   if (source === 'fmkorea') {
+    const docMatch = String(sourceLink).match(/[?&]document_srl=(\d+)/);
+    if (docMatch) return `${source}::doc:${docMatch[1]}`;
     const idMatch = String(sourceLink).match(/fmkorea\.com\/(\d+)/);
     if (idMatch) return `${source}::doc:${idMatch[1]}`;
   }
@@ -337,9 +342,10 @@ function shouldReplaceFeedDuplicate(prev = {}, item = {}) {
 
 async function readFeedItems() {
   try {
+    const cutoffIso = new Date(Date.now() - FEED_LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
     const batches = await Promise.all(FEED_SOURCES.map((source) =>
       supabaseRequest(
-        `deals?source=eq.${encodeURIComponent(source)}&deleted_at=is.null&select=*&order=registered_at.desc&limit=${FEED_SOURCE_LIMIT}`
+        `deals?source=eq.${encodeURIComponent(source)}&deleted_at=is.null&registered_at=gte.${encodeURIComponent(cutoffIso)}&select=*&order=registered_at.desc&limit=${FEED_SOURCE_LIMIT}`
       ).catch(() => [])
     ));
     const rows = batches.flat();

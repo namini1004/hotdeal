@@ -62,6 +62,7 @@ QUALITY_SIGNAL_FIELDS = [
 ]
 
 TRACKED_FIELDS = [
+    "source_post_id",
     "buy_link",
     "title",
     "desc",
@@ -132,23 +133,66 @@ def load_items() -> List[Dict]:
 def canonicalize_source_link(source: str, source_link: str) -> str:
     source = str(source or "").strip()
     source_link = str(source_link or "").strip()
+    source_post_id = extract_source_post_id(source, source_link)
     if source == "ppomppu":
         parsed = urlparse(source_link)
         query = parse_qs(parsed.query)
-        no = (query.get("no") or [""])[0]
         board_id = (query.get("id") or ["ppomppu"])[0]
-        if no:
-            canonical_query = urlencode({"id": board_id or "ppomppu", "no": no})
+        if source_post_id:
+            canonical_query = urlencode({"id": board_id or "ppomppu", "no": source_post_id})
             return f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{canonical_query}"
+    if source == "quasar" and source_post_id:
+        return f"https://quasarzone.com/bbs/qb_saleinfo/views/{source_post_id}"
+    if source == "fmkorea" and source_post_id:
+        return f"https://m.fmkorea.com/?mid=hotdeal&document_srl={source_post_id}"
+    if source == "ruliweb" and source_post_id:
+        return f"https://m.ruliweb.com/market/board/1020/read/{source_post_id}"
     return source_link
+
+
+def extract_source_post_id(source: str, source_link: str) -> str:
+    source = str(source or "").strip()
+    source_link = str(source_link or "").strip()
+    if source == "ppomppu":
+        no = (parse_qs(urlparse(source_link).query).get("no") or [""])[0].strip()
+        if no:
+            return no
+    if source == "quasar":
+        m = re.search(r"/views/(\d+)", source_link)
+        if m:
+            return m.group(1)
+    if source == "fmkorea":
+        doc = (parse_qs(urlparse(source_link).query).get("document_srl") or [""])[0].strip()
+        if doc:
+            return doc
+        m = re.search(r"fmkorea\.com/(?:index\.php/)?(\d+)", source_link)
+        if m:
+            return m.group(1)
+    if source == "ruliweb":
+        m = re.search(r"/read/(\d+)", source_link)
+        if m:
+            return m.group(1)
+    return ""
+
+
+def source_post_id_or_fallback(source: str, source_link: str) -> str:
+    post_id = extract_source_post_id(source, source_link)
+    if post_id:
+        return post_id
+    source_link = str(source_link or "").strip()
+    if not source_link:
+        return ""
+    return f"link:{hashlib.sha1(source_link.encode('utf-8')).hexdigest()[:12]}"
 
 
 def normalize(item: Dict) -> Dict:
     source = str(item.get("source") or "feed").strip()
     source_link = canonicalize_source_link(source, str(item.get("sourceLink") or "").strip())
+    source_post_id = source_post_id_or_fallback(source, source_link)
     buy_link = str(item.get("buyLink") or source_link).strip()
     return {
         "source": source,
+        "source_post_id": source_post_id,
         "source_link": source_link,
         "buy_link": buy_link,
         "title": str(item.get("title") or "제목 없음").strip(),
@@ -186,6 +230,20 @@ def row_changed(new_row: Dict, old_row: Dict) -> bool:
     return False
 
 
+def sync_key(row: Dict) -> str:
+    source = str(row.get("source") or "").strip()
+    source_post_id = str(row.get("source_post_id") or "").strip()
+    if not source_post_id:
+        source_post_id = source_post_id_or_fallback(source, row.get("source_link") or "")
+    if source and source_post_id:
+        return f"{source}::post::{source_post_id}"
+    return f"{source}::link::{row.get('source_link', '')}"
+
+
+def legacy_sync_key(row: Dict) -> str:
+    return f"{row.get('source', '')}::{row.get('source_link', '')}"
+
+
 def storage_public_prefix(supabase_url: str) -> str:
     return f"{supabase_url}/storage/v1/object/public/{IMAGE_BUCKET}/"
 
@@ -212,19 +270,10 @@ def is_reusable_storage_webp(img: str, source: str, supabase_url: str, variant: 
 
 
 def row_id_from_source_link(source: str, source_link: str) -> str:
+    post_id = extract_source_post_id(source, source_link)
+    if post_id:
+        return post_id
     source_link = source_link or ""
-    if source == "ppomppu":
-        m = re.search(r"[?&]no=(\d+)", source_link)
-        if m:
-            return m.group(1)
-    if source == "ruliweb":
-        m = re.search(r"/read/(\d+)", source_link)
-        if m:
-            return m.group(1)
-    if source == "fmkorea":
-        m = re.search(r"fmkorea\.com/(\d+)", source_link)
-        if m:
-            return m.group(1)
     return hashlib.sha1(source_link.encode("utf-8")).hexdigest()[:12]
 
 
@@ -422,7 +471,7 @@ def fetch_existing_rows(supabase_url: str, service_key: str) -> List[Dict]:
 def build_existing_map(existing_rows: List[Dict]) -> Dict[str, Dict]:
     existing: Dict[str, Dict] = {}
     for row in existing_rows:
-        key = f"{row.get('source', '')}::{row.get('source_link', '')}"
+        key = sync_key(row)
         if row.get("source") and row.get("source_link"):
             prev = existing.get(key)
             if not prev or existing_row_score(row) >= existing_row_score(prev):
@@ -434,14 +483,32 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
     return build_existing_map(fetch_existing_rows(supabase_url, service_key))
 
 
+def database_has_source_post_id(supabase_url: str, service_key: str) -> bool:
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": "application/json",
+    }
+    endpoint = f"{supabase_url}/rest/v1/deals?select=source_post_id&limit=1"
+    res = requests.get(endpoint, headers=headers, timeout=30)
+    if res.ok:
+        return True
+    if res.status_code == 400 and "source_post_id" in (res.text or ""):
+        return False
+    return False
+
+
+def strip_source_post_id(rows: List[Dict]) -> List[Dict]:
+    return [{k: v for k, v in row.items() if k != "source_post_id"} for row in rows]
+
+
 def canonical_existing_key(row: Dict) -> str:
     source = str(row.get("source") or "").strip()
     source_link = str(row.get("source_link") or "").strip()
-    if source == "ppomppu":
-        no = (parse_qs(urlparse(source_link).query).get("no") or [""])[0].strip()
-        if no:
-            return f"{source}::no::{no}"
-    return f"{source}::{source_link}"
+    source_post_id = str(row.get("source_post_id") or "").strip() or source_post_id_or_fallback(source, source_link)
+    if source_post_id:
+        return f"{source}::post::{source_post_id}"
+    return f"{source}::link::{source_link}"
 
 
 def build_duplicate_delete_rows(existing_rows: List[Dict], now_iso: str) -> List[Dict]:
@@ -540,11 +607,18 @@ def request_with_quality_signal_fallback(method: str, endpoint: str, headers: Di
 
 
 def patch_feed_row_by_key(row: Dict, supabase_url: str, headers: Dict):
-    patch_endpoint = (
-        f"{supabase_url}/rest/v1/deals"
-        f"?source=eq.{quote(row['source'], safe='')}"
-        f"&source_link=eq.{quote(row['source_link'], safe='')}"
-    )
+    if row.get("source_post_id"):
+        patch_endpoint = (
+            f"{supabase_url}/rest/v1/deals"
+            f"?source=eq.{quote(row['source'], safe='')}"
+            f"&source_post_id=eq.{quote(row['source_post_id'], safe='')}"
+        )
+    else:
+        patch_endpoint = (
+            f"{supabase_url}/rest/v1/deals"
+            f"?source=eq.{quote(row['source'], safe='')}"
+            f"&source_link=eq.{quote(row['source_link'], safe='')}"
+        )
     return request_with_quality_signal_fallback(
         "PATCH",
         patch_endpoint,
@@ -557,7 +631,7 @@ def patch_feed_row_by_key(row: Dict, supabase_url: str, headers: Dict):
 def write_rows_without_upsert(rows: List[Dict], existing_map: Dict[str, Dict], supabase_url: str, endpoint_insert: str, headers: Dict) -> int:
     written = 0
     for row in rows:
-        key = f"{row['source']}::{row['source_link']}"
+        key = sync_key(row)
         if key in existing_map:
             res = patch_feed_row_by_key(row, supabase_url, headers)
             action = "patch"
@@ -675,14 +749,16 @@ def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: st
     skipped_delete_sources = (EXPECTED_FEED_SOURCES - current_sources) | stale_fallback_sources
 
     for row in rows:
-        key = f"{row['source']}::{row['source_link']}"
-        prev = existing_map.get(key)
+        key = sync_key(row)
+        legacy_key = legacy_sync_key(row)
+        prev = existing_map.get(key) or existing_map.get(legacy_key)
         if prune_before is not None:
             if is_older_than(row, prune_before):
                 continue
             if prev and is_older_than(prev, prune_before):
                 continue
         current_keys.add(key)
+        current_keys.add(legacy_key)
         if not prev:
             row["updated_at"] = now_iso
             changed_rows.append(row)
@@ -748,13 +824,14 @@ def main():
         raise SystemExit("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
 
     raw_items, stale_fallback_sources = load_feed_data()
+    use_source_post_id = database_has_source_post_id(supabase_url, service_key)
     norm_items = [normalize(v) for v in raw_items if (v.get("sourceLink") or "").strip()]
 
     # source+source_link / exact title 기준 중복 제거(최신 항목 우선)
     dedup = {}
     title_keys = set()
     for row in norm_items:
-        canonical_key = f"{row['source']}::{row['source_link']}"
+        canonical_key = sync_key(row)
         normalized_title = re.sub(r"\s+", " ", row.get("title") or "").strip().lower()
         title_key = f"{row['source']}::title::{normalized_title}"
         if title_key in title_keys:
@@ -762,6 +839,8 @@ def main():
         title_keys.add(title_key)
         dedup[canonical_key] = row
     rows = list(dedup.values())
+    if not use_source_post_id:
+        rows = strip_source_post_id(rows)
 
     now_dt = datetime.now(timezone.utc)
     now_iso = now_dt.isoformat()
@@ -790,7 +869,8 @@ def main():
         print("NO_CHANGE")
         return
 
-    endpoint_upsert = f"{supabase_url}/rest/v1/deals?on_conflict=source,source_link"
+    conflict_columns = "source,source_post_id" if use_source_post_id else "source,source_link"
+    endpoint_upsert = f"{supabase_url}/rest/v1/deals?on_conflict={conflict_columns}"
     endpoint_insert = f"{supabase_url}/rest/v1/deals"
     headers = {
         "apikey": service_key,

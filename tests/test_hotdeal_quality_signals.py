@@ -82,6 +82,28 @@ def test_api_canonical_feed_key_dedupes_ppomppu_page_variants():
     assert data['a'] == data['b']
 
 
+def test_api_canonical_feed_key_extracts_all_feed_source_ids():
+    script = f'''
+      const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});
+      const keys = [
+        deals.canonicalFeedKey({{ source: 'ppomppu', sourceLink: 'https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=6&no=708770' }}),
+        deals.canonicalFeedKey({{ source: 'quasar', sourceLink: 'https://quasarzone.com/bbs/qb_saleinfo/views/1960291?page=2' }}),
+        deals.canonicalFeedKey({{ source: 'fmkorea', sourceLink: 'https://m.fmkorea.com/?mid=hotdeal&document_srl=9941127608' }}),
+        deals.canonicalFeedKey({{ source: 'ruliweb', sourceLink: 'https://m.ruliweb.com/market/board/1020/read/104541' }}),
+        deals.canonicalFeedKey({{ source: 'fmkorea', sourcePostId: '9941127608', sourceLink: 'https://example.com/changed' }}),
+      ];
+      console.log(JSON.stringify(keys));
+    '''
+    out = subprocess.check_output(['node', '-e', script], cwd=ROOT, text=True)
+    assert json.loads(out) == [
+        'ppomppu::no:708770',
+        'quasar::view:1960291',
+        'fmkorea::doc:9941127608',
+        'ruliweb::read:104541',
+        'fmkorea::post:9941127608',
+    ]
+
+
 def test_api_feed_duplicate_prefers_row_with_image_over_newer_blank():
     script = f'''
       const deals = require({json.dumps(str(ROOT / 'api/_lib/deals.js'))});

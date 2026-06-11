@@ -11,6 +11,49 @@ spec.loader.exec_module(sync)
 
 
 class SyncSoftDeleteGuardTests(unittest.TestCase):
+    def test_source_post_id_extraction_supports_all_feed_sources(self):
+        cases = [
+            ("ppomppu", "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=6&no=708770", "708770"),
+            ("quasar", "https://quasarzone.com/bbs/qb_saleinfo/views/1960291?page=2", "1960291"),
+            ("fmkorea", "https://m.fmkorea.com/?mid=hotdeal&document_srl=9941127608", "9941127608"),
+            ("fmkorea", "https://www.fmkorea.com/9941127608", "9941127608"),
+            ("ruliweb", "https://m.ruliweb.com/market/board/1020/read/104541", "104541"),
+        ]
+
+        for source, link, expected in cases:
+            self.assertEqual(sync.extract_source_post_id(source, link), expected)
+
+    def test_normalize_sets_source_post_id_and_canonical_source_link(self):
+        row = sync.normalize(
+            {
+                "source": "fmkorea",
+                "sourceLink": "https://www.fmkorea.com/index.php?mid=hotdeal&listStyle=webzine&document_srl=9941127608&page=2",
+                "title": "deal",
+            }
+        )
+
+        self.assertEqual(row["source_post_id"], "9941127608")
+        self.assertEqual(row["source_link"], "https://m.fmkorea.com/?mid=hotdeal&document_srl=9941127608")
+
+    def test_sync_key_uses_source_post_id_over_source_link_variants(self):
+        first = sync.normalize(
+            {
+                "source": "ppomppu",
+                "sourceLink": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=1&no=710000",
+                "title": "deal",
+            }
+        )
+        second = sync.normalize(
+            {
+                "source": "ppomppu",
+                "sourceLink": "https://m.ppomppu.co.kr/new/bbs_view.php?id=ppomppu&page=6&no=710000",
+                "title": "deal",
+            }
+        )
+
+        self.assertEqual(sync.sync_key(first), "ppomppu::post::710000")
+        self.assertEqual(sync.sync_key(first), sync.sync_key(second))
+
     def test_zero_item_source_does_not_soft_delete_existing_rows(self):
         rows = [
             {
@@ -313,7 +356,7 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
 
         existing_map = sync.build_existing_map(rows)
 
-        self.assertEqual(existing_map["ppomppu::https://m.ppomppu.co.kr/new/bbs_view.php?id=ppomppu&no=1"]["id"], 1)
+        self.assertEqual(existing_map["ppomppu::post::1"]["id"], 1)
 
 
 if __name__ == "__main__":

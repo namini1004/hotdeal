@@ -3,6 +3,7 @@ create extension if not exists pgcrypto;
 create table if not exists public.deals (
   id uuid primary key default gen_random_uuid(),
   source text not null default 'user',
+  source_post_id text,
   source_link text not null default '',
   buy_link text not null default '',
   title text not null,
@@ -31,6 +32,7 @@ create table if not exists public.deals (
 
 alter table public.deals
   add column if not exists source text not null default 'user',
+  add column if not exists source_post_id text,
   add column if not exists source_link text not null default '',
   add column if not exists buy_link text not null default '',
   add column if not exists likes integer not null default 0,
@@ -52,6 +54,9 @@ alter table public.deals
 create unique index if not exists deals_source_source_link_uniq
   on public.deals (source, source_link)
   where source <> 'user' and source_link <> '';
+
+create unique index if not exists deals_source_source_post_id_uniq
+  on public.deals (source, source_post_id);
 
 create index if not exists idx_deals_source_registered_at
   on public.deals (source, registered_at desc);
