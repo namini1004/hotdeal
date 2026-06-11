@@ -225,6 +225,33 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
         self.assertEqual(deleted_rows[0]["id"], 1)
         self.assertEqual(deleted_rows[0]["source"], "fmkorea")
 
+    def test_ppomppu_page_variants_are_soft_deleted_by_canonical_no(self):
+        rows = [
+            {
+                "id": 1,
+                "source": "ppomppu",
+                "source_link": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=1&no=710000",
+                "img": "",
+                "detail_img": "",
+                "updated_at": "2026-05-29T00:00:00+00:00",
+                "deleted_at": None,
+            },
+            {
+                "id": 2,
+                "source": "ppomppu",
+                "source_link": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=6&no=710000",
+                "img": "https://example.com/thumb.webp",
+                "detail_img": "",
+                "updated_at": "2026-05-28T00:00:00+00:00",
+                "deleted_at": None,
+            },
+        ]
+
+        deleted_rows = sync.build_duplicate_delete_rows(rows, "2026-05-29T01:00:00+00:00")
+
+        self.assertEqual(len(deleted_rows), 1)
+        self.assertEqual(deleted_rows[0]["id"], 1)
+
     def test_prune_delete_rows_include_all_old_active_duplicate_ids(self):
         rows = [
             {

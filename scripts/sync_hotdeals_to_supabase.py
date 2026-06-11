@@ -434,6 +434,16 @@ def fetch_existing_map(supabase_url: str, service_key: str) -> Dict[str, Dict]:
     return build_existing_map(fetch_existing_rows(supabase_url, service_key))
 
 
+def canonical_existing_key(row: Dict) -> str:
+    source = str(row.get("source") or "").strip()
+    source_link = str(row.get("source_link") or "").strip()
+    if source == "ppomppu":
+        no = (parse_qs(urlparse(source_link).query).get("no") or [""])[0].strip()
+        if no:
+            return f"{source}::no::{no}"
+    return f"{source}::{source_link}"
+
+
 def build_duplicate_delete_rows(existing_rows: List[Dict], now_iso: str) -> List[Dict]:
     groups: Dict[str, List[Dict]] = {}
     for row in existing_rows:
@@ -443,7 +453,7 @@ def build_duplicate_delete_rows(existing_rows: List[Dict], now_iso: str) -> List
         source_link = str(row.get("source_link") or "").strip()
         if not source or not source_link or source not in EXPECTED_FEED_SOURCES:
             continue
-        groups.setdefault(f"{source}::{source_link}", []).append(row)
+        groups.setdefault(canonical_existing_key(row), []).append(row)
 
     deleted_rows: List[Dict] = []
     for rows in groups.values():
@@ -573,20 +583,18 @@ def soft_delete_rows(rows: List[Dict], supabase_url: str, headers: Dict) -> int:
     id_rows = [row for row in rows if row.get("id")]
     keyed_rows = [row for row in rows if not row.get("id")]
 
-    for batch in chunked(id_rows, 100):
-        ids = ",".join(f'"{str(row["id"])}"' for row in batch)
-        patch_endpoint = f"{supabase_url}/rest/v1/deals?id=in.({quote(ids, safe=',')})"
-        body = {"deleted_at": batch[0]["deleted_at"], "updated_at": batch[0]["updated_at"]}
+    for row in id_rows:
+        patch_endpoint = f"{supabase_url}/rest/v1/deals?id=eq.{quote(str(row['id']), safe='')}"
         res = request_with_quality_signal_fallback(
             "PATCH",
             patch_endpoint,
             {**headers, "Prefer": "return=minimal"},
-            body,
+            {"deleted_at": row["deleted_at"], "updated_at": row["updated_at"]},
             timeout=60,
         )
         if not res.ok:
             raise SystemExit(f"Supabase soft delete failed ({res.status_code}): {res.text}")
-        written += len(batch)
+        written += 1
 
     for row in keyed_rows:
         source = row["source"]
@@ -814,15 +822,6 @@ def main():
     # 2) 수집에서 사라진 행은 PATCH로 soft delete
     if deleted_rows:
         written += soft_delete_rows(deleted_rows, supabase_url, headers)
-
-    # 3) upsert/insert fallback 이후 생긴 중복까지 최종 정리한다.
-    final_now_iso = datetime.now(timezone.utc).isoformat()
-    final_rows = fetch_existing_rows(supabase_url, service_key)
-    final_delete_rows: List[Dict] = []
-    append_id_delete_rows(final_delete_rows, build_duplicate_delete_rows(final_rows, final_now_iso))
-    append_id_delete_rows(final_delete_rows, build_prune_delete_rows(final_rows, final_now_iso, prune_before))
-    if final_delete_rows:
-        written += soft_delete_rows(final_delete_rows, supabase_url, headers)
 
     ingest_status = send_push_ingest(changed_rows)
     print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} ingest={ingest_status}")
