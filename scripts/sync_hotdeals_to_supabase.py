@@ -28,6 +28,8 @@ DEFAULT_FEED_FILES = [
 ]
 DEFAULT_EXPECTED_FEED_SOURCES = {"ppomppu", "quasar", "fmkorea", "ruliweb"}
 PRUNE_FEED_AGE_HOURS = int(os.environ.get("HOTDEAL_PRUNE_FEED_AGE_HOURS", "48"))
+MIN_SOURCE_DELETE_GUARD_EXISTING_ROWS = int(os.environ.get("HOTDEAL_MIN_SOURCE_DELETE_GUARD_EXISTING_ROWS", "10"))
+SOURCE_DELETE_GUARD_MIN_RATIO = float(os.environ.get("HOTDEAL_SOURCE_DELETE_GUARD_MIN_RATIO", "0.5"))
 
 
 def _configured_feed_files():
@@ -747,6 +749,20 @@ def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: st
     current_keys = set()
     current_sources = {str(row.get("source") or "").strip() for row in rows if row.get("source")}
     skipped_delete_sources = (EXPECTED_FEED_SOURCES - current_sources) | stale_fallback_sources
+    active_existing_by_source = {}
+    seen_existing_ids = set()
+    for prev in existing_map.values():
+        if prev.get("deleted_at"):
+            continue
+        source = str(prev.get("source") or "").strip()
+        if source not in EXPECTED_FEED_SOURCES:
+            continue
+        row_id = prev.get("id") or f"{source}:{prev.get('source_link') or sync_key(prev)}"
+        if row_id in seen_existing_ids:
+            continue
+        seen_existing_ids.add(row_id)
+        active_existing_by_source[source] = active_existing_by_source.get(source, 0) + 1
+    current_eligible_by_source = {}
 
     for row in rows:
         key = sync_key(row)
@@ -759,6 +775,9 @@ def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: st
                 continue
         current_keys.add(key)
         current_keys.add(legacy_key)
+        source = str(row.get("source") or "").strip()
+        if source:
+            current_eligible_by_source[source] = current_eligible_by_source.get(source, 0) + 1
         if not prev:
             row["updated_at"] = now_iso
             changed_rows.append(row)
@@ -777,6 +796,13 @@ def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: st
 
     # 이번 수집 결과에 없는 기존 feed 글은 soft delete 처리하되,
     # 0건 수집된 소스는 파서 실패 가능성이 높으므로 기존 데이터를 유지한다.
+    for source, existing_count in active_existing_by_source.items():
+        if source in skipped_delete_sources:
+            continue
+        current_count = current_eligible_by_source.get(source, 0)
+        if existing_count >= MIN_SOURCE_DELETE_GUARD_EXISTING_ROWS and current_count < existing_count * SOURCE_DELETE_GUARD_MIN_RATIO:
+            skipped_delete_sources.add(source)
+
     deleted_rows: List[Dict] = []
     deleted_keys = set()
     for key, prev in existing_map.items():

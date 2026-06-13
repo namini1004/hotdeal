@@ -129,6 +129,45 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
         self.assertEqual(deleted_rows, [])
         self.assertIn("fmkorea", skipped_sources)
 
+    def test_sparse_current_source_does_not_soft_delete_existing_rows(self):
+        rows = [
+            {
+                "source": "fmkorea",
+                "source_post_id": str(idx),
+                "source_link": f"https://m.fmkorea.com/?mid=hotdeal&document_srl={idx}",
+                "title": f"existing fmkorea {idx}",
+                "img": "",
+                "detail_img": "",
+                "registered_at": "2026-05-29T00:00:00+00:00",
+            }
+            for idx in (100, 101)
+        ]
+        existing_map = {
+            f"fmkorea::post::{idx}": {
+                "id": idx,
+                "source": "fmkorea",
+                "source_post_id": str(idx),
+                "source_link": f"https://m.fmkorea.com/?mid=hotdeal&document_srl={idx}",
+                "title": f"existing fmkorea {idx}",
+                "img": "",
+                "detail_img": "",
+                "registered_at": "2026-05-29T00:00:00+00:00",
+                "deleted_at": None,
+            }
+            for idx in range(100, 130)
+        }
+
+        changed_rows, deleted_rows, skipped_sources = sync.build_sync_plan(
+            rows,
+            existing_map,
+            "2026-05-29T01:00:00+00:00",
+            prune_before=sync.datetime(2026, 5, 27, 0, 0, tzinfo=sync.timezone.utc),
+        )
+
+        self.assertEqual(changed_rows, [])
+        self.assertEqual(deleted_rows, [])
+        self.assertIn("fmkorea", skipped_sources)
+
     def test_source_with_current_rows_still_soft_deletes_missing_rows(self):
         rows = [
             {
