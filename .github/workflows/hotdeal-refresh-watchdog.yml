@@ -3,7 +3,7 @@ name: hotdeal-refresh-watchdog
 on:
   schedule:
     # 본 refresh와 다른 offset에서 사이트 최신성을 확인해 GitHub 내부에서 보조 dispatch
-    - cron: "13,28,43,58 * * * *"
+    - cron: "22,52 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ concurrency:
 
 env:
   FEED_URL: https://gaji.run/api/deals?scope=feed
-  STALE_THRESHOLD_MINUTES: "35"
+  STALE_THRESHOLD_MINUTES: "75"
 
 jobs:
   watchdog:

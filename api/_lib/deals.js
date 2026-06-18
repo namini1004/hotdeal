@@ -270,6 +270,8 @@ function readFeedItemsFromFiles() {
 }
 
 function normalizeFeedDbRow(row = {}) {
+  const img = normalizeUserImageUrl(row.img || '');
+  const detailImg = normalizeUserImageUrl(row.detail_img || row.img || '');
   return {
     id: String(row.id || ''),
     title: row.title || '제목 없음',
@@ -279,8 +281,8 @@ function normalizeFeedDbRow(row = {}) {
     price: inferKeywordPrice(row.title || '', row.desc || '', row.price || '') || '가격 정보 확인',
     category: row.category || '기타',
     desc: row.desc || '',
-    img: row.img || '',
-    detailImg: row.detail_img || row.img || '',
+    img,
+    detailImg: detailImg || img,
     sourceLink: row.source_link || '',
     sourcePostId: row.source_post_id || '',
     buyLink: row.buy_link || '',

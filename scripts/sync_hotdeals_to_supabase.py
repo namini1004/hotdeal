@@ -424,9 +424,10 @@ def mirror_feed_images(rows: List[Dict], existing_map: Dict[str, Dict], supabase
     for row in rows:
         if row.get("source") not in IMAGE_HEADERS_BY_SOURCE:
             continue
-        key = f"{row['source']}::{row['source_link']}"
+        key = sync_key(row)
+        legacy_key = legacy_sync_key(row)
         try:
-            mirrored = mirror_feed_image(row, existing_map.get(key), supabase_url, service_key)
+            mirrored = mirror_feed_image(row, existing_map.get(key) or existing_map.get(legacy_key), supabase_url, service_key)
             row["img"] = mirrored.get("img", "")
             row["detail_img"] = mirrored.get("detail_img", row["img"])
         except Exception as exc:
@@ -693,6 +694,30 @@ def soft_delete_rows(rows: List[Dict], supabase_url: str, headers: Dict) -> int:
     return written
 
 
+def purge_soft_deleted_feed_rows(supabase_url: str, headers: Dict) -> int:
+    purged = 0
+    while True:
+        res = requests.get(
+            f"{supabase_url}/rest/v1/deals?source=neq.user&deleted_at=not.is.null&select=id&limit=1000",
+            headers=headers,
+            timeout=60,
+        )
+        if not res.ok:
+            print(f"WARN_PURGE_SOFT_DELETED_READ_FAILED status={res.status_code}")
+            return purged
+        ids = [str(row.get("id") or "").strip() for row in (res.json() or []) if row.get("id")]
+        if not ids:
+            return purged
+        for i in range(0, len(ids), 100):
+            batch = ids[i:i + 100]
+            endpoint = f"{supabase_url}/rest/v1/deals?id=in.({quote(','.join(batch), safe=',-')})"
+            delete_res = requests.delete(endpoint, headers={**headers, "Prefer": "return=minimal"}, timeout=60)
+            if not delete_res.ok:
+                print(f"WARN_PURGE_SOFT_DELETED_DELETE_FAILED status={delete_res.status_code}")
+                return purged
+            purged += len(batch)
+
+
 def send_push_ingest(changed_rows: List[Dict]):
     ingest_url = os.environ.get("PUSH_INGEST_URL", "").strip()
     ingest_secret = os.environ.get("PUSH_INGEST_SECRET", "").strip()
@@ -929,8 +954,9 @@ def main():
     if deleted_rows:
         written += soft_delete_rows(deleted_rows, supabase_url, headers)
 
+    purged = purge_soft_deleted_feed_rows(supabase_url, headers)
     ingest_status = send_push_ingest(changed_rows)
-    print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} ingest={ingest_status}")
+    print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} purged={purged} ingest={ingest_status}")
 
 
 if __name__ == "__main__":
