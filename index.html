@@ -138,11 +138,6 @@
     .fab.is-compact{width:56px;min-width:56px;height:56px;padding:0;border-radius:50%;box-shadow:0 10px 24px rgba(var(--brand-rgb),.38);display:flex;align-items:center;justify-content:center;gap:0}
     .fab.is-compact .fab-plus{font-size:30px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;margin:0;transform:none}
     .fab.is-compact .fab-text{display:none}
-    .sort-sheet-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s ease,visibility 0s linear .18s;z-index:40}
-    .sort-sheet-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .18s ease}
-    .sort-sheet{position:fixed;left:50%;top:50%;width:min(320px,calc(100vw - 36px));visibility:hidden;opacity:0;pointer-events:none;transform:translate(-50%,-48%) scale(.96);padding:16px;background:#fff;border-radius:18px;box-shadow:0 22px 60px rgba(17,24,39,.24);transition:opacity .18s ease,transform .18s ease,visibility 0s linear .18s;z-index:41}
-    .sort-sheet.show{visibility:visible;opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);transition:opacity .18s ease,transform .18s ease}
-    .sort-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.sort-sheet-title{font-size:17px;font-weight:950;letter-spacing:-.03em}.sort-x-btn{width:32px;height:32px;border:0;border-radius:999px;background:#f4f6f8;color:#374151;font-size:20px;font-weight:900;line-height:1;cursor:pointer}
     .temp-modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.38);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s ease,visibility 0s linear .2s;z-index:50}
     .temp-modal-backdrop.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease}
     .temp-modal{position:fixed;left:50%;bottom:0;width:100%;max-width:430px;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(calc(100% + 48px));padding:12px 26px calc(env(safe-area-inset-bottom) + 22px);background:#fff;border-radius:28px 28px 0 0;box-shadow:0 -18px 44px rgba(17,24,39,.18);transition:transform .22s ease,visibility 0s linear .22s;z-index:51;text-align:center}
@@ -159,14 +154,14 @@
       body{background:var(--page)}
       .app{max-width:1120px;padding:0 28px 48px}
       .top{top:16px;margin:16px 0 18px;padding:16px 20px 14px;border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 34px rgba(17,24,39,.055)}
-      .row{display:grid;grid-template-columns:minmax(190px,1fr) auto minmax(190px,1fr);gap:18px;align-items:center}
+      .row{display:flex;align-items:center;justify-content:space-between;gap:18px}
       .app-webview .row{display:flex;justify-content:space-between;gap:12px}
       .title-app{font-size:28px}
       .web-tabs{display:flex;justify-content:center;padding:5px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 10px 28px rgba(42,25,82,.045)}
       .mobile-tabs{display:none}
       .web-tab{height:34px;padding:0 14px;font-size:13px;color:#697386}
       .web-tab.active{background:#171325;color:#fff;box-shadow:0 8px 18px rgba(17,19,37,.14)}
-      .top-actions{justify-content:flex-end;gap:3px}
+      .top-actions{margin-left:auto;justify-content:flex-end;gap:3px}
       .view-toggle{display:flex;gap:4px;padding:4px;margin-left:auto}
       .view-btn{width:34px;height:32px}
       .icon-btn{width:36px;height:36px;background:#f4f6f8}
@@ -227,11 +222,6 @@
         </nav>
         <div class="top-actions">
           <a class="icon-btn gaji-board-btn" id="boardShortcut" href="board.html" aria-label="가지가지"><img src="assets/gaji-eggplant-transparent.png" alt="" aria-hidden="true"></a>
-          <button class="icon-btn" id="sortToggle" type="button" aria-label="정렬">
-            <span id="sortIconWrap" aria-hidden="true">
-              <svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
-            </span>
-          </button>
           <button class="icon-btn" id="searchToggle" aria-label="검색"><svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg></button>
           <button class="icon-btn" id="settingsToggle" type="button" aria-label="설정"><svg class="top-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6l-.09.09a2 2 0 1 1-3.82 0L10 20a1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1l-.09-.09a2 2 0 1 1 0-3.82L4 10a1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.6l.09-.09a2 2 0 1 1 3.82 0L14 4a1.65 1.65 0 0 0 1 .6 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.35.34.68.6 1l.09.09a2 2 0 1 1 0 3.82L20 14c-.26.32-.46.65-.6 1Z"></path></svg></button>
         </div>
@@ -245,10 +235,8 @@
       </nav>
       <div class="feed-controls">
         <div class="chips" id="tabs">
-          <button class="chip active" type="button" data-tab="all">전체</button>
-          <button class="chip" type="button" data-tab="popular">인기</button>
-          <button class="chip" type="button" data-tab="latest">최신</button>
-          <button class="chip" type="button" data-tab="pick" hidden>가지딜</button>
+          <button class="chip active" type="button" data-tab="all">전체순</button>
+          <button class="chip" type="button" data-tab="popular">인기순</button>
         </div>
         <div class="view-toggle" role="group" aria-label="보기 방식">
           <button class="view-btn active" id="viewGridBtn" type="button" data-view="grid" aria-label="바둑판 보기">
@@ -280,12 +268,6 @@
       <button class="pwa-install-btn" id="pwaInstallBtn" type="button">설치</button>
       <button class="pwa-install-close" id="pwaInstallClose" type="button" aria-label="설치 안내 닫기">×</button>
     </div>
-  </div>
-  <div class="sort-sheet-backdrop" id="sortSheetBackdrop"></div>
-  <div class="sort-sheet" id="sortSheet" role="dialog" aria-modal="true" aria-label="정렬 선택">
-    <div class="sort-sheet-head"><div class="sort-sheet-title">정렬 방식</div><button class="sort-x-btn" id="sortCloseBtn" type="button" aria-label="닫기">×</button></div>
-    <button class="sheet-btn" id="sortLatestBtn" type="button"><svg class="sheet-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg><span>최신순</span></button>
-    <button class="sheet-btn" id="sortTempBtn" type="button"><svg class="sheet-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V5a2 2 0 1 0-4 0v9.76a4 4 0 1 0 4 0Z"></path><path d="M12 7v8"></path></svg><span>가지온도순</span></button>
   </div>
   <div class="settings-sheet-backdrop" id="settingsSheetBackdrop"></div>
   <div class="settings-sheet" id="settingsSheet" role="menu" aria-label="설정 메뉴">
@@ -320,7 +302,6 @@
     const READ_HIGHLIGHT_TOGGLE_KEY = 'hotdeal_read_highlight_enabled_v1';
     const DEALS_API = '/api/deals';
     const LAST_TAB_KEY = 'hotdeal_last_tab_v1';
-    const LAST_SORT_KEY = 'hotdeal_sort_mode_v1';
     const SCROLL_Y_KEY = 'hotdeal_list_scroll_y_v1';
     const SCROLL_RESTORE_PENDING_KEY = 'hotdeal_list_scroll_restore_pending_v1';
     const DETAIL_BOOTSTRAP_KEY = 'hotdeal_detail_bootstrap_v1';
@@ -330,17 +311,23 @@
     const PWA_INSTALL_DISMISSED_KEY = 'gaji_pwa_install_dismissed_at_v1';
     const PWA_INSTALL_DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
     const FULL_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
-    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'all', sortMode: 'latest', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '' };
+    const FEED_PAGE_SIZE = 100;
+    const FEED_LOOKBACK_MS = 48 * 60 * 60 * 1000;
+    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'all', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '', feedNextOffset: 0, feedHasMore: true };
     let isRefreshing = false;
+    let isLoadingMoreFeed = false;
 
     function normalizeItems(items){
-      return (items || []).map((item, idx) => ({
+      return (items || []).map((item, idx) => {
+        const rawTemperature = Number(item.temperature);
+        const hasTemperature = item.temperature !== undefined && item.temperature !== null && item.temperature !== '' && Number.isFinite(rawTemperature);
+        return ({
         id: String(item.id ?? idx + 1),
         title: item.title || '제목 없음',
         area: item.area || '뽐뿌 핫딜',
         dist: item.dist || '기타',
         time: item.time || item.date || '',
-        relativeTime: window.TimeFormat?.toRelativeKorean(item.registeredAt || item.date || '') || item.time || item.date || '',
+        relativeTime: window.TimeFormat?.toRelativeKorean(item.registeredAt || item.date || item.time || '') || '',
         price: item.price || '가격 정보 확인',
         category: item.category || '기타',
         desc: item.desc || '',
@@ -353,10 +340,12 @@
         date: item.date || '',
         registeredAt: item.registeredAt || '',
         source: item.source || '',
-        temperature: Number(item.temperature ?? 0),
+        temperature: hasTemperature ? rawTemperature : 0,
+        hasTemperature,
         hotScore: Number(item.hotScore ?? 0),
         edited: Boolean(item.edited)
-      }));
+      });
+      });
     }
 
     function parseStoredItems(key){
@@ -401,8 +390,16 @@
       return Date.now() - lastMs >= FULL_REFRESH_INTERVAL_MS;
     }
 
+    function feedTemperatureLooksIncomplete(items = state.feedItems){
+      const feed = (items || []).filter(item => item.source !== 'user');
+      if(!feed.length) return false;
+      const withTemperature = feed.filter(item => Number(item.temperature || 0) > 0).length;
+      return withTemperature < Math.min(3, Math.ceil(feed.length * 0.05));
+    }
+
     function shouldUseDeltaRefresh(mode = 'auto'){
       if(!state.lastFeedSyncAt) return false;
+      if(feedTemperatureLooksIncomplete()) return false;
       if(mode === 'entry') return !isFeedSyncExpired();
       if(mode === 'manual') return false;
       return true;
@@ -448,6 +445,24 @@
     function filterDeleted(items){
       const deleted = getDeletedKeys();
       return (items || []).filter(item => !deleted.has(getDealKey(item)));
+    }
+
+    function itemTimestampMs(item = {}){
+      const raw = item.registeredAt || item.date || item.time || item.relativeTime || '';
+      const parsed = window.TimeFormat?.parseMs?.(raw) || Date.parse(String(raw || ''));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function isFreshFeedItem(item = {}, nowMs = Date.now()){
+      if(item.source === 'user') return true;
+      const ms = itemTimestampMs(item);
+      if(!ms) return false;
+      return nowMs - ms <= FEED_LOOKBACK_MS;
+    }
+
+    function filterStaleFeedItems(items){
+      const nowMs = Date.now();
+      return (items || []).filter(item => isFreshFeedItem(item, nowMs));
     }
 
     function getReadKeys(){
@@ -546,7 +561,7 @@
     }
 
     function applyItems(items){
-      const cleaned = filterDeleted(dedupeItems(items));
+      const cleaned = filterStaleFeedItems(filterDeleted(dedupeItems(items)));
       state.allItems = cleaned;
       state.feedItems = cleaned.filter(item => item.source !== 'user');
       state.ppomppuItems = state.feedItems.filter(item => item.source === 'ppomppu' || (!item.source || item.source === 'feed'));
@@ -558,15 +573,12 @@
     }
 
     function isWithinHours(item, hours){
-      const ms = Date.parse(item.registeredAt || item.date || '');
-      if(!Number.isFinite(ms)) return false;
+      const ms = itemTimestampMs(item);
+      if(!ms) return false;
       return Date.now() - ms <= hours * 60 * 60 * 1000;
     }
 
     function getCurrentTabItems(){
-      if(state.activeTab === 'popular') return state.allItems.filter(item => Number(item.temperature || 0) >= 70);
-      if(state.activeTab === 'latest') return state.allItems.filter(item => isWithinHours(item, 10));
-      if(state.activeTab === 'pick') return state.userItems;
       return state.allItems;
     }
 
@@ -575,11 +587,11 @@
       const kw = state.keyword.trim().toLowerCase();
       const filtered = !kw ? baseItems : baseItems.filter(i => (i.title || '').toLowerCase().includes(kw));
       return filtered.sort((a, b) => {
-        const da = Date.parse(a.registeredAt || a.date || '') || 0;
-        const db = Date.parse(b.registeredAt || b.date || '') || 0;
+        const da = itemTimestampMs(a);
+        const db = itemTimestampMs(b);
         const ta = Number(a.temperature || 0);
         const tb = Number(b.temperature || 0);
-        if(state.sortMode === 'temperature'){
+        if(state.activeTab === 'popular'){
           if(tb !== ta) return tb - ta;
           return db - da;
         }
@@ -623,17 +635,16 @@
       return mixColor('#7c3aed', '#5b21b6', (t - 70) / 30);            // 고온은 더 진한 보라
     }
 
+    function displayRelativeTime(item){
+      const value = window.TimeFormat?.toRelativeKorean(item.registeredAt || item.date || item.time || '') || item.relativeTime || item.time || '';
+      return String(value).replace(/^20\d{2}-(\d{2}-\d{2})$/, '$1');
+    }
+
     function render(){
       const list = document.getElementById('list');
       const items = getFilteredItems();
       if(!items.length){
-        list.innerHTML = state.activeTab === 'popular'
-          ? '<div class="empty">70°C 이상 인기 딜이 아직 없습니다.</div>'
-          : state.activeTab === 'latest'
-            ? '<div class="empty">최근 10시간 이내 올라온 딜이 아직 없습니다.</div>'
-            : state.activeTab === 'pick'
-              ? '<div class="empty">가지픽이 아직 없습니다.</div>'
-              : '<div class="empty">딜이 아직 없습니다.</div>';
+        list.innerHTML = '<div class="empty">딜이 아직 없습니다.</div>';
         list.insertAdjacentHTML('beforeend', renderSyncStamp());
         return;
       }
@@ -645,7 +656,7 @@
         const favBadge = isFavorited(item) ? '<span class="fav-badge" aria-label="찜됨">♥</span>' : '';
         const imageLoading = idx < 4 ? 'eager' : 'lazy';
         const imageFetchPriority = idx === 0 ? 'high' : 'auto';
-        const timeText = state.activeTab === 'pick' ? '' : (item.relativeTime || item.time || '');
+        const timeText = displayRelativeTime(item);
         const metaTime = timeText ? `<span>${timeText}</span>` : '';
         return `
         <a class="item ${viewedClass}" data-key="${dealKey}" href="indexdetail.html?id=${encodeURIComponent(item.id)}">
@@ -669,6 +680,11 @@
         </a>
       `;
       }).join('') + renderSyncStamp();
+      setTimeout(() => {
+        if(state.feedHasMore && !isLoadingMoreFeed && document.documentElement.scrollHeight <= window.innerHeight + 700){
+          loadMoreFeed();
+        }
+      }, 0);
     }
 
     function setActiveTabUI(){
@@ -677,7 +693,7 @@
     }
 
     function restoreLastTab(){
-      const allowed = new Set(['all','popular','latest','pick']);
+      const allowed = new Set(['all','popular']);
       const saved = localStorage.getItem(LAST_TAB_KEY);
       if(saved && allowed.has(saved)) state.activeTab = saved; else state.activeTab = 'all';
       setActiveTabUI();
@@ -687,7 +703,7 @@
       localStorage.setItem(LAST_TAB_KEY, state.activeTab || 'all');
     }
 
-    const TAB_ORDER = ['all','popular','latest','pick'];
+    const TAB_ORDER = ['all','popular'];
 
     function switchTab(nextTab){
       if(!TAB_ORDER.includes(nextTab) || state.activeTab === nextTab) return false;
@@ -698,17 +714,6 @@
       activeChip?.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
       render();
       return true;
-    }
-
-    function restoreLastSort(){
-      const saved = localStorage.getItem(LAST_SORT_KEY);
-      if(saved === 'latest' || saved === 'temperature'){
-        state.sortMode = saved;
-      }
-    }
-
-    function persistLastSort(){
-      localStorage.setItem(LAST_SORT_KEY, state.sortMode || 'latest');
     }
 
     function bindTabs(){
@@ -878,57 +883,6 @@
       refreshSettingsSheet();
     }
 
-    function getSortIconSvg(className = 'top-icon'){
-      return state.sortMode === 'temperature'
-        ? `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 14.76V5a2 2 0 1 0-4 0v9.76a4 4 0 1 0 4 0Z"></path><path d="M12 7v8"></path></svg>`
-        : `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>`;
-    }
-
-    function renderSortIcon(){
-      const wrap = document.getElementById('sortIconWrap');
-      const icon = getSortIconSvg('top-icon');
-      if(wrap) wrap.innerHTML = icon;
-      const button = document.getElementById('sortToggle');
-      if(button){
-        const label = state.sortMode === 'temperature' ? '가지온도순 정렬' : '최신순 정렬';
-        button.setAttribute('aria-label', label);
-        button.setAttribute('title', label);
-      }
-    }
-
-    function openSortSheet(){
-      document.getElementById('sortSheetBackdrop').classList.add('show');
-      document.getElementById('sortSheet').classList.add('show');
-      document.getElementById('sortLatestBtn').classList.toggle('active', state.sortMode === 'latest');
-      document.getElementById('sortTempBtn').classList.toggle('active', state.sortMode === 'temperature');
-    }
-
-    function closeSortSheet(){
-      document.getElementById('sortSheetBackdrop').classList.remove('show');
-      document.getElementById('sortSheet').classList.remove('show');
-    }
-
-    function bindSortSheet(){
-      document.getElementById('sortToggle').addEventListener('click', openSortSheet);
-      document.getElementById('sortSheetBackdrop').addEventListener('click', closeSortSheet);
-      document.getElementById('sortCloseBtn').addEventListener('click', closeSortSheet);
-      document.getElementById('sortLatestBtn').addEventListener('click', () => {
-        state.sortMode = 'latest';
-        persistLastSort();
-        renderSortIcon();
-        render();
-        closeSortSheet();
-      });
-      document.getElementById('sortTempBtn').addEventListener('click', () => {
-        state.sortMode = 'temperature';
-        persistLastSort();
-        renderSortIcon();
-        render();
-        closeSortSheet();
-      });
-      renderSortIcon();
-    }
-
     function saveListScrollState(){
       sessionStorage.setItem(SCROLL_Y_KEY, String(window.scrollY || 0));
     }
@@ -1011,6 +965,9 @@
         if(ticking) return;
         ticking = true;
         requestAnimationFrame(update);
+        if(state.feedHasMore && !isLoadingMoreFeed && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 700){
+          loadMoreFeed();
+        }
       }, { passive:true });
     }
 
@@ -1028,7 +985,7 @@
         .join('~');
     }
 
-    async function refreshFeed({ silent = false, mode = 'auto' } = {}){
+    async function refreshFeed({ silent = false, mode = 'auto', append = false } = {}){
       if(isRefreshing) return;
       isRefreshing = true;
       const wrap = document.getElementById('pullRefresh');
@@ -1039,23 +996,30 @@
           wrap.style.height = '86px';
           label.textContent = '가지 로딩중...';
         }
-        const headers = state.feedEtag ? { 'If-None-Match': state.feedEtag } : {};
-        const sinceQuery = shouldUseDeltaRefresh(mode) && state.lastFeedSyncAt ? `&since=${encodeURIComponent(state.lastFeedSyncAt)}` : '';
-        const res = await fetch(`${DEALS_API}?scope=feed${sinceQuery}`, { cache: 'no-store', headers });
+        const headers = (!append && state.feedEtag) ? { 'If-None-Match': state.feedEtag } : {};
+        const sinceQuery = (!append && shouldUseDeltaRefresh(mode) && state.lastFeedSyncAt) ? `&since=${encodeURIComponent(state.lastFeedSyncAt)}` : '';
+        const offsetQuery = append ? `&offset=${encodeURIComponent(state.feedNextOffset || 0)}` : '';
+        const res = await fetch(`${DEALS_API}?scope=feed&limit=${FEED_PAGE_SIZE}${offsetQuery}${sinceQuery}`, { cache: 'no-store', headers });
         if(res.status === 304) return;
         if(res.ok){
-          state.feedEtag = res.headers.get('etag') || state.feedEtag;
+          if(!append) state.feedEtag = res.headers.get('etag') || state.feedEtag;
           const data = await res.json();
           const incoming = normalizeItems(data.items || []);
           const prevFingerprint = makeFeedFingerprint(getCurrentTabItems());
 
-          if(data.delta && state.feedItems.length){
+          if(append){
+            const byKey = new Map(state.feedItems.map((item) => [getDealKey(item), item]));
+            incoming.forEach((item) => byKey.set(getDealKey(item), item));
+            state.feedItems = [...byKey.values()];
+          }else if(data.delta && state.feedItems.length){
             const byKey = new Map(state.feedItems.map((item) => [getDealKey(item), item]));
             incoming.forEach((item) => byKey.set(getDealKey(item), item));
             state.feedItems = [...byKey.values()];
           }else{
             state.feedItems = incoming;
           }
+          state.feedHasMore = Boolean(data.hasMore);
+          state.feedNextOffset = Number(data.nextOffset || state.feedItems.length || 0);
 
           applyItems([...state.userItems, ...state.feedItems]);
           persistLastFeedSyncAt(data.serverTime || new Date().toISOString());
@@ -1074,6 +1038,16 @@
           }, 220);
         }
         isRefreshing = false;
+      }
+    }
+
+    async function loadMoreFeed(){
+      if(isLoadingMoreFeed || isRefreshing || !state.feedHasMore) return;
+      isLoadingMoreFeed = true;
+      try{
+        await refreshFeed({ silent: true, mode: 'append', append: true });
+      }finally{
+        isLoadingMoreFeed = false;
       }
     }
 
@@ -1265,12 +1239,10 @@
 
     async function init(){
       restoreLastTab();
-      restoreLastSort();
       bindSettingsSheet();
       bindTabs();
       bindListSwipeTabs();
       bindSearch();
-      bindSortSheet();
       bindViewToggle();
       restoreViewMode();
       bindReadTracking();
@@ -1284,15 +1256,18 @@
       const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
       restoreLastFeedSyncAt();
       applyItems(cached);
-      render();
-      restoreListScrollState();
+      const needsFreshTemperature = feedTemperatureLooksIncomplete(state.feedItems);
+      if(!needsFreshTemperature){
+        render();
+        restoreListScrollState();
+      }
 
       if(await loadRemoteFavorites()){
         render();
         restoreListScrollState();
       }
 
-      await refreshFeed({ silent: true, mode: 'entry' });
+      await refreshFeed({ silent: true, mode: needsFreshTemperature ? 'manual' : 'entry' });
       refreshNaminDealsBackground();
 
       render();

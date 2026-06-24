@@ -56,9 +56,14 @@ try {
     $env:HOTDEAL_SUPABASE_URL_FILE = $SupabaseUrlFile
     $env:HOTDEAL_SUPABASE_SERVICE_ROLE_KEY_FILE = $SupabaseServiceRoleKeyFile
     $env:HOTDEAL_FMKOREA_INCREMENTAL = "1"
-    $env:HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES = "2"
+    $env:HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES = "1"
     $env:HOTDEAL_FMKOREA_PAGE_DELAY_SECONDS = [string]$PageDelaySeconds
     $env:HOTDEAL_FMKOREA_BACKOFF_STATE = $BackoffState
+    $env:HOTDEAL_FMKOREA_BROWSER_FALLBACK = "1"
+    $env:HOTDEAL_FMKOREA_BROWSER_FALLBACK_MAX_PAGES = "1"
+    $env:HOTDEAL_FMKOREA_BROWSER_HEADLESS = "0"
+    $env:HOTDEAL_FMKOREA_BROWSER_CHANNEL = "chrome"
+    $env:HOTDEAL_FMKOREA_BROWSER_PROFILE_DIR = (Join-Path $StateDir "fmkorea-browser-profile")
 
     Set-Location $RepoPath
     Write-TaskLog "start repo=$RepoPath timeout=$TimeoutSeconds pageDelay=$PageDelaySeconds backoffState=$BackoffState"

@@ -60,17 +60,16 @@ class UserPreferenceUiTests(unittest.TestCase):
         self.assertIn('function bindSettingsSheet()', html)
         self.assertIn("window.GajiTheme?.apply?.(event.target.checked ? 'dark' : 'light');", html)
 
-    def test_home_sort_control_is_header_icon_left_of_search(self):
+    def test_home_sort_control_is_removed_from_header(self):
         html = (ROOT / 'index.html').read_text(encoding='utf-8')
         actions_start = html.index('<div class="top-actions">')
         actions_end = html.index('</div>', actions_start)
         actions = html[actions_start:actions_end]
 
-        self.assertIn('id="sortToggle"', actions)
-        self.assertIn('id="sortIconWrap"', actions)
-        self.assertLess(actions.index('id="sortToggle"'), actions.index('id="searchToggle"'))
-        self.assertNotIn('#sortToggle{display:none}', html)
-        self.assertIn('function getSortIconSvg', html)
+        self.assertNotIn('id="sortToggle"', actions)
+        self.assertNotIn('id="sortIconWrap"', actions)
+        self.assertNotIn('id="sortSheet"', html)
+        self.assertIn('id="searchToggle"', actions)
 
     def test_theme_script_is_loaded_on_html_pages(self):
         for path in ROOT.glob('*.html'):
@@ -119,6 +118,22 @@ class UserPreferenceUiTests(unittest.TestCase):
         self.assertIn('white-space:nowrap;word-break:keep-all', html)
         for category in ('식품', '뷰티', '육아', '스포츠'):
             self.assertIn(f'data-cat="{category}">{category}</button>', html)
+
+
+    def test_web_header_actions_align_to_upper_right(self):
+        index = (ROOT / 'index.html').read_text(encoding='utf-8')
+        board = (ROOT / 'board.html').read_text(encoding='utf-8')
+
+        desktop_index = index[index.index('@media (min-width:768px)'):index.index('@media (min-width:1180px)')]
+        desktop_board = board[board.index('@media (min-width:768px)'):]
+
+        self.assertIn('.row{display:flex;align-items:center;justify-content:space-between;gap:18px}', desktop_index)
+        self.assertIn('.top-actions{margin-left:auto;justify-content:flex-end;gap:3px}', desktop_index)
+        self.assertNotIn('grid-template-columns:minmax(190px,1fr) auto minmax(190px,1fr)', desktop_index)
+
+        self.assertIn('.top-row{display:flex;align-items:center;justify-content:space-between;gap:18px}', desktop_board)
+        self.assertIn('.top-actions{margin-left:auto;justify-content:flex-end;gap:3px}', desktop_board)
+        self.assertNotIn('grid-template-columns:minmax(190px,1fr) auto minmax(190px,1fr)', desktop_board)
 
 
 if __name__ == '__main__':

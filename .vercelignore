@@ -1,5 +1,7 @@
 .git
 .pytest_cache
+.artifacts
+.codex-remote-attachments
 .tools
 node_modules
 firebase/functions/node_modules

@@ -28,6 +28,7 @@ LIST_URL_CANDIDATES = [
 MAX_PAGES = 10
 INCREMENTAL_MAX_PAGES = int(os.environ.get("HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES", "2"))
 INCREMENTAL_TAIL_SAMPLE_SIZE = int(os.environ.get("HOTDEAL_FMKOREA_INCREMENTAL_TAIL_SAMPLE_SIZE", "3"))
+BROWSER_FALLBACK_MAX_PAGES = int(os.environ.get("HOTDEAL_FMKOREA_BROWSER_FALLBACK_MAX_PAGES", "1"))
 PAGE_DELAY_SECONDS = float(os.environ.get("HOTDEAL_FMKOREA_PAGE_DELAY_SECONDS", "8"))
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "fmkorea_hotdeals_2days.json"
@@ -41,6 +42,7 @@ HEADERS = {
     "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 FMKOREA_DIAGNOSTIC_DIR = os.environ.get("FMKOREA_DIAGNOSTIC_DIR", "").strip()
+DEFAULT_BROWSER_PROFILE_DIR = ROOT / ".artifacts" / "fmkorea-browser-profile"
 
 
 def env_bool(name: str, default: bool = True) -> bool:
@@ -48,6 +50,27 @@ def env_bool(name: str, default: bool = True) -> bool:
     if not raw:
         return default
     return raw not in {"0", "false", "no", "off"}
+
+
+def browser_fallback_enabled() -> bool:
+    return env_bool("HOTDEAL_FMKOREA_BROWSER_FALLBACK", False)
+
+
+def browser_fallback_headless() -> bool:
+    return env_bool("HOTDEAL_FMKOREA_BROWSER_HEADLESS", False)
+
+
+def browser_fallback_profile_dir() -> Path:
+    raw = os.environ.get("HOTDEAL_FMKOREA_BROWSER_PROFILE_DIR", "").strip()
+    return Path(raw) if raw else DEFAULT_BROWSER_PROFILE_DIR
+
+
+def ignore_backoff_enabled() -> bool:
+    return env_bool("HOTDEAL_FMKOREA_IGNORE_BACKOFF", False)
+
+
+def backoff_readonly_enabled() -> bool:
+    return env_bool("HOTDEAL_FMKOREA_BACKOFF_READONLY", False)
 
 
 def load_backoff_state() -> Dict:
@@ -339,7 +362,7 @@ def write_fmkorea_diagnostics(page, url: str, rows: List[Dict], label: str):
         print(f"WARN_FMKOREA_DIAGNOSTIC_FAILED label={label} reason={exc}")
 
 
-def collect_recent_rows(page, now: datetime, since: datetime, previous_items: List[Dict] = None):
+def collect_recent_rows(page, now: datetime, since: datetime, previous_items: List[Dict] = None, page_factory=None):
     collected = []
     seen = set()
     last_rows = []
@@ -349,6 +372,13 @@ def collect_recent_rows(page, now: datetime, since: datetime, previous_items: Li
     max_pages = max(1, INCREMENTAL_MAX_PAGES if incremental else MAX_PAGES)
     security_blocked = False
 
+    def get_browser_page():
+        if page is not None:
+            return page
+        if page_factory is not None:
+            return page_factory()
+        return None
+
     for base_url in LIST_URL_CANDIDATES:
         source_rows = []
         source_seen = set()
@@ -356,11 +386,31 @@ def collect_recent_rows(page, now: datetime, since: datetime, previous_items: Li
             separator = "&" if "?" in base_url else "?"
             url = f"{base_url}{separator}page={pg}"
             rows, security = fetch_static_page(url)
+            used_browser_fallback = False
             if security:
-                security_blocked = True
-                break
-            if not rows and page is not None:
-                rows = run_page_extract(page, url)
+                browser_page = get_browser_page() if browser_fallback_enabled() else None
+                if browser_page is not None:
+                    print(f"FMKOREA_BROWSER_FALLBACK_TRY reason=static_security url={url}")
+                    try:
+                        rows = run_page_extract(browser_page, url)
+                        used_browser_fallback = True
+                    except Exception as exc:
+                        print(f"WARN_FMKOREA_BROWSER_FALLBACK_FAILED url={url} reason={exc}")
+                        rows = []
+                    if rows:
+                        security = False
+                        print(f"FMKOREA_BROWSER_FALLBACK_RECOVERED url={url} rows={len(rows)}")
+                    else:
+                        security_blocked = True
+                        break
+                else:
+                    security_blocked = True
+                    break
+            if not rows:
+                browser_page = get_browser_page()
+                if browser_page is not None:
+                    rows = run_page_extract(browser_page, url)
+                    used_browser_fallback = bool(rows)
             last_rows = rows
             last_url = url
             page_kept = 0
@@ -375,6 +425,9 @@ def collect_recent_rows(page, now: datetime, since: datetime, previous_items: Li
                 source_seen.add(key)
                 source_rows.append(r)
             if rows and page_kept == 0:
+                break
+            if used_browser_fallback and pg >= max(1, BROWSER_FALLBACK_MAX_PAGES):
+                print(f"FMKOREA_BROWSER_FALLBACK_STOP reason=max_pages pages={max(1, BROWSER_FALLBACK_MAX_PAGES)}")
                 break
             if incremental:
                 if rows and page_tail_seen_in_previous(rows, previous_keys):
@@ -708,12 +761,48 @@ def filter_items_within_window(items: List[Dict], now: datetime, since: datetime
     return [item for item in items or [] if item_is_within_window(item, now, since)]
 
 
+def open_fmkorea_browser_context(playwright, use_browser_fallback=None):
+    context_options = {
+        "viewport": {"width": 390, "height": 844},
+        "user_agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+        "locale": "ko-KR",
+        "timezone_id": "Asia/Seoul",
+    }
+    if use_browser_fallback is None:
+        use_browser_fallback = browser_fallback_enabled()
+    if use_browser_fallback:
+        profile_dir = browser_fallback_profile_dir()
+        profile_dir.mkdir(parents=True, exist_ok=True)
+        channel = os.environ.get("HOTDEAL_FMKOREA_BROWSER_CHANNEL", "chrome").strip() or "chrome"
+        print(
+            "FMKOREA_BROWSER_FALLBACK_ENABLED "
+            f"profileDir={profile_dir} "
+            f"channel={channel} "
+            f"headless={browser_fallback_headless()}"
+        )
+        try:
+            context = playwright.chromium.launch_persistent_context(
+                str(profile_dir),
+                channel=channel,
+                headless=browser_fallback_headless(),
+                args=["--disable-blink-features=AutomationControlled"],
+                **context_options,
+            )
+            return context, None
+        except Exception as exc:
+            print(f"WARN_FMKOREA_BROWSER_FALLBACK_CONTEXT_FAILED reason={exc}")
+
+    browser = playwright.chromium.launch(headless=True)
+    context = browser.new_context(**context_options)
+    return context, browser
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
     previous_items = filter_items_within_window(load_previous_items(), now, since)
     remaining, backoff_state = backoff_remaining_seconds(now)
-    if remaining > 0:
+    if remaining > 0 and not ignore_backoff_enabled():
         print(
             "FMKOREA_BACKOFF_SKIP "
             f"remainingSeconds={remaining} "
@@ -750,15 +839,26 @@ def main():
                 pass
     else:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(
-                viewport={"width": 390, "height": 844},
-                user_agent="Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
-                locale="ko-KR",
-                timezone_id="Asia/Seoul",
-            )
-            page = context.new_page()
-            all_rows, security_blocked = collect_recent_rows(page, now, since, previous_items)
+            context = None
+            browser = None
+            page = None
+
+            def ensure_browser_page():
+                nonlocal context, browser, page
+                if page is None:
+                    context, browser = open_fmkorea_browser_context(p, use_browser_fallback=browser_fallback_enabled())
+                    page = context.new_page()
+                return page
+
+            if browser_fallback_enabled():
+                all_rows, security_blocked = collect_recent_rows(None, now, since, previous_items, page_factory=ensure_browser_page)
+            else:
+                context, browser = open_fmkorea_browser_context(p, use_browser_fallback=False)
+                page = context.new_page()
+                all_rows, security_blocked = collect_recent_rows(page, now, since, previous_items)
+
+            if context is None:
+                context, browser = open_fmkorea_browser_context(p, use_browser_fallback=False)
 
             detail_page = context.new_page()
             for r in all_rows:
@@ -805,7 +905,9 @@ def main():
                     pass
             detail_page.close()
 
-            browser.close()
+            context.close()
+            if browser is not None:
+                browser.close()
 
     items = []
     for r in all_rows:
@@ -927,7 +1029,12 @@ def main():
         stale_fallback = True
 
     write_feed_output(items, stale_fallback, now, since)
-    if security_blocked:
+    if backoff_readonly_enabled():
+        if security_blocked:
+            print("FMKOREA_BACKOFF_READONLY_SECURITY")
+        else:
+            print("FMKOREA_BACKOFF_READONLY_SUCCESS")
+    elif security_blocked:
         record_security_backoff(now)
     else:
         clear_backoff_state()

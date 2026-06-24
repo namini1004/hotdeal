@@ -12,26 +12,30 @@ class GithubRefreshResilienceTests(unittest.TestCase):
     def test_refresh_schedule_uses_offset_minutes_to_avoid_busy_cron_slots(self):
         workflow = REFRESH_WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn('cron: "7,22,37,52 * * * *"', workflow)
+        self.assertIn('cron: "7,37 * * * *"', workflow)
         self.assertNotIn('cron: "*/15 * * * *"', workflow)
 
     def test_refresh_workflow_runs_sources_as_independent_jobs_before_upsert(self):
         workflow = REFRESH_WORKFLOW.read_text(encoding="utf-8")
 
-        for job in ("refresh-ppomppu", "refresh-quasar", "refresh-ruliweb"):
+        for job in ("refresh-ppomppu", "refresh-quasar", "refresh-fmkorea", "refresh-ruliweb"):
             self.assertIn(f"  {job}:", workflow)
-        self.assertNotIn("  refresh-fmkorea:", workflow)
+        self.assertIn('HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES: "1"', workflow)
+        self.assertIn('HOTDEAL_FMKOREA_BROWSER_FALLBACK_MAX_PAGES: "1"', workflow)
         self.assertIn("name: Download refreshed feed artifacts", workflow)
         self.assertIn("name: Remove checkout feed snapshots before artifact merge", workflow)
         self.assertIn("name: Copy downloaded feed artifacts into assets", workflow)
         self.assertIn("cp .downloaded-feeds/*hotdeals*.json assets/", workflow)
-        self.assertNotIn("needs.refresh-fmkorea.result", workflow)
+        self.assertIn("needs.refresh-fmkorea.result", workflow)
 
     def test_fmkorea_ingest_is_split_to_local_hermes_runner(self):
         script = (ROOT / "scripts" / "hermes_fmkorea_ingest.py").read_text(encoding="utf-8")
 
         self.assertIn("scripts/update_fmkorea_feed.py", script)
         self.assertIn("scripts/sync_hotdeals_to_supabase.py", script)
+        self.assertIn("FMKOREA_BACKOFF_SKIP", script)
+        self.assertIn("FMKOREA_BACKOFF_SET", script)
+        self.assertIn("HERMES_FMKOREA_INGEST_SKIPPED", script)
         self.assertIn("HOTDEAL_FEED_FILES", script)
         self.assertIn("fmkorea_hotdeals_2days.json", script)
         self.assertIn("HOTDEAL_EXPECTED_FEED_SOURCES", script)
@@ -40,7 +44,8 @@ class GithubRefreshResilienceTests(unittest.TestCase):
     def test_github_watchdog_dispatches_refresh_when_site_feed_is_stale(self):
         workflow = WATCHDOG_WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn('cron: "13,28,43,58 * * * *"', workflow)
+        self.assertIn('cron: "22,52 * * * *"', workflow)
+        self.assertIn('STALE_THRESHOLD_MINUTES: "75"', workflow)
         self.assertIn("actions: write", workflow)
         self.assertIn("hotdeal-refresh-supabase.yml", workflow)
         self.assertIn("STALE_THRESHOLD_MINUTES", workflow)

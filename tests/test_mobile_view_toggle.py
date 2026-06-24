@@ -15,10 +15,10 @@ def test_home_tabs_use_deal_labels_and_keep_view_toggle_next_to_chips():
     controls_end = html.index('</header>', controls_start)
     controls = html[controls_start:controls_end]
 
-    assert 'data-tab="all">전체</button>' in controls
-    assert 'data-tab="popular">인기</button>' in controls
-    assert 'data-tab="latest">최신</button>' in controls
-    assert 'data-tab="pick" hidden>가지딜</button>' in controls
+    assert 'data-tab="all">전체순</button>' in controls
+    assert 'data-tab="popular">인기순</button>' in controls
+    assert 'data-tab="latest"' not in controls
+    assert 'data-tab="pick"' not in controls
     assert controls.index('id="tabs"') < controls.index('class="view-toggle"')
     assert 'aria-label="바둑판 보기"' in controls
     assert 'aria-label="리스트 보기"' in controls

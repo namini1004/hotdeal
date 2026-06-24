@@ -127,7 +127,11 @@ def main():
     env["HOTDEAL_EXPECTED_FEED_SOURCES"] = "fmkorea"
 
     parser_output = run_step([sys.executable, "scripts/update_fmkorea_feed.py"], env=env, timeout=540)
-    if "FMKOREA_BACKOFF_SKIP" in parser_output or "FMKOREA_BACKOFF_SET" in parser_output:
+    if (
+        "FMKOREA_BACKOFF_SKIP" in parser_output
+        or "FMKOREA_BACKOFF_SET" in parser_output
+        or "FMKOREA_BACKOFF_READONLY_SECURITY" in parser_output
+    ):
         append_log(f"HERMES_FMKOREA_INGEST_SKIPPED\n{parser_output.strip()[-4000:]}")
         if args.verbose:
             print(parser_output.strip()[-4000:])

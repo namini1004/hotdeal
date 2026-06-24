@@ -43,6 +43,26 @@ function filterBySince(items, since) {
   });
 }
 
+function parseLimit(value, fallback = 400, max = 600) {
+  const n = Number.parseInt(String(value || ''), 10);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.min(n, max);
+}
+
+function parseOffset(value) {
+  const n = Number.parseInt(String(value || ''), 10);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n;
+}
+
+function sortDealsForResponse(items = []) {
+  return [...items].sort((a, b) => {
+    const tb = toMs(b.registeredAt || b.updatedAt || b.date || '');
+    const ta = toMs(a.registeredAt || a.updatedAt || a.date || '');
+    return tb - ta;
+  });
+}
+
 function getSessionUserId(sessionUser) {
   return String(sessionUser?.id || sessionUser?.email || '').trim();
 }
@@ -313,6 +333,8 @@ module.exports = async (req, res) => {
 
       const scope = url.searchParams.get('scope') || 'all';
       const since = url.searchParams.get('since') || '';
+      const limit = parseLimit(url.searchParams.get('limit') || req.query?.limit);
+      const offset = parseOffset(url.searchParams.get('offset') || req.query?.offset);
 
       const fullFeedItems = scope === 'user' ? [] : await readFeedItems();
       const feedItems = since && scope !== 'user' ? filterBySince(fullFeedItems, since) : fullFeedItems;
@@ -329,7 +351,10 @@ module.exports = async (req, res) => {
         }
       }
 
-      const items = dedupe([...userItems, ...feedItems]);
+      const allItems = sortDealsForResponse(dedupe([...userItems, ...feedItems]));
+      const pageItems = allItems.slice(offset, offset + limit + 1);
+      const hasMore = pageItems.length > limit;
+      const items = pageItems.slice(0, limit);
       const etag = makeEtag(scope, items);
       res.setHeader('Cache-Control', 'public, max-age=10, stale-while-revalidate=60');
       res.setHeader('ETag', etag);
@@ -339,7 +364,7 @@ module.exports = async (req, res) => {
         return res.end();
       }
 
-      return json(res, 200, { items, delta: Boolean(since), serverTime: new Date().toISOString() });
+      return json(res, 200, { items, delta: Boolean(since), hasMore, nextOffset: offset + items.length, serverTime: new Date().toISOString() });
     }
 
     if (req.method === 'PATCH' || req.method === 'DELETE') {

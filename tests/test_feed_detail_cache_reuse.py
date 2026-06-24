@@ -1,3 +1,5 @@
+import json
+
 from scripts import update_fmkorea_feed as fmkorea
 from scripts import update_ppomppu_feed as ppomppu
 from scripts import update_quasar_feed as quasar
@@ -176,6 +178,58 @@ def test_fmkorea_incremental_stops_immediately_on_security_response(monkeypatch)
     assert len(calls) == 1
 
 
+def test_fmkorea_browser_fallback_recovers_static_security_response(monkeypatch):
+    now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+
+    def fake_fetch(url):
+        return [], True
+
+    browser_rows = [
+        {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=101", "lines": [], "raw": ""},
+        {"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=100", "lines": [], "raw": ""},
+    ]
+
+    monkeypatch.setattr(fmkorea, "fetch_static_page", fake_fetch)
+    monkeypatch.setattr(fmkorea, "browser_fallback_enabled", lambda: True)
+    monkeypatch.setattr(fmkorea, "run_page_extract", lambda page, url: browser_rows)
+    monkeypatch.setattr(fmkorea, "should_keep_row_by_time", lambda row, now, since: True)
+
+    rows, security_blocked = fmkorea.collect_recent_rows(object(), now, since, [])
+
+    assert rows == browser_rows
+    assert security_blocked is False
+
+
+def test_fmkorea_browser_fallback_stops_at_fallback_page_cap(monkeypatch):
+    now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
+    since = now - fmkorea.timedelta(hours=48)
+    fetched = []
+    extracted = []
+
+    def fake_fetch(url):
+        fetched.append(url)
+        return [], True
+
+    def fake_extract(page, url):
+        extracted.append(url)
+        return [{"href": "https://m.fmkorea.com/?mid=hotdeal&document_srl=101", "lines": [], "raw": ""}]
+
+    monkeypatch.setattr(fmkorea, "fetch_static_page", fake_fetch)
+    monkeypatch.setattr(fmkorea, "browser_fallback_enabled", lambda: True)
+    monkeypatch.setattr(fmkorea, "run_page_extract", fake_extract)
+    monkeypatch.setattr(fmkorea, "should_keep_row_by_time", lambda row, now, since: True)
+    monkeypatch.setattr(fmkorea, "BROWSER_FALLBACK_MAX_PAGES", 1)
+
+    rows, security_blocked = fmkorea.collect_recent_rows(object(), now, since, [])
+
+    assert len(rows) == 1
+    assert security_blocked is False
+    assert len(fetched) == 1
+    assert len(extracted) == 1
+    assert "page=1" in extracted[0]
+
+
 def test_fmkorea_security_backoff_uses_exponential_delay_with_jitter(monkeypatch):
     monkeypatch.setattr(fmkorea.random, "uniform", lambda low, high: 0)
 
@@ -193,6 +247,22 @@ def test_fmkorea_clear_backoff_prints_recovery_signal(monkeypatch, tmp_path, cap
 
     captured = capsys.readouterr()
     assert "FMKOREA_BACKOFF_RECOVERED previousFailures=2" in captured.out
+
+
+def test_fmkorea_backoff_readonly_does_not_clear_state(monkeypatch, tmp_path, capsys):
+    state_path = tmp_path / "fmkorea_backoff_state.json"
+    state_path.write_text('{"failures": 2}', encoding="utf-8")
+    monkeypatch.setattr(fmkorea, "BACKOFF_STATE_PATH", state_path)
+    monkeypatch.setattr(fmkorea, "backoff_readonly_enabled", lambda: True)
+
+    if fmkorea.backoff_readonly_enabled():
+        print("FMKOREA_BACKOFF_READONLY_SUCCESS")
+    else:
+        fmkorea.clear_backoff_state()
+
+    captured = capsys.readouterr()
+    assert "FMKOREA_BACKOFF_READONLY_SUCCESS" in captured.out
+    assert json.loads(state_path.read_text(encoding="utf-8"))["failures"] == 2
 
 
 def test_fmkorea_filters_previous_items_outside_48_hour_window():
