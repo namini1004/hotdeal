@@ -75,6 +75,7 @@ def test_time_format_parses_source_date_variants():
 def test_home_list_uses_relative_time_without_raw_clock_fallback():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
 
+    assert '<script src="assets/time-format.js"></script>' in html
     assert "function displayRelativeTime(item)" in html
     assert "const timeText = displayRelativeTime(item);" in html
     assert "item.registeredAt || item.date || item.time" in html
