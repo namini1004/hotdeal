@@ -495,6 +495,41 @@
       localStorage.setItem(detailCacheKey(item.id), JSON.stringify(item));
     }
 
+    function clearCachedDetail(id){
+      if(!id) return;
+      try{ localStorage.removeItem(detailCacheKey(id)); }catch(_){ }
+    }
+
+    function removeItemIdFromCache(id){
+      if(!id) return;
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      try{
+        const parsed = JSON.parse(raw);
+        const keep = item => String(item?.id) !== String(id);
+        if(Array.isArray(parsed)){
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed.filter(keep)));
+          return;
+        }
+        for(const tab of ['today', 'yesterday', 'items']){
+          if(Array.isArray(parsed[tab])) parsed[tab] = parsed[tab].filter(keep);
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }catch(_){ }
+    }
+
+    function renderNotFound(){
+      currentItem = null;
+      renderItem({
+        title:'상품 없음',
+        price:'-',
+        desc:'현재 노출되지 않는 딜입니다.',
+        img:'',
+        category:'핫딜',
+        time:''
+      }, { loadComments: false, saveCache: false });
+    }
+
     function renderRichText(text){
       if(window.TextFormat?.markdownToHtml){
         return window.TextFormat.markdownToHtml(text || '');
@@ -889,7 +924,11 @@
 
     async function fetchItemById(id){
       const res = await fetch(`${DEALS_API}?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
-      if(!res.ok) throw new Error('fetch failed');
+      if(!res.ok){
+        const error = new Error('fetch failed');
+        error.status = res.status;
+        throw error;
+      }
       const data = await res.json();
       return data.item;
     }
@@ -1137,11 +1176,6 @@
         return;
       }
 
-      if(cachedDetail){
-        await userReady;
-        return;
-      }
-
       try{
         const latest = await fetchItemById(id);
         if(latest && !isDeleted(latest)){
@@ -1163,7 +1197,15 @@
           }
           saveItems(dedupeItems(next));
         }
-      }catch(_){
+      }catch(error){
+        if(error?.status === 404){
+          if(item) saveDeletedKey(getDealKey(item));
+          clearCachedDetail(id);
+          removeItemIdFromCache(id);
+          sessionStorage.removeItem(DETAIL_BOOTSTRAP_KEY);
+          renderNotFound();
+          refreshFavoriteUI();
+        }
       }
       await userReady;
     }
