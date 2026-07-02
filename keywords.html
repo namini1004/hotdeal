@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
   <link rel="shortcut icon" href="/assets/favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="가지" />
   <title>관심 키워드</title>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
@@ -29,6 +33,14 @@
     .meta{font-size:12px;color:var(--muted)}
     .del{height:32px;background:#fff;border:1px solid #fecaca;color:var(--danger);padding:0 10px;border-radius:999px;font-weight:700}
     .empty{color:var(--muted);font-size:14px;text-align:center;padding:20px 0}
+    .push-panel{margin-top:12px}
+    .push-panel[hidden]{display:none}
+    .push-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .push-copy{min-width:0}
+    .push-title{font-size:15px;font-weight:850;letter-spacing:-.02em}
+    .push-state{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.38}
+    .push-btn{flex:0 0 auto;min-width:74px}
+    .push-btn[disabled]{background:#d1d5db;color:#fff;cursor:default}
   </style>
   <script src="assets/theme.js"></script>
 </head>
@@ -49,6 +61,16 @@
       <div class="status" id="statusBox"></div>
     </section>
 
+    <section class="panel push-panel" id="webPushPanel" hidden>
+      <div class="push-row">
+        <div class="push-copy">
+          <div class="push-title">브라우저 알림</div>
+          <div class="push-state" id="webPushState">이 브라우저에서는 꺼져 있어요.</div>
+        </div>
+        <button class="push-btn" id="webPushBtn" type="button">켜기</button>
+      </div>
+    </section>
+
     <section class="list" id="keywordList"></section>
   </main>
 
@@ -58,7 +80,11 @@
     const inputEl = document.getElementById('termInput');
     const addBtn = document.getElementById('addBtn');
     const statusBox = document.getElementById('statusBox');
+    const webPushPanel = document.getElementById('webPushPanel');
+    const webPushBtn = document.getElementById('webPushBtn');
+    const webPushState = document.getElementById('webPushState');
     const KEYWORD_CACHE_KEY = 'gaji_keyword_cache_v1';
+    let cachedVapidPublicKey = '';
 
     function showStatus(msg){
       if(!msg){ statusBox.style.display='none'; return; }
@@ -83,6 +109,147 @@
 
     function goGoogleLogin(){
       location.href = `/api/auth?action=start&provider=google&return_to=${encodeURIComponent('keywords.html')}`;
+    }
+
+    function canUseWebPush(){
+      return Boolean(window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window);
+    }
+
+    function shouldTryAndroidBridge(){
+      const ua = String(navigator.userAgent || '');
+      return document.documentElement.classList.contains('app-webview') || /\bwv\)/i.test(ua) || /Gaji/i.test(ua);
+    }
+
+    function setWebPushStatus(message, buttonText = '켜기', disabled = false){
+      if(webPushState) webPushState.textContent = message;
+      if(webPushBtn){
+        webPushBtn.textContent = buttonText;
+        webPushBtn.disabled = disabled;
+      }
+    }
+
+    function urlBase64ToUint8Array(base64String){
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for(let i = 0; i < rawData.length; i += 1) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    }
+
+    async function getServiceWorkerRegistration(){
+      const registration = await navigator.serviceWorker.register('/service-worker.js');
+      return navigator.serviceWorker.ready.then(() => registration);
+    }
+
+    async function fetchVapidPublicKey(){
+      if(cachedVapidPublicKey) return cachedVapidPublicKey;
+      const res = await fetch('/api/push/register-device?action=vapid-public-key', { credentials:'include', cache:'no-store' });
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok || !data.enabled || !data.publicKey) throw new Error(data.error || 'web_push_not_configured');
+      cachedVapidPublicKey = data.publicKey;
+      return cachedVapidPublicKey;
+    }
+
+    async function getExistingWebPushSubscription(){
+      if(!canUseWebPush()) return null;
+      const registration = await getServiceWorkerRegistration();
+      return registration.pushManager.getSubscription();
+    }
+
+    async function registerWebPushSubscription(subscription){
+      const res = await fetch('/api/push/register-device', {
+        method:'POST',
+        credentials:'include',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          webPushSubscription: subscription.toJSON(),
+          appVersion: 'pwa',
+          userAgent: navigator.userAgent || '',
+          enabled: true
+        })
+      });
+      const data = await res.json().catch(()=>({}));
+      if(res.status === 401){
+        showStatus('브라우저 알림은 Google 로그인이 필요합니다.');
+        setTimeout(goGoogleLogin, 700);
+        return false;
+      }
+      if(!res.ok) throw new Error(data.error || 'web_push_register_failed');
+      return true;
+    }
+
+    async function refreshWebPushPanel(data){
+      if(!webPushPanel) return;
+      if(!canUseWebPush()){
+        webPushPanel.hidden = true;
+        return;
+      }
+
+      webPushPanel.hidden = false;
+      if(Notification.permission === 'denied'){
+        setWebPushStatus('브라우저 설정에서 알림이 차단되어 있어요.', '차단됨', true);
+        return;
+      }
+
+      try{
+        const subscription = await getExistingWebPushSubscription();
+        if(subscription){
+          setWebPushStatus('이 브라우저 알림 사용중', '갱신', false);
+          if(data && data.hasEnabledToken === false) {
+            await registerWebPushSubscription(subscription).catch(()=>false);
+          }
+          return;
+        }
+        setWebPushStatus('이 브라우저에서는 꺼져 있어요.', '켜기', false);
+      }catch(_){
+        setWebPushStatus('브라우저 알림 상태를 확인하지 못했어요.', '다시', false);
+      }
+    }
+
+    async function enableWebPush(){
+      if(!canUseWebPush()){
+        showStatus('이 브라우저는 PWA 푸시 알림을 지원하지 않아요.');
+        return;
+      }
+
+      try{
+        setWebPushStatus('알림 권한을 확인하고 있어요.', '확인중', true);
+        const permission = Notification.permission === 'granted'
+          ? 'granted'
+          : await Notification.requestPermission();
+
+        if(permission !== 'granted'){
+          setWebPushStatus('알림 권한이 꺼져 있어요.', '켜기', false);
+          showStatus('알림 권한을 허용해야 브라우저 알림을 받을 수 있어요.');
+          return;
+        }
+
+        if(!await ensureGoogleLogin()) return;
+
+        const publicKey = await fetchVapidPublicKey();
+        const registration = await getServiceWorkerRegistration();
+        let subscription = await registration.pushManager.getSubscription();
+        if(!subscription){
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey)
+          });
+        }
+
+        await registerWebPushSubscription(subscription);
+        setWebPushStatus('이 브라우저 알림 사용중', '갱신', false);
+        showStatus('브라우저 알림을 켰어요.');
+        await loadKeywords();
+      }catch(error){
+        const message = String(error?.message || '');
+        if(message.includes('Web Push is not configured') || message.includes('web_push_not_configured')){
+          showStatus('서버의 PWA 알림 키 설정이 아직 필요합니다.');
+        }else{
+          showStatus('브라우저 알림 등록에 실패했어요. 다시 시도해주세요.');
+        }
+        setWebPushStatus('이 브라우저에서는 꺼져 있어요.', '켜기', false);
+      }
     }
 
     async function ensureGoogleLogin(){
@@ -137,8 +304,16 @@
     async function ensurePushTokenIfMissingFromKeywordsResponse(data){
       try {
         if (data && data.hasEnabledToken === false) {
-          showStatus('푸시 토큰이 없어 앱에서 재등록을 시도합니다.');
-          window.location.href = 'gaji://push/sync';
+          if (canUseWebPush()) {
+            showStatus('이 브라우저에서도 알림을 켤 수 있어요.');
+            return;
+          }
+          if (shouldTryAndroidBridge()) {
+            showStatus('푸시 토큰이 없어 앱에서 재등록을 시도합니다.');
+            window.location.href = 'gaji://push/sync';
+            return;
+          }
+          showStatus('현재 브라우저에서는 푸시 알림을 지원하지 않아요.');
         }
       } catch (_) {
         // ignore
@@ -160,6 +335,7 @@
         return;
       }
       const data = await res.json();
+      await refreshWebPushPanel(data);
       await ensurePushTokenIfMissingFromKeywordsResponse(data);
       saveCachedKeywords(data.items || []);
       render(data.items || []);
@@ -196,7 +372,10 @@
       }
     });
 
+    webPushBtn?.addEventListener('click', enableWebPush);
+
     (async () => {
+      if(canUseWebPush()) refreshWebPushPanel().catch(()=>undefined);
       loadKeywords();
     })();
   </script>

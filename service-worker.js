@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gaji-shell-v16';
+const CACHE_NAME = 'gaji-shell-v17';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
@@ -75,5 +75,67 @@ self.addEventListener('fetch', (event) => {
       }
       return res;
     }))
+  );
+});
+
+function normalizeNotificationUrl(value) {
+  try {
+    const url = new URL(value || '/index.html', self.location.origin);
+    if (url.origin === self.location.origin || url.origin === 'https://gaji.run') return url.href;
+  } catch (_) {
+    // fall through to home
+  }
+  return new URL('/index.html', self.location.origin).href;
+}
+
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (_) {
+    data = {};
+  }
+
+  const title = String(data.title || '가지딜 알림');
+  const body = String(data.body || '새 딜이 등록됐어요.');
+  const url = normalizeNotificationUrl(data.url);
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: data.icon || '/assets/pwa-icon-192.png',
+      badge: data.badge || '/assets/pwa-icon-192.png',
+      tag: data.tag || data.dealId || 'gaji-keyword-alert',
+      renotify: true,
+      data: {
+        url,
+        dealId: data.dealId || '',
+        source: data.source || '',
+      },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = normalizeNotificationUrl(event.notification?.data?.url);
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          try {
+            const clientUrl = new URL(client.url);
+            const target = new URL(targetUrl);
+            if (clientUrl.origin === target.origin && 'focus' in client) {
+              if ('navigate' in client) return client.navigate(targetUrl).then(() => client.focus());
+              return client.focus();
+            }
+          } catch (_) {
+            // keep searching
+          }
+        }
+        return self.clients.openWindow(targetUrl);
+      })
   );
 });

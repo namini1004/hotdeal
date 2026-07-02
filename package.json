@@ -8,6 +8,7 @@
     "test": "python -m pytest"
   },
   "dependencies": {
-    "firebase-admin": "^12.6.0"
+    "firebase-admin": "^12.6.0",
+    "web-push": "^3.6.7"
   }
 }

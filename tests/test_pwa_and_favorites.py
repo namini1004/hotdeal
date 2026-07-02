@@ -20,6 +20,9 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         service_worker = (ROOT / 'service-worker.js').read_text(encoding='utf-8')
         self.assertIn("if (url.pathname.startsWith('/api/')) return;", service_worker)
         self.assertIn("caches.open(CACHE_NAME)", service_worker)
+        self.assertIn("self.addEventListener('push'", service_worker)
+        self.assertIn('showNotification', service_worker)
+        self.assertIn("self.addEventListener('notificationclick'", service_worker)
 
         for page in ['index.html', 'indexdetail.html', 'my-gaji.html', 'favorites.html']:
             html = (ROOT / page).read_text(encoding='utf-8')
@@ -48,6 +51,29 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         self.assertIn('/api/deals?action=favorites', favorites)
         self.assertIn("fetch('/api/deals?scope=all'", favorites)
         self.assertIn('!d.remoteDisabled', favorites)
+
+    def test_pwa_web_push_extends_android_push_without_replacing_it(self):
+        package = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))
+        self.assertIn('web-push', package['dependencies'])
+
+        register_device = (ROOT / 'api' / 'push' / 'register-device.js').read_text(encoding='utf-8')
+        self.assertIn('fcmToken', register_device)
+        self.assertIn('webPushSubscription', register_device)
+        self.assertIn("platform = webPushSubscription ? 'web' : 'android'", register_device)
+        self.assertIn('getVapidPublicKey', register_device)
+        self.assertIn('webPushDeviceId(webPushSubscription)', register_device)
+
+        ingest = (ROOT / 'api' / 'push' / 'ingest.js').read_text(encoding='utf-8')
+        self.assertIn('sendEachForMulticast', ingest)
+        self.assertIn('sendWebPushNotification', ingest)
+        self.assertIn('webPushCount', ingest)
+        self.assertIn('webPushConfigMissing', ingest)
+
+        keywords = (ROOT / 'keywords.html').read_text(encoding='utf-8')
+        self.assertIn('PushManager', keywords)
+        self.assertIn('Notification.requestPermission()', keywords)
+        self.assertIn('/api/push/register-device?action=vapid-public-key', keywords)
+        self.assertIn('webPushSubscription: subscription.toJSON()', keywords)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,12 @@
 const crypto = require('crypto');
 const { json } = require('../_lib/auth');
 const { firestore, messaging, firebaseDebugInfo } = require('../_lib/firebase-admin');
+const {
+  getWebPushConfig,
+  isExpiredWebPushError,
+  normalizeWebPushSubscription,
+  sendWebPushNotification,
+} = require('../_lib/web-push');
 
 function normalizeText(...values) {
   return values
@@ -39,6 +45,60 @@ function chunkArray(values, size) {
   const out = [];
   for (let i = 0; i < values.length; i += size) out.push(values.slice(i, i + size));
   return out;
+}
+
+function buildClickUrl(row, rowId, buyLink, sourceLink) {
+  if (rowId) return `https://gaji.run/detail.html?id=${encodeURIComponent(rowId)}`;
+  const fallback = buyLink || sourceLink || '';
+  if (fallback) return fallback;
+  const source = String(row.source || '').trim();
+  return source ? `https://gaji.run/?source=${encodeURIComponent(source)}` : 'https://gaji.run';
+}
+
+function buildNotificationPayload({ clickUrl, dealId, matchedTerms, source, title }) {
+  const term = String(matchedTerms?.[0] || '').trim();
+  return {
+    title: term ? `🍆 키워드알림: ${term}` : '🍆 가지딜 알림',
+    body: title || (term ? `${term} 관련 새 딜이 등록됐어요.` : '새 딜이 등록됐어요.'),
+    url: clickUrl,
+    dealId,
+    source,
+    tag: `gaji-deal-${dealId}`,
+    icon: '/assets/pwa-icon-192.png',
+    badge: '/assets/pwa-icon-192.png',
+  };
+}
+
+async function sendWebPushToDevices(webDevices, payload) {
+  if (webDevices.length === 0) {
+    return { attempted: 0, successCount: 0, failureCount: 0, expiredRefs: [], configMissing: false };
+  }
+
+  if (!getWebPushConfig().ready) {
+    return {
+      attempted: webDevices.length,
+      successCount: 0,
+      failureCount: webDevices.length,
+      expiredRefs: [],
+      configMissing: true,
+    };
+  }
+
+  let successCount = 0;
+  let failureCount = 0;
+  const expiredRefs = [];
+
+  for (const device of webDevices) {
+    try {
+      await sendWebPushNotification(device.subscription, payload);
+      successCount += 1;
+    } catch (error) {
+      failureCount += 1;
+      if (isExpiredWebPushError(error)) expiredRefs.push(device.ref);
+    }
+  }
+
+  return { attempted: webDevices.length, successCount, failureCount, expiredRefs, configMissing: false };
 }
 
 async function findMatchedUsers(db, normalizedText) {
@@ -117,8 +177,15 @@ async function processRows(rows = []) {
         .map((d) => String(d.get('fcmToken') || '').trim())
         .filter(Boolean);
 
+      const webDevices = devicesSnap.docs
+        .map((d) => ({
+          ref: d.ref,
+          subscription: normalizeWebPushSubscription(d.get('webPushSubscription')),
+        }))
+        .filter((d) => d.subscription);
+
       const matchedTerms = [...termSet];
-      if (tokens.length === 0) {
+      if (tokens.length === 0 && webDevices.length === 0) {
         await matchRef.set({
           dealId,
           uid,
@@ -130,34 +197,40 @@ async function processRows(rows = []) {
         continue;
       }
 
-      const clickUrl = rowId
-        ? `https://gaji.run/detail.html?id=${encodeURIComponent(rowId)}`
-        : (buyLink || sourceLink || 'https://gaji.run');
-      const response = await msg.sendEachForMulticast({
-        tokens,
-        data: {
-          url: clickUrl,
-          dealId,
-          source,
-          title: `🍆 키워드알림: ${matchedTerms[0]}`,
-          body: `${matchedTerms[0]} 관련 새 딜이 등록됐어요.`,
-        },
-        android: { priority: 'high' },
-      });
-
+      const clickUrl = buildClickUrl(row, rowId, buyLink, sourceLink);
+      const payload = buildNotificationPayload({ clickUrl, dealId, matchedTerms, source, title });
+      let response = { successCount: 0, failureCount: 0, responses: [] };
       const invalidTokens = [];
-      response.responses.forEach((r, idx) => {
-        const code = r.error?.code || '';
-        if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) {
-          invalidTokens.push(tokens[idx]);
-        }
-      });
+
+      if (tokens.length > 0) {
+        response = await msg.sendEachForMulticast({
+          tokens,
+          data: {
+            url: clickUrl,
+            dealId,
+            source,
+            title: payload.title,
+            body: `${matchedTerms[0]} 관련 새 딜이 등록됐어요.`,
+          },
+          android: { priority: 'high' },
+        });
+
+        response.responses.forEach((r, idx) => {
+          const code = r.error?.code || '';
+          if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) {
+            invalidTokens.push(tokens[idx]);
+          }
+        });
+      }
+
+      const webPushResult = await sendWebPushToDevices(webDevices, payload);
 
       const batch = db.batch();
       invalidTokens.forEach((token) => {
         const target = devicesSnap.docs.find((d) => d.get('fcmToken') === token);
         if (target) batch.delete(target.ref);
       });
+      webPushResult.expiredRefs.forEach((ref) => batch.delete(ref));
 
       batch.set(matchRef, {
         dealId,
@@ -166,13 +239,19 @@ async function processRows(rows = []) {
         status: 'sent',
         sentAt: now,
         tokenCount: tokens.length,
-        successCount: response.successCount,
-        failureCount: response.failureCount,
+        webPushCount: webDevices.length,
+        successCount: response.successCount + webPushResult.successCount,
+        failureCount: response.failureCount + webPushResult.failureCount,
+        fcmSuccessCount: response.successCount,
+        fcmFailureCount: response.failureCount,
+        webPushSuccessCount: webPushResult.successCount,
+        webPushFailureCount: webPushResult.failureCount,
+        webPushConfigMissing: webPushResult.configMissing,
         clickUrl,
       });
 
       await batch.commit();
-      pushed += response.successCount;
+      pushed += response.successCount + webPushResult.successCount;
     }
   }
 
