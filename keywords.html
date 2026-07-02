@@ -84,7 +84,9 @@
     const webPushBtn = document.getElementById('webPushBtn');
     const webPushState = document.getElementById('webPushState');
     const KEYWORD_CACHE_KEY = 'gaji_keyword_cache_v1';
+    const BROAD_KEYWORDS = new Set(['무료','배송','쿠폰','특가','할인','행사','이벤트','카드','포인트','세일','핫딜','딜','원','가격','구매','예약','정가','오늘','추천']);
     let cachedVapidPublicKey = '';
+    let webPushSubscribed = false;
 
     function showStatus(msg){
       if(!msg){ statusBox.style.display='none'; return; }
@@ -120,12 +122,29 @@
       return document.documentElement.classList.contains('app-webview') || /\bwv\)/i.test(ua) || /Gaji/i.test(ua);
     }
 
+    function isStandaloneDisplay(){
+      return window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
+    }
+
+    function getDisplayMode(){
+      if(document.documentElement.classList.contains('app-webview')) return 'webview';
+      return isStandaloneDisplay() ? 'standalone' : 'browser';
+    }
+
     function setWebPushStatus(message, buttonText = '켜기', disabled = false){
       if(webPushState) webPushState.textContent = message;
       if(webPushBtn){
         webPushBtn.textContent = buttonText;
         webPushBtn.disabled = disabled;
       }
+    }
+
+    function broadKeywordWarning(term){
+      const clean = String(term || '').trim().toLowerCase();
+      if(BROAD_KEYWORDS.has(clean) || clean.length <= 2){
+        return '넓은 키워드라 알림이 많을 수 있어요. 같은 키워드는 30분에 한 번만 바로 보내고 나머지는 묶어서 알려드려요.';
+      }
+      return '';
     }
 
     function urlBase64ToUint8Array(base64String){
@@ -166,6 +185,8 @@
           webPushSubscription: subscription.toJSON(),
           appVersion: 'pwa',
           userAgent: navigator.userAgent || '',
+          displayMode: getDisplayMode(),
+          replaceBrowserPush: true,
           enabled: true
         })
       });
@@ -177,6 +198,42 @@
       }
       if(!res.ok) throw new Error(data.error || 'web_push_register_failed');
       return true;
+    }
+
+    async function disableWebPush(){
+      if(!canUseWebPush()){
+        showStatus('이 브라우저는 PWA 푸시 알림을 지원하지 않아요.');
+        return;
+      }
+      try{
+        const subscription = await getExistingWebPushSubscription();
+        if(!subscription){
+          webPushSubscribed = false;
+          setWebPushStatus('이 브라우저에서는 꺼져 있어요.', '켜기', false);
+          return;
+        }
+        setWebPushStatus('브라우저 알림을 끄고 있어요.', '처리중', true);
+        const res = await fetch('/api/push/register-device', {
+          method:'DELETE',
+          credentials:'include',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ webPushSubscription: subscription.toJSON() })
+        });
+        if(res.status === 401){
+          showStatus('브라우저 알림 해제는 Google 로그인이 필요합니다.');
+          setTimeout(goGoogleLogin, 700);
+          return;
+        }
+        if(!res.ok) throw new Error('web_push_disable_failed');
+        await subscription.unsubscribe().catch(()=>false);
+        webPushSubscribed = false;
+        setWebPushStatus('이 브라우저에서는 꺼져 있어요.', '켜기', false);
+        showStatus('이 브라우저 알림을 껐어요.');
+        await loadKeywords();
+      }catch(_){
+        setWebPushStatus('이 브라우저 알림 사용중', '끄기', false);
+        showStatus('브라우저 알림 해제에 실패했어요. 브라우저 알림 설정에서도 끌 수 있어요.');
+      }
     }
 
     async function refreshWebPushPanel(data){
@@ -195,12 +252,14 @@
       try{
         const subscription = await getExistingWebPushSubscription();
         if(subscription){
-          setWebPushStatus('이 브라우저 알림 사용중', '갱신', false);
-          if(data && data.hasEnabledToken === false) {
+          webPushSubscribed = true;
+          setWebPushStatus('이 브라우저 알림 사용중', '끄기', false);
+          if((data && data.hasEnabledToken === false) || getDisplayMode() === 'standalone') {
             await registerWebPushSubscription(subscription).catch(()=>false);
           }
           return;
         }
+        webPushSubscribed = false;
         setWebPushStatus('이 브라우저에서는 꺼져 있어요.', '켜기', false);
       }catch(_){
         setWebPushStatus('브라우저 알림 상태를 확인하지 못했어요.', '다시', false);
@@ -238,7 +297,8 @@
         }
 
         await registerWebPushSubscription(subscription);
-        setWebPushStatus('이 브라우저 알림 사용중', '갱신', false);
+        webPushSubscribed = true;
+        setWebPushStatus('이 브라우저 알림 사용중', '끄기', false);
         showStatus('브라우저 알림을 켰어요.');
         await loadKeywords();
       }catch(error){
@@ -365,14 +425,17 @@
           return;
         }
         inputEl.value = '';
-        showStatus('키워드를 등록했어요.');
+        showStatus(broadKeywordWarning(term) || '키워드를 등록했어요.');
         await loadKeywords();
       }catch(_){
         showStatus('네트워크 오류가 발생했어요.');
       }
     });
 
-    webPushBtn?.addEventListener('click', enableWebPush);
+    webPushBtn?.addEventListener('click', () => {
+      if(webPushSubscribed) disableWebPush();
+      else enableWebPush();
+    });
 
     (async () => {
       if(canUseWebPush()) refreshWebPushPanel().catch(()=>undefined);

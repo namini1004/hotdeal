@@ -19,6 +19,39 @@ function normalizeDeviceId(value, fallback) {
   return raw.replace(/[\/#?\[\]]/g, '_').slice(0, 120);
 }
 
+function normalizeDisplayMode(value) {
+  const mode = String(value || '').trim().toLowerCase();
+  if (['standalone', 'fullscreen', 'minimal-ui'].includes(mode)) return 'standalone';
+  if (mode === 'webview') return 'webview';
+  return 'browser';
+}
+
+async function disableOtherBrowserWebPushDevices(db, uid, currentDeviceId, now) {
+  const devicesRef = db.collection('users').doc(uid).collection('devices');
+  const snap = await devicesRef.get();
+  const batch = db.batch();
+  let disabled = 0;
+
+  for (const doc of snap.docs) {
+    if (doc.id === currentDeviceId) continue;
+    if (!doc.get('enabled')) continue;
+    if (!doc.get('webPushSubscription')) continue;
+    const displayMode = normalizeDisplayMode(doc.get('displayMode'));
+    if (displayMode === 'standalone') continue;
+    batch.set(doc.ref, {
+      enabled: false,
+      disabledAt: now,
+      disabledReason: 'standalone_pwa_registered',
+      supersededBy: currentDeviceId,
+      updatedAt: now,
+    }, { merge: true });
+    disabled += 1;
+  }
+
+  if (disabled > 0) await batch.commit();
+  return disabled;
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const config = getWebPushConfig();
@@ -28,8 +61,8 @@ module.exports = async (req, res) => {
     });
   }
 
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'GET, POST');
+  if (req.method !== 'POST' && req.method !== 'DELETE') {
+    res.setHeader('Allow', 'GET, POST, DELETE');
     return json(res, 405, { error: 'Method not allowed' });
   }
 
@@ -39,10 +72,30 @@ module.exports = async (req, res) => {
       return json(res, 401, { error: 'Google login required' });
     }
 
+    const uid = `${user.provider}:${user.providerId}`;
+    const db = firestore();
+    const now = new Date();
+
     const token = normalizeToken(req.body?.fcmToken);
     const webPushSubscription = normalizeWebPushSubscription(
       req.body?.webPushSubscription || req.body?.subscription,
     );
+
+    if (req.method === 'DELETE') {
+      const targetDeviceId = webPushSubscription
+        ? webPushDeviceId(webPushSubscription)
+        : normalizeDeviceId(req.body?.deviceId, '');
+      if (!targetDeviceId) return json(res, 400, { error: 'deviceId or webPushSubscription is required' });
+
+      await db.collection('users').doc(uid).collection('devices').doc(targetDeviceId).set({
+        enabled: false,
+        disabledAt: now,
+        disabledReason: 'user_disabled_web_push',
+        updatedAt: now,
+      }, { merge: true });
+
+      return json(res, 200, { ok: true, uid, deviceId: targetDeviceId, disabled: true });
+    }
 
     if (!token && !webPushSubscription) {
       return json(res, 400, { error: 'fcmToken or webPushSubscription is required' });
@@ -52,15 +105,12 @@ module.exports = async (req, res) => {
       return json(res, 503, { error: 'Web Push is not configured' });
     }
 
-    const uid = `${user.provider}:${user.providerId}`;
     const deviceId = webPushSubscription
       ? webPushDeviceId(webPushSubscription)
       : normalizeDeviceId(req.body?.deviceId, crypto.createHash('sha1').update(token).digest('hex'));
     const enabled = req.body?.enabled !== false;
     const platform = webPushSubscription ? 'web' : 'android';
-
-    const db = firestore();
-    const now = new Date();
+    const displayMode = normalizeDisplayMode(req.body?.displayMode);
 
     const userPatch = {
       updatedAt: now,
@@ -92,11 +142,16 @@ module.exports = async (req, res) => {
       devicePatch.webPushEndpointHash = webPushEndpointHash(webPushSubscription);
       devicePatch.userAgent = String(req.body?.userAgent || req.headers['user-agent'] || '').slice(0, 500);
       devicePatch.appVersion = String(req.body?.appVersion || 'pwa');
+      devicePatch.displayMode = displayMode;
+      devicePatch.clientKind = displayMode === 'standalone' ? 'pwa' : 'browser';
     }
 
     await db.collection('users').doc(uid).collection('devices').doc(deviceId).set(devicePatch, { merge: true });
+    const disabledBrowserWebPush = webPushSubscription && displayMode === 'standalone'
+      ? await disableOtherBrowserWebPushDevices(db, uid, deviceId, now)
+      : 0;
 
-    return json(res, 200, { ok: true, uid, deviceId, platform });
+    return json(res, 200, { ok: true, uid, deviceId, platform, disabledBrowserWebPush });
   } catch (error) {
     return json(res, 500, { error: error.message || 'register failed' });
   }

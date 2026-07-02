@@ -62,18 +62,29 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         self.assertIn("platform = webPushSubscription ? 'web' : 'android'", register_device)
         self.assertIn('getVapidPublicKey', register_device)
         self.assertIn('webPushDeviceId(webPushSubscription)', register_device)
+        self.assertIn("req.method === 'DELETE'", register_device)
+        self.assertIn('standalone_pwa_registered', register_device)
+        self.assertIn('disabledBrowserWebPush', register_device)
 
         ingest = (ROOT / 'api' / 'push' / 'ingest.js').read_text(encoding='utf-8')
         self.assertIn('sendEachForMulticast', ingest)
         self.assertIn('sendWebPushNotification', ingest)
         self.assertIn('webPushCount', ingest)
         self.assertIn('webPushConfigMissing', ingest)
+        self.assertIn('KEYWORD_ALERT_WINDOW_MS = 30 * 60 * 1000', ingest)
+        self.assertIn('keyword_alert_windows', ingest)
+        self.assertIn("status: 'queued'", ingest)
+        self.assertIn("reason: 'keyword_throttle'", ingest)
+        self.assertIn('buildKeywordDigestPayload', ingest)
 
         keywords = (ROOT / 'keywords.html').read_text(encoding='utf-8')
         self.assertIn('PushManager', keywords)
         self.assertIn('Notification.requestPermission()', keywords)
         self.assertIn('/api/push/register-device?action=vapid-public-key', keywords)
         self.assertIn('webPushSubscription: subscription.toJSON()', keywords)
+        self.assertIn('displayMode: getDisplayMode()', keywords)
+        self.assertIn("method:'DELETE'", keywords)
+        self.assertIn('넓은 키워드라 알림이 많을 수 있어요', keywords)
 
 
 if __name__ == '__main__':

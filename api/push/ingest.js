@@ -8,6 +8,11 @@ const {
   sendWebPushNotification,
 } = require('../_lib/web-push');
 
+const KEYWORD_ALERT_WINDOW_MS = 30 * 60 * 1000;
+const MAX_PENDING_TITLES = 5;
+const MAX_PENDING_DEAL_IDS = 30;
+const DUE_DIGEST_LIMIT = 50;
+
 function normalizeText(...values) {
   return values
     .map((v) => String(v || '').toLowerCase())
@@ -47,6 +52,32 @@ function chunkArray(values, size) {
   return out;
 }
 
+function toMillis(value) {
+  if (!value) return 0;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value.toDate === 'function') return value.toDate().getTime();
+  const parsed = Date.parse(String(value));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function keywordWindowId(uid, term) {
+  return crypto.createHash('sha1').update(`${uid}::${term}`).digest('hex');
+}
+
+function sortMatchedTerms(termSet) {
+  return [...termSet]
+    .map((term) => String(term || '').trim())
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length || a.localeCompare(b, 'ko'));
+}
+
+function appendLimitedUnique(values, value, max) {
+  const out = Array.isArray(values) ? values.filter(Boolean).map(String) : [];
+  const next = String(value || '').trim();
+  if (next && !out.includes(next)) out.push(next);
+  return out.slice(-max);
+}
+
 function buildClickUrl(row, rowId, buyLink, sourceLink) {
   if (rowId) return `https://gaji.run/detail.html?id=${encodeURIComponent(rowId)}`;
   const fallback = buyLink || sourceLink || '';
@@ -64,6 +95,23 @@ function buildNotificationPayload({ clickUrl, dealId, matchedTerms, source, titl
     dealId,
     source,
     tag: `gaji-deal-${dealId}`,
+    icon: '/assets/pwa-icon-192.png',
+    badge: '/assets/pwa-icon-192.png',
+  };
+}
+
+function buildKeywordDigestPayload({ term, count }) {
+  const safeTerm = String(term || '').trim();
+  const safeCount = Math.max(1, Number(count || 0));
+  return {
+    title: safeTerm ? `🍆 키워드알림: ${safeTerm}` : '🍆 키워드알림',
+    body: safeTerm
+      ? `${safeTerm} 관련 새 딜 ${safeCount}개가 등록됐어요.`
+      : `새 딜 ${safeCount}개가 등록됐어요.`,
+    url: 'https://gaji.run/',
+    dealId: `keyword-digest-${keywordWindowId('digest', safeTerm).slice(0, 16)}`,
+    source: 'keyword_digest',
+    tag: `gaji-keyword-digest-${keywordWindowId('digest', safeTerm).slice(0, 16)}`,
     icon: '/assets/pwa-icon-192.png',
     badge: '/assets/pwa-icon-192.png',
   };
@@ -101,6 +149,195 @@ async function sendWebPushToDevices(webDevices, payload) {
   return { attempted: webDevices.length, successCount, failureCount, expiredRefs, configMissing: false };
 }
 
+async function loadEnabledDevices(db, deviceCache, uid) {
+  let devicesSnap = deviceCache.get(uid);
+  if (!devicesSnap) {
+    devicesSnap = await db
+      .collection('users')
+      .doc(uid)
+      .collection('devices')
+      .where('enabled', '==', true)
+      .get();
+    deviceCache.set(uid, devicesSnap);
+  }
+  return devicesSnap;
+}
+
+function splitDevices(devicesSnap) {
+  const tokens = devicesSnap.docs
+    .map((d) => String(d.get('fcmToken') || '').trim())
+    .filter(Boolean);
+
+  const webDevices = devicesSnap.docs
+    .map((d) => ({
+      ref: d.ref,
+      subscription: normalizeWebPushSubscription(d.get('webPushSubscription')),
+    }))
+    .filter((d) => d.subscription);
+
+  return { tokens, webDevices };
+}
+
+async function sendPayloadToDevices({ msg, devicesSnap, tokens, webDevices, payload, androidBody }) {
+  let response = { successCount: 0, failureCount: 0, responses: [] };
+  const invalidTokenRefs = [];
+
+  if (tokens.length > 0) {
+    response = await msg.sendEachForMulticast({
+      tokens,
+      data: {
+        url: payload.url || 'https://gaji.run',
+        dealId: String(payload.dealId || ''),
+        source: String(payload.source || ''),
+        title: String(payload.title || '가지딜 알림'),
+        body: String(androidBody || payload.body || '새 딜이 등록됐어요.'),
+      },
+      android: { priority: 'high' },
+    });
+
+    response.responses.forEach((r, idx) => {
+      const code = r.error?.code || '';
+      if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) {
+        const token = tokens[idx];
+        const target = devicesSnap.docs.find((d) => d.get('fcmToken') === token);
+        if (target) invalidTokenRefs.push(target.ref);
+      }
+    });
+  }
+
+  const webPushResult = await sendWebPushToDevices(webDevices, payload);
+  return {
+    tokenCount: tokens.length,
+    webPushCount: webDevices.length,
+    successCount: response.successCount + webPushResult.successCount,
+    failureCount: response.failureCount + webPushResult.failureCount,
+    fcmSuccessCount: response.successCount,
+    fcmFailureCount: response.failureCount,
+    webPushSuccessCount: webPushResult.successCount,
+    webPushFailureCount: webPushResult.failureCount,
+    webPushConfigMissing: webPushResult.configMissing,
+    invalidTokenRefs,
+    expiredWebPushRefs: webPushResult.expiredRefs,
+  };
+}
+
+async function planKeywordAlert(db, uid, term, rowInfo, now) {
+  const ref = db.collection('keyword_alert_windows').doc(keywordWindowId(uid, term));
+  const dueAt = new Date(now.getTime() + KEYWORD_ALERT_WINDOW_MS);
+
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const data = snap.exists ? (snap.data() || {}) : {};
+    const windowStartedAtMs = toMillis(data.windowStartedAt);
+    const expired = !windowStartedAtMs || now.getTime() - windowStartedAtMs >= KEYWORD_ALERT_WINDOW_MS;
+    const pendingCount = Math.max(0, Number(data.pendingCount || 0));
+    const base = {
+      uid,
+      term,
+      termNormalized: term,
+      updatedAt: now,
+    };
+
+    if (!snap.exists || expired) {
+      tx.set(ref, {
+        ...base,
+        windowStartedAt: now,
+        dueAt,
+        pendingCount: 0,
+        pendingTitles: [],
+        pendingDealIds: [],
+        lastImmediateAt: now,
+      }, { merge: true });
+      return {
+        action: 'send',
+        digest: pendingCount > 0 ? { count: pendingCount, titles: data.pendingTitles || [] } : null,
+      };
+    }
+
+    const nextPendingCount = pendingCount + 1;
+    tx.set(ref, {
+      ...base,
+      dueAt: data.dueAt || dueAt,
+      pendingCount: nextPendingCount,
+      pendingTitles: appendLimitedUnique(data.pendingTitles, rowInfo.title, MAX_PENDING_TITLES),
+      pendingDealIds: appendLimitedUnique(data.pendingDealIds, rowInfo.dealId, MAX_PENDING_DEAL_IDS),
+      lastQueuedAt: now,
+    }, { merge: true });
+
+    return {
+      action: 'queue',
+      pendingCount: nextPendingCount,
+    };
+  });
+}
+
+async function flushDueKeywordDigests(db, msg, deviceCache, now) {
+  let pushed = 0;
+  let digests = 0;
+  const snap = await db
+    .collection('keyword_alert_windows')
+    .where('dueAt', '<=', now)
+    .limit(DUE_DIGEST_LIMIT)
+    .get();
+
+  for (const doc of snap.docs) {
+    const data = doc.data() || {};
+    const pendingCount = Math.max(0, Number(data.pendingCount || 0));
+    const uid = String(data.uid || '').trim();
+    const term = String(data.term || data.termNormalized || '').trim();
+    if (!uid || !term || pendingCount <= 0) {
+      await doc.ref.delete();
+      continue;
+    }
+
+    const devicesSnap = await loadEnabledDevices(db, deviceCache, uid);
+    const { tokens, webDevices } = splitDevices(devicesSnap);
+    const batch = db.batch();
+
+    if (tokens.length === 0 && webDevices.length === 0) {
+      batch.set(doc.ref, {
+        pendingCount: 0,
+        pendingTitles: [],
+        pendingDealIds: [],
+        lastDigestSkippedAt: now,
+        lastDigestSkipReason: 'no_tokens',
+        updatedAt: now,
+      }, { merge: true });
+      await batch.commit();
+      continue;
+    }
+
+    const payload = buildKeywordDigestPayload({ term, count: pendingCount });
+    const result = await sendPayloadToDevices({
+      msg,
+      devicesSnap,
+      tokens,
+      webDevices,
+      payload,
+      androidBody: payload.body,
+    });
+
+    result.invalidTokenRefs.forEach((ref) => batch.delete(ref));
+    result.expiredWebPushRefs.forEach((ref) => batch.delete(ref));
+    batch.set(doc.ref, {
+      pendingCount: 0,
+      pendingTitles: [],
+      pendingDealIds: [],
+      windowStartedAt: now,
+      dueAt: new Date(now.getTime() + KEYWORD_ALERT_WINDOW_MS),
+      lastDigestSentAt: now,
+      lastDigestCount: pendingCount,
+      updatedAt: now,
+    }, { merge: true });
+    await batch.commit();
+
+    pushed += result.successCount;
+    digests += 1;
+  }
+
+  return { pushed, digests };
+}
+
 async function findMatchedUsers(db, normalizedText) {
   const candidateTerms = buildCandidateTerms(normalizedText);
   if (candidateTerms.length === 0) return new Map();
@@ -135,6 +372,12 @@ async function processRows(rows = []) {
   let processed = 0;
   let pushed = 0;
   let skipped = 0;
+  let queued = 0;
+  let digests = 0;
+
+  const flushed = await flushDueKeywordDigests(db, msg, deviceCache, now);
+  pushed += flushed.pushed;
+  digests += flushed.digests;
 
   for (const row of rows) {
     if (row.deleted_at) continue;
@@ -162,29 +405,10 @@ async function processRows(rows = []) {
       const matchSnap = await matchRef.get();
       if (matchSnap.exists) continue;
 
-      let devicesSnap = deviceCache.get(uid);
-      if (!devicesSnap) {
-        devicesSnap = await db
-          .collection('users')
-          .doc(uid)
-          .collection('devices')
-          .where('enabled', '==', true)
-          .get();
-        deviceCache.set(uid, devicesSnap);
-      }
-
-      const tokens = devicesSnap.docs
-        .map((d) => String(d.get('fcmToken') || '').trim())
-        .filter(Boolean);
-
-      const webDevices = devicesSnap.docs
-        .map((d) => ({
-          ref: d.ref,
-          subscription: normalizeWebPushSubscription(d.get('webPushSubscription')),
-        }))
-        .filter((d) => d.subscription);
-
-      const matchedTerms = [...termSet];
+      const devicesSnap = await loadEnabledDevices(db, deviceCache, uid);
+      const { tokens, webDevices } = splitDevices(devicesSnap);
+      const matchedTerms = sortMatchedTerms(termSet);
+      const primaryTerm = matchedTerms[0] || '';
       if (tokens.length === 0 && webDevices.length === 0) {
         await matchRef.set({
           dealId,
@@ -199,38 +423,55 @@ async function processRows(rows = []) {
 
       const clickUrl = buildClickUrl(row, rowId, buyLink, sourceLink);
       const payload = buildNotificationPayload({ clickUrl, dealId, matchedTerms, source, title });
-      let response = { successCount: 0, failureCount: 0, responses: [] };
-      const invalidTokens = [];
+      const alertPlan = await planKeywordAlert(db, uid, primaryTerm, { dealId, title, clickUrl }, now);
 
-      if (tokens.length > 0) {
-        response = await msg.sendEachForMulticast({
-          tokens,
-          data: {
-            url: clickUrl,
-            dealId,
-            source,
-            title: payload.title,
-            body: `${matchedTerms[0]} 관련 새 딜이 등록됐어요.`,
-          },
-          android: { priority: 'high' },
+      if (alertPlan.action === 'queue') {
+        await matchRef.set({
+          dealId,
+          uid,
+          matchedTerms,
+          status: 'queued',
+          reason: 'keyword_throttle',
+          throttleTerm: primaryTerm,
+          queuedAt: now,
+          pendingCount: alertPlan.pendingCount,
+          clickUrl,
         });
-
-        response.responses.forEach((r, idx) => {
-          const code = r.error?.code || '';
-          if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) {
-            invalidTokens.push(tokens[idx]);
-          }
-        });
+        queued += 1;
+        continue;
       }
 
-      const webPushResult = await sendWebPushToDevices(webDevices, payload);
-
       const batch = db.batch();
-      invalidTokens.forEach((token) => {
-        const target = devicesSnap.docs.find((d) => d.get('fcmToken') === token);
-        if (target) batch.delete(target.ref);
+      const cleanupRefs = new Map();
+      let digestResult = null;
+      if (alertPlan.digest?.count > 0) {
+        const digestPayload = buildKeywordDigestPayload({ term: primaryTerm, count: alertPlan.digest.count });
+        digestResult = await sendPayloadToDevices({
+          msg,
+          devicesSnap,
+          tokens,
+          webDevices,
+          payload: digestPayload,
+          androidBody: digestPayload.body,
+        });
+        digestResult.invalidTokenRefs.forEach((ref) => cleanupRefs.set(ref.path, ref));
+        digestResult.expiredWebPushRefs.forEach((ref) => cleanupRefs.set(ref.path, ref));
+        pushed += digestResult.successCount;
+        digests += 1;
+      }
+
+      const result = await sendPayloadToDevices({
+        msg,
+        devicesSnap,
+        tokens,
+        webDevices,
+        payload,
+        androidBody: `${primaryTerm} 관련 새 딜이 등록됐어요.`,
       });
-      webPushResult.expiredRefs.forEach((ref) => batch.delete(ref));
+
+      result.invalidTokenRefs.forEach((ref) => cleanupRefs.set(ref.path, ref));
+      result.expiredWebPushRefs.forEach((ref) => cleanupRefs.set(ref.path, ref));
+      cleanupRefs.forEach((ref) => batch.delete(ref));
 
       batch.set(matchRef, {
         dealId,
@@ -238,24 +479,27 @@ async function processRows(rows = []) {
         matchedTerms,
         status: 'sent',
         sentAt: now,
-        tokenCount: tokens.length,
-        webPushCount: webDevices.length,
-        successCount: response.successCount + webPushResult.successCount,
-        failureCount: response.failureCount + webPushResult.failureCount,
-        fcmSuccessCount: response.successCount,
-        fcmFailureCount: response.failureCount,
-        webPushSuccessCount: webPushResult.successCount,
-        webPushFailureCount: webPushResult.failureCount,
-        webPushConfigMissing: webPushResult.configMissing,
+        throttleTerm: primaryTerm,
+        digestFlushed: Boolean(digestResult),
+        digestCount: alertPlan.digest?.count || 0,
+        tokenCount: result.tokenCount,
+        webPushCount: result.webPushCount,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        fcmSuccessCount: result.fcmSuccessCount,
+        fcmFailureCount: result.fcmFailureCount,
+        webPushSuccessCount: result.webPushSuccessCount,
+        webPushFailureCount: result.webPushFailureCount,
+        webPushConfigMissing: result.webPushConfigMissing,
         clickUrl,
       });
 
       await batch.commit();
-      pushed += response.successCount + webPushResult.successCount;
+      pushed += result.successCount;
     }
   }
 
-  return { ok: true, processed, pushed, skipped };
+  return { ok: true, processed, pushed, skipped, queued, digests };
 }
 
 module.exports = async (req, res) => {

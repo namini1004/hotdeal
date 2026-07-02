@@ -32,6 +32,8 @@ npm run deploy
   - PWA body: `{ "webPushSubscription": { "endpoint": "...", "keys": { "p256dh": "...", "auth": "..." } }, "appVersion": "pwa", "enabled": true }`
   - 인증: 로그인 세션 쿠키 필요
 - PWA 공개키 조회: `GET /api/push/register-device?action=vapid-public-key`
+- 현재 브라우저 PWA 구독 해제: `DELETE /api/push/register-device`
+  - body: `{ "webPushSubscription": { ... } }`
 - 키워드 등록: `POST /api/push/keywords`
   - body: `{ "term": "아이패드" }`
 - 키워드 조회: `GET /api/push/keywords`
@@ -41,8 +43,16 @@ npm run deploy
 1. 수집 스크립트가 Supabase 변경분을 업서트
 2. 변경분을 `/api/push/ingest`로 전송
 3. Vercel API가 사용자 키워드를 매칭
-4. Android 디바이스에는 기존 FCM data 메시지를 발송
-5. PWA 브라우저 구독에는 Web Push payload를 발송
+4. 사용자+키워드별 30분 알림 창을 확인
+5. 첫 매칭은 즉시 발송하고, 같은 창 안의 추가 매칭은 `keyword_alert_windows`에 누적
+6. 창이 지난 뒤에는 `관련 새 딜 N개` 묶음 알림을 발송
+7. Android 디바이스에는 기존 FCM data 메시지를 발송
+8. PWA 브라우저 구독에는 Web Push payload를 발송
+
+## 중복 알림 정리
+- PWA standalone에서 브라우저 알림을 켜거나 갱신하면 같은 계정의 기존 브라우저형 Web Push 구독은 `standalone_pwa_registered`로 비활성화한다.
+- 특정 브라우저 알림만 끄려면 해당 브라우저에서 `keywords.html`을 열고 브라우저 알림 끄기를 실행한다.
+- Android 앱 FCM 토큰은 이 정리 대상이 아니며 계속 유지한다.
 
 ## VAPID 키 생성
 ```bash
