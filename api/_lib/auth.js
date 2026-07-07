@@ -50,7 +50,9 @@ function appendSetCookie(res, value) {
 
 function cookieOptions(req, maxAge) {
   const proto = req.headers['x-forwarded-proto'] || '';
-  const secure = proto === 'https' || String(req.headers.host || '').includes('vercel.app');
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '');
+  const localHost = /^(localhost|127\.0\.0\.1|\[?::1\]?)(:\d+)?$/i.test(host);
+  const secure = proto === 'https' || (host && !localHost);
   return [
     'Path=/',
     'HttpOnly',

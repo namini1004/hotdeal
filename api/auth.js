@@ -19,8 +19,8 @@ const { getAnonymousUser } = require('./_lib/anonymous');
 const handleAdmin = require('./_lib/admin');
 
 function getGoogleRedirectUri(req) {
-  return (process.env.GOOGLE_REDIRECT_URI || process.env.AUTH_REDIRECT_URI || 'https://hotdeal-omega.vercel.app/api/auth').trim()
-    || `${getBaseUrl(req)}/api/auth`;
+  const configured = (process.env.GOOGLE_REDIRECT_URI || process.env.AUTH_REDIRECT_URI || '').trim();
+  return configured || `${getBaseUrl(req)}/api/auth`;
 }
 
 function normalizeReturnTo(returnTo = '') {
