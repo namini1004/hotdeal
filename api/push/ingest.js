@@ -163,22 +163,45 @@ async function loadEnabledDevices(db, deviceCache, uid) {
   return devicesSnap;
 }
 
+function webPushDisplayMode(doc) {
+  const mode = String(doc.get('displayMode') || '').trim().toLowerCase();
+  if (['standalone', 'fullscreen', 'minimal-ui'].includes(mode)) return 'standalone';
+  if (mode === 'webview') return 'webview';
+  return 'browser';
+}
+
+function isStandaloneWebPushDevice(doc) {
+  if (!normalizeWebPushSubscription(doc.get('webPushSubscription'))) return false;
+  const clientKind = String(doc.get('clientKind') || '').trim().toLowerCase();
+  return clientKind === 'pwa' || webPushDisplayMode(doc) === 'standalone';
+}
+
 function splitDevices(devicesSnap) {
+  const hasStandaloneWebPush = devicesSnap.docs.some(isStandaloneWebPushDevice);
+  let suppressedBrowserWebPushCount = 0;
+
   const tokens = devicesSnap.docs
     .map((d) => String(d.get('fcmToken') || '').trim())
     .filter(Boolean);
 
   const webDevices = devicesSnap.docs
-    .map((d) => ({
-      ref: d.ref,
-      subscription: normalizeWebPushSubscription(d.get('webPushSubscription')),
-    }))
-    .filter((d) => d.subscription);
+    .map((d) => {
+      const subscription = normalizeWebPushSubscription(d.get('webPushSubscription'));
+      if (!subscription) return null;
+      const clientKind = String(d.get('clientKind') || '').trim().toLowerCase();
+      const isBrowser = clientKind !== 'pwa' && webPushDisplayMode(d) === 'browser';
+      if (hasStandaloneWebPush && isBrowser) {
+        suppressedBrowserWebPushCount += 1;
+        return null;
+      }
+      return { ref: d.ref, subscription };
+    })
+    .filter((d) => d && d.subscription);
 
-  return { tokens, webDevices };
+  return { tokens, webDevices, suppressedBrowserWebPushCount };
 }
 
-async function sendPayloadToDevices({ msg, devicesSnap, tokens, webDevices, payload, androidBody }) {
+async function sendPayloadToDevices({ msg, devicesSnap, tokens, webDevices, payload, androidBody, suppressedBrowserWebPushCount = 0 }) {
   let response = { successCount: 0, failureCount: 0, responses: [] };
   const invalidTokenRefs = [];
 
@@ -216,6 +239,7 @@ async function sendPayloadToDevices({ msg, devicesSnap, tokens, webDevices, payl
     webPushSuccessCount: webPushResult.successCount,
     webPushFailureCount: webPushResult.failureCount,
     webPushConfigMissing: webPushResult.configMissing,
+    suppressedBrowserWebPushCount,
     invalidTokenRefs,
     expiredWebPushRefs: webPushResult.expiredRefs,
   };
@@ -291,7 +315,7 @@ async function flushDueKeywordDigests(db, msg, deviceCache, now) {
     }
 
     const devicesSnap = await loadEnabledDevices(db, deviceCache, uid);
-    const { tokens, webDevices } = splitDevices(devicesSnap);
+    const { tokens, webDevices, suppressedBrowserWebPushCount } = splitDevices(devicesSnap);
     const batch = db.batch();
 
     if (tokens.length === 0 && webDevices.length === 0) {
@@ -315,6 +339,7 @@ async function flushDueKeywordDigests(db, msg, deviceCache, now) {
       webDevices,
       payload,
       androidBody: payload.body,
+      suppressedBrowserWebPushCount,
     });
 
     result.invalidTokenRefs.forEach((ref) => batch.delete(ref));
@@ -406,7 +431,7 @@ async function processRows(rows = []) {
       if (matchSnap.exists) continue;
 
       const devicesSnap = await loadEnabledDevices(db, deviceCache, uid);
-      const { tokens, webDevices } = splitDevices(devicesSnap);
+      const { tokens, webDevices, suppressedBrowserWebPushCount } = splitDevices(devicesSnap);
       const matchedTerms = sortMatchedTerms(termSet);
       const primaryTerm = matchedTerms[0] || '';
       if (tokens.length === 0 && webDevices.length === 0) {
@@ -453,6 +478,7 @@ async function processRows(rows = []) {
           webDevices,
           payload: digestPayload,
           androidBody: digestPayload.body,
+          suppressedBrowserWebPushCount,
         });
         digestResult.invalidTokenRefs.forEach((ref) => cleanupRefs.set(ref.path, ref));
         digestResult.expiredWebPushRefs.forEach((ref) => cleanupRefs.set(ref.path, ref));
@@ -466,7 +492,8 @@ async function processRows(rows = []) {
         tokens,
         webDevices,
         payload,
-        androidBody: `${primaryTerm} 관련 새 딜이 등록됐어요.`,
+        androidBody: payload.body,
+        suppressedBrowserWebPushCount,
       });
 
       result.invalidTokenRefs.forEach((ref) => cleanupRefs.set(ref.path, ref));
@@ -491,6 +518,7 @@ async function processRows(rows = []) {
         webPushSuccessCount: result.webPushSuccessCount,
         webPushFailureCount: result.webPushFailureCount,
         webPushConfigMissing: result.webPushConfigMissing,
+        suppressedBrowserWebPushCount: result.suppressedBrowserWebPushCount,
         clickUrl,
       });
 

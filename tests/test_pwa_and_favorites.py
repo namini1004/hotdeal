@@ -71,11 +71,18 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         self.assertIn('sendWebPushNotification', ingest)
         self.assertIn('webPushCount', ingest)
         self.assertIn('webPushConfigMissing', ingest)
+        self.assertIn('suppressedBrowserWebPushCount', ingest)
+        self.assertIn('hasStandaloneWebPush', ingest)
         self.assertIn('KEYWORD_ALERT_WINDOW_MS = 30 * 60 * 1000', ingest)
         self.assertIn('keyword_alert_windows', ingest)
         self.assertIn("status: 'queued'", ingest)
         self.assertIn("reason: 'keyword_throttle'", ingest)
         self.assertIn('buildKeywordDigestPayload', ingest)
+        self.assertIn('androidBody: payload.body', ingest)
+        self.assertNotIn('androidBody: `${primaryTerm}', ingest)
+
+        self.assertIn('standalone_pwa_active', register_device)
+        self.assertIn('suppressedByStandalonePwa', register_device)
 
         keywords = (ROOT / 'keywords.html').read_text(encoding='utf-8')
         self.assertIn('PushManager', keywords)

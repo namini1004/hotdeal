@@ -52,6 +52,19 @@ async function disableOtherBrowserWebPushDevices(db, uid, currentDeviceId, now) 
   return disabled;
 }
 
+async function hasEnabledStandaloneWebPushDevice(db, uid, currentDeviceId) {
+  const devicesRef = db.collection('users').doc(uid).collection('devices');
+  const snap = await devicesRef.get();
+
+  return snap.docs.some((doc) => {
+    if (doc.id === currentDeviceId) return false;
+    if (!doc.get('enabled')) return false;
+    if (!doc.get('webPushSubscription')) return false;
+    const clientKind = String(doc.get('clientKind') || '').trim().toLowerCase();
+    return clientKind === 'pwa' || normalizeDisplayMode(doc.get('displayMode')) === 'standalone';
+  });
+}
+
 module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const config = getWebPushConfig();
@@ -108,9 +121,12 @@ module.exports = async (req, res) => {
     const deviceId = webPushSubscription
       ? webPushDeviceId(webPushSubscription)
       : normalizeDeviceId(req.body?.deviceId, crypto.createHash('sha1').update(token).digest('hex'));
-    const enabled = req.body?.enabled !== false;
     const platform = webPushSubscription ? 'web' : 'android';
     const displayMode = normalizeDisplayMode(req.body?.displayMode);
+    const suppressedByStandalonePwa = webPushSubscription && displayMode === 'browser'
+      ? await hasEnabledStandaloneWebPushDevice(db, uid, deviceId)
+      : false;
+    const enabled = req.body?.enabled !== false && !suppressedByStandalonePwa;
 
     const userPatch = {
       updatedAt: now,
@@ -144,6 +160,10 @@ module.exports = async (req, res) => {
       devicePatch.appVersion = String(req.body?.appVersion || 'pwa');
       devicePatch.displayMode = displayMode;
       devicePatch.clientKind = displayMode === 'standalone' ? 'pwa' : 'browser';
+      if (suppressedByStandalonePwa) {
+        devicePatch.disabledAt = now;
+        devicePatch.disabledReason = 'standalone_pwa_active';
+      }
     }
 
     await db.collection('users').doc(uid).collection('devices').doc(deviceId).set(devicePatch, { merge: true });
@@ -151,7 +171,7 @@ module.exports = async (req, res) => {
       ? await disableOtherBrowserWebPushDevices(db, uid, deviceId, now)
       : 0;
 
-    return json(res, 200, { ok: true, uid, deviceId, platform, disabledBrowserWebPush });
+    return json(res, 200, { ok: true, uid, deviceId, platform, disabledBrowserWebPush, suppressedByStandalonePwa });
   } catch (error) {
     return json(res, 500, { error: error.message || 'register failed' });
   }
