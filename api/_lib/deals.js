@@ -469,6 +469,7 @@ function mapPayload(body = {}) {
 module.exports = {
   readFeedItems,
   readFeedItemsFromFiles,
+  normalizeFeedDbRow,
   normalizeUserRow,
   parseUserId,
   computeHotScore,

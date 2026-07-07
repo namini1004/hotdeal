@@ -31,6 +31,25 @@ function buildDealId(row) {
   return crypto.createHash('sha1').update(JSON.stringify(row)).digest('hex');
 }
 
+function isInternalDealId(value) {
+  const id = String(value || '').trim();
+  return /^user-[a-f0-9-]{20,}$/i.test(id)
+    || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
+
+function sourcePostIdFromRow(row, sourceLink) {
+  const explicit = String(row.source_post_id || row.sourcePostId || '').trim();
+  if (explicit) return explicit;
+
+  const source = String(row.source || '').trim();
+  const link = String(sourceLink || row.source_link || row.sourceLink || '').trim();
+  if (source === 'ppomppu') return new URLSearchParams((link.split('?')[1] || '')).get('no') || '';
+  if (source === 'fmkorea') return new URLSearchParams((link.split('?')[1] || '')).get('document_srl') || (link.match(/fmkorea\.com\/(?:index\.php\/)?(\d+)/) || [])[1] || '';
+  if (source === 'quasar') return (link.match(/\/views\/(\d+)/) || [])[1] || '';
+  if (source === 'ruliweb') return (link.match(/\/read\/(\d+)/) || [])[1] || '';
+  return '';
+}
+
 function buildCandidateTerms(normalized) {
   const words = String(normalized || '').split(' ').map((w) => w.trim()).filter(Boolean);
   const out = new Set();
@@ -79,11 +98,21 @@ function appendLimitedUnique(values, value, max) {
 }
 
 function buildClickUrl(row, rowId, buyLink, sourceLink) {
-  if (rowId) return `https://gaji.run/detail.html?id=${encodeURIComponent(rowId)}`;
-  const fallback = buyLink || sourceLink || '';
-  if (fallback) return fallback;
+  if (isInternalDealId(rowId)) {
+    return `https://gaji.run/indexdetail.html?id=${encodeURIComponent(rowId)}`;
+  }
+
   const source = String(row.source || '').trim();
-  return source ? `https://gaji.run/?source=${encodeURIComponent(source)}` : 'https://gaji.run';
+  const sourcePostId = sourcePostIdFromRow(row, sourceLink);
+  if (source && sourcePostId) {
+    return `https://gaji.run/indexdetail.html?id=${encodeURIComponent(`${source}:post:${sourcePostId}`)}`;
+  }
+
+  if (rowId) {
+    return `https://gaji.run/indexdetail.html?id=${encodeURIComponent(rowId)}`;
+  }
+
+  return source ? `https://gaji.run/index.html?source=${encodeURIComponent(source)}` : 'https://gaji.run/index.html';
 }
 
 function buildNotificationPayload({ clickUrl, dealId, matchedTerms, source, title }) {

@@ -80,9 +80,21 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         self.assertIn('buildKeywordDigestPayload', ingest)
         self.assertIn('androidBody: payload.body', ingest)
         self.assertNotIn('androidBody: `${primaryTerm}', ingest)
+        self.assertIn('indexdetail.html?id=', ingest)
+        self.assertIn('sourcePostIdFromRow', ingest)
+        self.assertIn('isInternalDealId(rowId)', ingest)
+        self.assertNotIn('https://gaji.run/detail.html', ingest)
+        self.assertNotIn('const fallback = buyLink || sourceLink', ingest)
 
         self.assertIn('standalone_pwa_active', register_device)
         self.assertIn('suppressedByStandalonePwa', register_device)
+
+        deals_api = (ROOT / 'api' / 'deals.js').read_text(encoding='utf-8')
+        deals_lib = (ROOT / 'api' / '_lib' / 'deals.js').read_text(encoding='utf-8')
+        self.assertIn('parseFeedLookupId', deals_api)
+        self.assertIn('source_post_id=eq.', deals_api)
+        self.assertIn('normalizeFeedDbRow(rows[0])', deals_api)
+        self.assertIn('normalizeFeedDbRow,', deals_lib)
 
         keywords = (ROOT / 'keywords.html').read_text(encoding='utf-8')
         self.assertIn('PushManager', keywords)

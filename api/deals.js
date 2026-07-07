@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { readSession } = require('./_lib/auth');
 const { getActor, getActorId } = require('./_lib/anonymous');
-const { readFeedItems, normalizeUserRow, parseUserId, supabaseRequest, mapPayload } = require('./_lib/deals');
+const { readFeedItems, normalizeFeedDbRow, normalizeUserRow, parseUserId, supabaseRequest, mapPayload } = require('./_lib/deals');
 const ingestHandler = require('./push/ingest');
 
 function json(res, code, data) {
@@ -61,6 +61,15 @@ function sortDealsForResponse(items = []) {
     const ta = toMs(a.registeredAt || a.updatedAt || a.date || '');
     return tb - ta;
   });
+}
+
+function parseFeedLookupId(rawId = '') {
+  const match = String(rawId || '').trim().match(/^([a-z0-9_-]+):post:(.+)$/i);
+  if (!match) return null;
+  return {
+    source: match[1],
+    sourcePostId: match[2],
+  };
 }
 
 function getSessionUserId(sessionUser) {
@@ -269,6 +278,18 @@ async function handleItemRequest(req, res, id) {
   if (!id) return json(res, 400, { error: 'id is required' });
 
   if (req.method === 'GET') {
+    const feedLookup = parseFeedLookupId(id);
+    if (feedLookup) {
+      try {
+        const rows = await supabaseRequest(
+          `deals?source=eq.${encodeURIComponent(feedLookup.source)}&source_post_id=eq.${encodeURIComponent(feedLookup.sourcePostId)}&deleted_at=is.null&select=*&order=updated_at.desc&limit=1`
+        );
+        if (rows?.length) return json(res, 200, { item: normalizeFeedDbRow(rows[0]) });
+      } catch (_) {
+        // feed fallback
+      }
+    }
+
     const normalizedId = parseUserId(id);
 
     try {
@@ -278,6 +299,7 @@ async function handleItemRequest(req, res, id) {
         if (String(row.source || '').trim() === 'user') {
           return json(res, 200, { item: normalizeUserRow(row) });
         }
+        return json(res, 200, { item: normalizeFeedDbRow(row) });
       }
     } catch (_) {
       // feed fallback로 진행
