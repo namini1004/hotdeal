@@ -118,6 +118,11 @@
     .temp-info-btn:focus-visible{outline:2px solid rgba(var(--brand-rgb),.45);outline-offset:3px;border-radius:6px}
     .price{margin-top:6px;font-size:15px;font-weight:700;letter-spacing:-.015em}
     .empty{grid-column:1/-1;padding:40px 8px;color:#6b7280;font-size:14px}
+    .initial-loading{grid-column:1/-1;min-height:calc(100vh - 190px);display:flex;align-items:center;justify-content:center;padding:48px 12px;text-align:center}
+    .initial-loading-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--brand)}
+    .initial-loading .gaji-spinner{width:66px;height:66px;box-shadow:0 14px 28px rgba(var(--brand-rgb),.18)}
+    .initial-loading .gaji-icon{width:42px;height:42px;display:block;object-fit:contain;animation:gaji-spin 1s linear infinite}
+    .initial-loading-text{font-size:16px;font-weight:950;letter-spacing:-.02em}
     .sync-stamp{grid-column:1/-1;padding:8px 0 0;margin:0;color:#9ca3af;font-size:10px;line-height:1.35;text-align:left;letter-spacing:-.01em}
     .list.view-list{display:block;padding:0;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
     .list.view-list .item{display:grid;grid-template-columns:54px minmax(0,1fr);gap:10px;align-items:center;min-height:62px;padding:8px max(14px,calc((100vw - min(430px,100vw))/2 + 14px));border-width:0 0 1px;border-radius:0;box-shadow:none;background:#fff}
@@ -314,7 +319,7 @@
     const FULL_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
     const FEED_PAGE_SIZE = 100;
     const FEED_LOOKBACK_MS = 48 * 60 * 60 * 1000;
-    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'all', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '', feedNextOffset: 0, feedHasMore: true };
+    let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'all', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '', feedNextOffset: 0, feedHasMore: true, initialFeedLoading: true };
     let isRefreshing = false;
     let isLoadingMoreFeed = false;
 
@@ -644,6 +649,19 @@
     function render(){
       const list = document.getElementById('list');
       const items = getFilteredItems();
+      if(state.initialFeedLoading && !items.length){
+        list.innerHTML = `
+          <div class="initial-loading" role="status" aria-live="polite">
+            <div class="initial-loading-inner">
+              <div class="gaji-spinner" aria-hidden="true">
+                <img class="gaji-icon" src="assets/gaji-eggplant-transparent.png" alt="">
+              </div>
+              <div class="initial-loading-text">가지치기 중...</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
       if(!items.length){
         list.innerHTML = '<div class="empty">딜이 아직 없습니다.</div>';
         list.insertAdjacentHTML('beforeend', renderSyncStamp());
@@ -989,6 +1007,7 @@
     async function refreshFeed({ silent = false, mode = 'auto', append = false } = {}){
       if(isRefreshing) return;
       isRefreshing = true;
+      const clearInitialLoading = state.initialFeedLoading && !append;
       const wrap = document.getElementById('pullRefresh');
       const label = document.getElementById('gajiLabel');
       try{
@@ -1039,6 +1058,10 @@
           }, 220);
         }
         isRefreshing = false;
+        if(clearInitialLoading){
+          state.initialFeedLoading = false;
+          render();
+        }
       }
     }
 
@@ -1257,8 +1280,11 @@
       const cached = filterDeleted(dedupeItems([...parseStoredItems(STORAGE_KEY), ...parseStoredItems(LEGACY_STORAGE_KEY)]));
       restoreLastFeedSyncAt();
       applyItems(cached);
+      state.initialFeedLoading = state.allItems.length === 0;
       const needsFreshTemperature = feedTemperatureLooksIncomplete(state.feedItems);
-      if(!needsFreshTemperature){
+      if(state.initialFeedLoading){
+        render();
+      }else if(!needsFreshTemperature){
         render();
         restoreListScrollState();
       }
