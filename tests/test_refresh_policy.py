@@ -71,6 +71,17 @@ class RefreshPolicyTests(unittest.TestCase):
         self.assertIn("hasMore", js)
         self.assertIn("nextOffset", js)
 
+    def test_refresh_watchdog_monitors_workflow_cadence(self):
+        workflow = (ROOT / ".github" / "workflows" / "hotdeal-refresh-watchdog.yml").read_text(encoding="utf-8")
+
+        self.assertIn("REFRESH_WORKFLOW: hotdeal-refresh-supabase.yml", workflow)
+        self.assertIn('STALE_THRESHOLD_MINUTES: "35"', workflow)
+        self.assertIn("actions/workflows/{workflow}/runs?per_page=20", workflow)
+        self.assertIn('active_statuses = {"queued", "in_progress", "waiting", "requested", "pending"}', workflow)
+        self.assertIn('stale = (not active) and age_minutes > threshold', workflow)
+        self.assertIn("Refresh workflow last succeeded", workflow)
+        self.assertIn("gh workflow run hotdeal-refresh-supabase.yml", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

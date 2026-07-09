@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FEED_URL: https://gaji.run/api/deals?scope=feed
-  STALE_THRESHOLD_MINUTES: "75"
+  REFRESH_WORKFLOW: hotdeal-refresh-supabase.yml
+  STALE_THRESHOLD_MINUTES: "35"
 
 jobs:
   watchdog:
@@ -26,53 +26,72 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check production feed freshness
+      - name: Check refresh workflow cadence
         id: freshness
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python - <<'PY'
           import json
           import os
           import sys
-          import time
           import urllib.request
           from datetime import datetime, timezone
 
-          url = os.environ["FEED_URL"] + "&watchdog_ts=" + str(int(time.time()))
+          repo = os.environ["GITHUB_REPOSITORY"]
+          workflow = os.environ.get("REFRESH_WORKFLOW", "hotdeal-refresh-supabase.yml")
           threshold = float(os.environ.get("STALE_THRESHOLD_MINUTES", "35"))
+          token = os.environ.get("GH_TOKEN", "")
+          url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs?per_page=20"
           request = urllib.request.Request(
               url,
               headers={
                   "Accept": "application/json",
-                  "Cache-Control": "no-cache",
+                  "Authorization": f"Bearer {token}",
                   "User-Agent": "gaji-github-watchdog",
               },
           )
 
-          latest = None
+          latest_success = None
+          active = False
           count = 0
           try:
               with urllib.request.urlopen(request, timeout=25) as response:
                   payload = json.load(response)
-              items = payload.get("items") or []
-              count = len(items)
-              timestamps = [item.get("updatedAt") for item in items if item.get("updatedAt")]
-              if timestamps:
-                  latest = max(timestamps)
+              runs = payload.get("workflow_runs") or []
+              count = len(runs)
+              active_statuses = {"queued", "in_progress", "waiting", "requested", "pending"}
+              active = any(run.get("status") in active_statuses for run in runs)
+              successes = [
+                  run
+                  for run in runs
+                  if run.get("status") == "completed" and run.get("conclusion") == "success"
+              ]
+              if successes:
+                  latest_success = max(
+                      (run.get("updated_at") or run.get("run_started_at") or run.get("created_at") or "")
+                      for run in successes
+                  )
           except Exception as exc:
-              print(f"WATCHDOG_FETCH_FAILED {exc}")
+              print(f"WATCHDOG_WORKFLOW_FETCH_FAILED {exc}")
 
           stale = True
           age_minutes = 999999.0
-          if latest:
-              dt = datetime.fromisoformat(latest.replace("Z", "+00:00"))
+          if latest_success:
+              dt = datetime.fromisoformat(latest_success.replace("Z", "+00:00"))
               age_minutes = (datetime.now(timezone.utc) - dt.astimezone(timezone.utc)).total_seconds() / 60
-              stale = age_minutes > threshold
+              stale = (not active) and age_minutes > threshold
 
-          print(f"WATCHDOG_FEED count={count} latest_update={latest} age_min={age_minutes:.1f} threshold={threshold} stale={stale}")
+          print(
+              "WATCHDOG_REFRESH_WORKFLOW "
+              f"count={count} active={active} latest_success={latest_success} "
+              f"age_min={age_minutes:.1f} threshold={threshold} stale={stale}"
+          )
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write(f"stale={str(stale).lower()}\n")
               output.write(f"age_minutes={age_minutes:.1f}\n")
-              output.write(f"latest_update={latest or ''}\n")
+              output.write(f"latest_success={latest_success or ''}\n")
+              output.write(f"active={str(active).lower()}\n")
           PY
 
       - name: Dispatch refresh workflow when stale
@@ -80,5 +99,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Production feed is stale for ${{ steps.freshness.outputs.age_minutes }} minutes; dispatching refresh."
+          echo "Refresh workflow last succeeded ${{ steps.freshness.outputs.age_minutes }} minutes ago; dispatching refresh."
           gh workflow run hotdeal-refresh-supabase.yml --ref "${GITHUB_REF_NAME}"

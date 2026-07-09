@@ -41,14 +41,16 @@ class GithubRefreshResilienceTests(unittest.TestCase):
         self.assertIn("HOTDEAL_EXPECTED_FEED_SOURCES", script)
         self.assertIn("fmkorea", script)
 
-    def test_github_watchdog_dispatches_refresh_when_site_feed_is_stale(self):
+    def test_github_watchdog_dispatches_refresh_when_refresh_workflow_is_stale(self):
         workflow = WATCHDOG_WORKFLOW.read_text(encoding="utf-8")
 
         self.assertIn('cron: "22,52 * * * *"', workflow)
-        self.assertIn('STALE_THRESHOLD_MINUTES: "75"', workflow)
+        self.assertIn('STALE_THRESHOLD_MINUTES: "35"', workflow)
         self.assertIn("actions: write", workflow)
-        self.assertIn("hotdeal-refresh-supabase.yml", workflow)
-        self.assertIn("STALE_THRESHOLD_MINUTES", workflow)
+        self.assertIn("REFRESH_WORKFLOW: hotdeal-refresh-supabase.yml", workflow)
+        self.assertIn("actions/workflows/{workflow}/runs?per_page=20", workflow)
+        self.assertIn("latest_success", workflow)
+        self.assertIn("stale = (not active) and age_minutes > threshold", workflow)
         self.assertIn("gh workflow run", workflow)
 
     def test_fmkorea_parser_has_actions_diagnostics_and_desktop_fallback(self):
