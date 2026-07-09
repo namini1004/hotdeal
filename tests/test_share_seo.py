@@ -70,6 +70,14 @@ class ShareSeoTests(unittest.TestCase):
         rewrites = vercel.get('rewrites', [])
         self.assertIn({'source': '/d/:id', 'destination': '/api/share?id=:id'}, rewrites)
 
+        redirects = vercel.get('redirects', [])
+        self.assertIn({
+            'source': '/:path*',
+            'has': [{'type': 'host', 'value': 'www.gaji.run'}],
+            'destination': 'https://gaji.run/:path*',
+            'permanent': True,
+        }, redirects)
+
 
 if __name__ == '__main__':
     unittest.main()

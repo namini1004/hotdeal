@@ -22,6 +22,17 @@
       "has": [
         {
           "type": "host",
+          "value": "www.gaji.run"
+        }
+      ],
+      "destination": "https://gaji.run/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
           "value": "hotdeal-omega.vercel.app"
         }
       ],
