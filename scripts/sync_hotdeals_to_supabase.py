@@ -89,6 +89,8 @@ TRACKED_FIELDS = [
 IMAGE_BUCKET = os.environ.get("SUPABASE_IMAGE_BUCKET", "deal-images").strip() or "deal-images"
 THUMBNAIL_MAX_SIZE = int(os.environ.get("MIRROR_THUMBNAIL_MAX_SIZE", "320"))
 DETAIL_IMAGE_MAX_SIZE = int(os.environ.get("MIRROR_DETAIL_IMAGE_MAX_SIZE", "640"))
+DEFAULT_PUSH_INGEST_BATCH_SIZE = 10
+DEFAULT_PUSH_INGEST_MAX_ROWS = 50
 DETAIL_IMAGE_VARIANT = f"detail{DETAIL_IMAGE_MAX_SIZE}"
 THUMBNAIL_WEBP_QUALITY = int(os.environ.get("MIRROR_THUMBNAIL_WEBP_QUALITY", "75"))
 DETAIL_IMAGE_WEBP_QUALITY = int(os.environ.get("MIRROR_DETAIL_IMAGE_WEBP_QUALITY", "82"))
@@ -223,6 +225,13 @@ def normalize(item: Dict) -> Dict:
 def chunked(rows: List[Dict], size: int):
     for i in range(0, len(rows), size):
         yield rows[i : i + size]
+
+
+def positive_int_env(name: str, default: int) -> int:
+    try:
+        return max(1, int(os.environ.get(name, str(default))))
+    except ValueError:
+        return default
 
 
 def row_changed(new_row: Dict, old_row: Dict) -> bool:
@@ -728,24 +737,56 @@ def send_push_ingest(changed_rows: List[Dict]):
     if not rows:
         return "SKIP"
 
+    original_count = len(rows)
+    max_rows = positive_int_env("PUSH_INGEST_MAX_ROWS", DEFAULT_PUSH_INGEST_MAX_ROWS)
+    rows = rows[:max_rows]
+    dropped = original_count - len(rows)
+    batch_size = positive_int_env("PUSH_INGEST_BATCH_SIZE", DEFAULT_PUSH_INGEST_BATCH_SIZE)
     headers = {
         "Content-Type": "application/json",
         "x-ingest-secret": ingest_secret,
     }
-    res = requests.post(
-        ingest_url,
-        headers=headers,
-        json={"rows": rows},
-        timeout=60,
-    )
-    if not res.ok:
-        raise SystemExit(f"Push ingest failed ({res.status_code}): {res.text}")
-    response_body = (res.text or "").strip()
-    if not response_body:
-        return "OK"
-    if len(response_body) > 500:
-        response_body = f"{response_body[:500]}..."
-    return f"OK {response_body}"
+    totals = {"processed": 0, "pushed": 0, "skipped": 0, "queued": 0, "digests": 0}
+    batches = 0
+
+    for batch in chunked(rows, batch_size):
+        batches += 1
+        try:
+            res = requests.post(
+                ingest_url,
+                headers=headers,
+                json={"rows": batch},
+                timeout=60,
+            )
+        except requests.RequestException as exc:
+            message = str(exc).replace("\n", " ")[:160]
+            return f"FAIL request_error={type(exc).__name__} rows={len(rows)} batches={batches} message={message}"
+
+        if not res.ok:
+            response_body = (res.text or "").strip().replace("\n", " ")[:300]
+            return f"FAIL status={res.status_code} rows={len(rows)} batches={batches} body={response_body}"
+
+        try:
+            body = res.json() or {}
+        except ValueError:
+            body = {}
+        for key in totals:
+            totals[key] += int(body.get(key) or 0)
+
+    parts = [
+        "OK",
+        f"rows={original_count}",
+        f"sent={len(rows)}",
+        f"batches={batches}",
+        f"processed={totals['processed']}",
+        f"pushed={totals['pushed']}",
+        f"skipped={totals['skipped']}",
+        f"queued={totals['queued']}",
+        f"digests={totals['digests']}",
+    ]
+    if dropped > 0:
+        parts.append(f"dropped={dropped}")
+    return " ".join(parts)
 
 
 def parse_iso_datetime(value: str):
@@ -873,6 +914,24 @@ def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: st
     return changed_rows, deleted_rows, skipped_delete_sources
 
 
+def build_push_ingest_rows(changed_rows: List[Dict], existing_map: Dict[str, Dict]) -> List[Dict]:
+    rows: List[Dict] = []
+    seen = set()
+    for row in changed_rows:
+        if row.get("deleted_at"):
+            continue
+        key = sync_key(row)
+        legacy_key = legacy_sync_key(row)
+        prev = existing_map.get(key) or existing_map.get(legacy_key)
+        if prev and not prev.get("deleted_at"):
+            continue
+        if key in seen:
+            continue
+        rows.append(row)
+        seen.add(key)
+    return rows
+
+
 def main():
     supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -916,6 +975,7 @@ def main():
         stale_fallback_sources,
         prune_before=prune_before,
     )
+    push_ingest_rows = build_push_ingest_rows(changed_rows, existing_map)
     append_id_delete_rows(deleted_rows, build_duplicate_delete_rows(existing_rows, now_iso))
     append_id_delete_rows(deleted_rows, build_prune_delete_rows(existing_rows, now_iso, prune_before))
     if skipped_delete_sources:
@@ -960,8 +1020,8 @@ def main():
         written += soft_delete_rows(deleted_rows, supabase_url, headers)
 
     purged = purge_soft_deleted_feed_rows(supabase_url, headers)
-    ingest_status = send_push_ingest(changed_rows)
-    print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} purged={purged} ingest={ingest_status}")
+    ingest_status = send_push_ingest(push_ingest_rows)
+    print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} purged={purged} push_candidates={len(push_ingest_rows)} ingest={ingest_status}")
 
 
 if __name__ == "__main__":

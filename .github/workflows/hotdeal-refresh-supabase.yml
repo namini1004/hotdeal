@@ -200,4 +200,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PUSH_INGEST_URL: https://gaji.run/api/push/ingest
           PUSH_INGEST_SECRET: ${{ secrets.PUSH_INGEST_SECRET }}
+          PUSH_INGEST_BATCH_SIZE: "10"
+          PUSH_INGEST_MAX_ROWS: "50"
         run: python scripts/sync_hotdeals_to_supabase.py
