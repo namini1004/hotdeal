@@ -81,9 +81,17 @@ class PushIngestSyncTests(unittest.TestCase):
         self.assertEqual(posted[0][2]["rows"], [changed_rows[0]])
         self.assertEqual(posted[1][2]["rows"], [changed_rows[1]])
 
-    def test_send_push_ingest_skips_without_rows_or_secret(self):
-        with patch.dict(os.environ, {"PUSH_INGEST_URL": "", "PUSH_INGEST_SECRET": ""}):
-            self.assertEqual(sync.send_push_ingest([{"id": "deal"}]), "SKIP")
+    def test_send_push_ingest_posts_empty_rows_to_flush_due_digests(self):
+        posted = []
+
+        def fake_post(url, headers=None, json=None, **kwargs):
+            posted.append((url, headers, json, kwargs))
+            return Mock(
+                ok=True,
+                status_code=200,
+                text='{"ok":true,"processed":0,"pushed":1,"skipped":0,"queued":0,"digests":1}',
+                json=lambda: {"ok": True, "processed": 0, "pushed": 1, "skipped": 0, "queued": 0, "digests": 1},
+            )
 
         with patch.dict(
             os.environ,
@@ -91,8 +99,15 @@ class PushIngestSyncTests(unittest.TestCase):
                 "PUSH_INGEST_URL": "https://gaji.run/api/push/ingest",
                 "PUSH_INGEST_SECRET": "test-secret",
             },
-        ):
-            self.assertEqual(sync.send_push_ingest([]), "SKIP")
+        ), patch.object(sync.requests, "post", side_effect=fake_post):
+            result = sync.send_push_ingest([])
+
+        self.assertEqual(result, "OK rows=0 sent=0 batches=1 processed=0 pushed=1 skipped=0 queued=0 digests=1")
+        self.assertEqual(posted[0][2]["rows"], [])
+
+    def test_send_push_ingest_skips_without_secret(self):
+        with patch.dict(os.environ, {"PUSH_INGEST_URL": "", "PUSH_INGEST_SECRET": ""}):
+            self.assertEqual(sync.send_push_ingest([{"id": "deal"}]), "SKIP")
 
 
 if __name__ == "__main__":

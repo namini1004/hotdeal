@@ -77,6 +77,8 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         self.assertIn('keyword_alert_windows', ingest)
         self.assertIn("status: 'queued'", ingest)
         self.assertIn("reason: 'keyword_throttle'", ingest)
+        self.assertIn('const flushed = await flushDueKeywordDigests', ingest)
+        self.assertNotIn('if (!rows.length) return { ok: true, processed: 0, pushed: 0, skipped: 0 };', ingest)
         self.assertIn('buildKeywordDigestPayload', ingest)
         self.assertIn('androidBody: payload.body', ingest)
         self.assertNotIn('androidBody: `${primaryTerm}', ingest)

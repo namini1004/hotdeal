@@ -730,12 +730,10 @@ def purge_soft_deleted_feed_rows(supabase_url: str, headers: Dict) -> int:
 def send_push_ingest(changed_rows: List[Dict]):
     ingest_url = os.environ.get("PUSH_INGEST_URL", "").strip()
     ingest_secret = os.environ.get("PUSH_INGEST_SECRET", "").strip()
-    if not ingest_url or not ingest_secret or not changed_rows:
+    if not ingest_url or not ingest_secret:
         return "SKIP"
 
-    rows = [row for row in changed_rows if not row.get("deleted_at")]
-    if not rows:
-        return "SKIP"
+    rows = [row for row in (changed_rows or []) if not row.get("deleted_at")]
 
     original_count = len(rows)
     max_rows = positive_int_env("PUSH_INGEST_MAX_ROWS", DEFAULT_PUSH_INGEST_MAX_ROWS)
@@ -749,7 +747,8 @@ def send_push_ingest(changed_rows: List[Dict]):
     totals = {"processed": 0, "pushed": 0, "skipped": 0, "queued": 0, "digests": 0}
     batches = 0
 
-    for batch in chunked(rows, batch_size):
+    ingest_batches = list(chunked(rows, batch_size)) if rows else [[]]
+    for batch in ingest_batches:
         batches += 1
         try:
             res = requests.post(

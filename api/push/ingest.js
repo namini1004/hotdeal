@@ -417,8 +417,6 @@ async function findMatchedUsers(db, normalizedText) {
 }
 
 async function processRows(rows = []) {
-  if (!rows.length) return { ok: true, processed: 0, pushed: 0, skipped: 0 };
-
   const db = firestore();
   const msg = messaging();
   const now = new Date();
@@ -432,6 +430,10 @@ async function processRows(rows = []) {
   const flushed = await flushDueKeywordDigests(db, msg, deviceCache, now);
   pushed += flushed.pushed;
   digests += flushed.digests;
+
+  if (!rows.length) {
+    return { ok: true, processed, pushed, skipped, queued, digests };
+  }
 
   for (const row of rows) {
     if (row.deleted_at) continue;
