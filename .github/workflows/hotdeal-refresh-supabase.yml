@@ -198,4 +198,6 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PUSH_INGEST_URL: https://gaji.run/api/push/ingest
+          PUSH_INGEST_SECRET: ${{ secrets.PUSH_INGEST_SECRET }}
         run: python scripts/sync_hotdeals_to_supabase.py

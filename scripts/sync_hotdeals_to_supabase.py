@@ -740,7 +740,12 @@ def send_push_ingest(changed_rows: List[Dict]):
     )
     if not res.ok:
         raise SystemExit(f"Push ingest failed ({res.status_code}): {res.text}")
-    return "OK"
+    response_body = (res.text or "").strip()
+    if not response_body:
+        return "OK"
+    if len(response_body) > 500:
+        response_body = f"{response_body[:500]}..."
+    return f"OK {response_body}"
 
 
 def parse_iso_datetime(value: str):

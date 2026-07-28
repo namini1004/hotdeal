@@ -27,6 +27,8 @@ class GithubRefreshResilienceTests(unittest.TestCase):
         self.assertIn("name: Copy downloaded feed artifacts into assets", workflow)
         self.assertIn("cp .downloaded-feeds/*hotdeals*.json assets/", workflow)
         self.assertIn("needs.refresh-fmkorea.result", workflow)
+        self.assertIn("PUSH_INGEST_URL: https://gaji.run/api/push/ingest", workflow)
+        self.assertIn("PUSH_INGEST_SECRET: ${{ secrets.PUSH_INGEST_SECRET }}", workflow)
 
     def test_fmkorea_ingest_is_split_to_local_hermes_runner(self):
         script = (ROOT / "scripts" / "hermes_fmkorea_ingest.py").read_text(encoding="utf-8")
