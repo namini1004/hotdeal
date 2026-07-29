@@ -65,8 +65,17 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         self.assertIn("req.method === 'DELETE'", register_device)
         self.assertIn('standalone_pwa_registered', register_device)
         self.assertIn('disabledBrowserWebPush', register_device)
+        self.assertIn('webPushInstallationId', register_device)
+        self.assertIn('planPushDeviceCleanup', register_device)
 
         ingest = (ROOT / 'api' / 'push' / 'ingest.js').read_text(encoding='utf-8')
+        self.assertIn("req.body?.action === 'cleanup-devices'", ingest)
+        self.assertIn("collectionGroup('devices')", ingest)
+        self.assertIn("req.body?.execute === true", ingest)
+        self.assertIn('duplicate_legacy_pwa_user_agent', (
+            ROOT / 'api' / '_lib' / 'push-device-dedupe.js'
+        ).read_text(encoding='utf-8'))
+
         self.assertIn('sendEachForMulticast', ingest)
         self.assertIn('sendWebPushNotification', ingest)
         self.assertIn('webPushCount', ingest)
@@ -104,6 +113,7 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         self.assertIn('/api/push/register-device?action=vapid-public-key', keywords)
         self.assertIn('webPushSubscription: subscription.toJSON()', keywords)
         self.assertIn('displayMode: getDisplayMode()', keywords)
+        self.assertIn('installationId: getWebPushInstallationId()', keywords)
         self.assertIn("method:'DELETE'", keywords)
         self.assertIn('넓은 키워드라 알림이 많을 수 있어요', keywords)
 

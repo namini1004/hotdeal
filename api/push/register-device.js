@@ -9,6 +9,12 @@ const {
   webPushDeviceId,
   webPushEndpointHash,
 } = require('../_lib/web-push');
+const {
+  deviceRecordFromDoc,
+  normalizeDisplayMode,
+  normalizeInstallationId,
+  planPushDeviceCleanup,
+} = require('../_lib/push-device-dedupe');
 
 function normalizeToken(value) {
   return String(value || '').trim();
@@ -19,37 +25,32 @@ function normalizeDeviceId(value, fallback) {
   return raw.replace(/[\/#?\[\]]/g, '_').slice(0, 120);
 }
 
-function normalizeDisplayMode(value) {
-  const mode = String(value || '').trim().toLowerCase();
-  if (['standalone', 'fullscreen', 'minimal-ui'].includes(mode)) return 'standalone';
-  if (mode === 'webview') return 'webview';
-  return 'browser';
-}
-
-async function disableOtherBrowserWebPushDevices(db, uid, currentDeviceId, now) {
+async function disableSupersededPushDevices(db, uid, now) {
   const devicesRef = db.collection('users').doc(uid).collection('devices');
   const snap = await devicesRef.get();
+  const records = snap.docs.map((doc) => deviceRecordFromDoc(uid, doc));
+  const actions = planPushDeviceCleanup(records, {
+    includeLegacyStandalone: true,
+    includeFcmDuplicates: true,
+  });
   const batch = db.batch();
-  let disabled = 0;
-
-  for (const doc of snap.docs) {
-    if (doc.id === currentDeviceId) continue;
-    if (!doc.get('enabled')) continue;
-    if (!doc.get('webPushSubscription')) continue;
-    const displayMode = normalizeDisplayMode(doc.get('displayMode'));
-    if (displayMode === 'standalone') continue;
-    batch.set(doc.ref, {
+  for (const action of actions) {
+    batch.set(action.ref, {
       enabled: false,
       disabledAt: now,
-      disabledReason: 'standalone_pwa_registered',
-      supersededBy: currentDeviceId,
+      disabledReason: action.reason,
+      supersededBy: action.supersededBy,
       updatedAt: now,
     }, { merge: true });
-    disabled += 1;
   }
-
-  if (disabled > 0) await batch.commit();
-  return disabled;
+  if (actions.length > 0) await batch.commit();
+  return {
+    disabled: actions.length,
+    reasons: actions.reduce((counts, action) => {
+      counts[action.reason] = (counts[action.reason] || 0) + 1;
+      return counts;
+    }, {}),
+  };
 }
 
 async function hasEnabledStandaloneWebPushDevice(db, uid, currentDeviceId) {
@@ -123,6 +124,7 @@ module.exports = async (req, res) => {
       : normalizeDeviceId(req.body?.deviceId, crypto.createHash('sha1').update(token).digest('hex'));
     const platform = webPushSubscription ? 'web' : 'android';
     const displayMode = normalizeDisplayMode(req.body?.displayMode);
+    const installationId = normalizeInstallationId(req.body?.installationId);
     const suppressedByStandalonePwa = webPushSubscription && displayMode === 'browser'
       ? await hasEnabledStandaloneWebPushDevice(db, uid, deviceId)
       : false;
@@ -160,6 +162,7 @@ module.exports = async (req, res) => {
       devicePatch.appVersion = String(req.body?.appVersion || 'pwa');
       devicePatch.displayMode = displayMode;
       devicePatch.clientKind = displayMode === 'standalone' ? 'pwa' : 'browser';
+      if (installationId) devicePatch.webPushInstallationId = installationId;
       if (suppressedByStandalonePwa) {
         devicePatch.disabledAt = now;
         devicePatch.disabledReason = 'standalone_pwa_active';
@@ -167,11 +170,20 @@ module.exports = async (req, res) => {
     }
 
     await db.collection('users').doc(uid).collection('devices').doc(deviceId).set(devicePatch, { merge: true });
-    const disabledBrowserWebPush = webPushSubscription && displayMode === 'standalone'
-      ? await disableOtherBrowserWebPushDevices(db, uid, deviceId, now)
-      : 0;
+    const cleanup = webPushSubscription
+      ? await disableSupersededPushDevices(db, uid, now)
+      : { disabled: 0, reasons: {} };
 
-    return json(res, 200, { ok: true, uid, deviceId, platform, disabledBrowserWebPush, suppressedByStandalonePwa });
+    return json(res, 200, {
+      ok: true,
+      uid,
+      deviceId,
+      platform,
+      disabledBrowserWebPush: cleanup.reasons.standalone_pwa_registered || 0,
+      disabledDuplicateDevices: cleanup.disabled,
+      disabledReasons: cleanup.reasons,
+      suppressedByStandalonePwa,
+    });
   } catch (error) {
     return json(res, 500, { error: error.message || 'register failed' });
   }

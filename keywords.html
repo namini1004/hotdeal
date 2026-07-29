@@ -131,6 +131,20 @@
       return isStandaloneDisplay() ? 'standalone' : 'browser';
     }
 
+    function getWebPushInstallationId(){
+      const key = 'gaji_web_push_installation_id_v1';
+      try{
+        const saved = String(localStorage.getItem(key) || '').trim();
+        if(/^[a-zA-Z0-9_-]{16,120}$/.test(saved)) return saved;
+        const generated = window.crypto?.randomUUID?.().replace(/-/g, '')
+          || `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem(key, generated);
+        return generated;
+      }catch(_){
+        return '';
+      }
+    }
+
     function setWebPushStatus(message, buttonText = '켜기', disabled = false){
       if(webPushState) webPushState.textContent = message;
       if(webPushBtn){
@@ -186,6 +200,7 @@
           appVersion: 'pwa',
           userAgent: navigator.userAgent || '',
           displayMode: getDisplayMode(),
+          installationId: getWebPushInstallationId(),
           replaceBrowserPush: true,
           enabled: true
         })

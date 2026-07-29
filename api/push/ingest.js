@@ -7,6 +7,10 @@ const {
   normalizeWebPushSubscription,
   sendWebPushNotification,
 } = require('../_lib/web-push');
+const {
+  deviceRecordFromDoc,
+  planPushDeviceCleanup,
+} = require('../_lib/push-device-dedupe');
 
 const KEYWORD_ALERT_WINDOW_MS = 30 * 60 * 1000;
 const MAX_PENDING_TITLES = 5;
@@ -561,6 +565,61 @@ async function processRows(rows = []) {
   return { ok: true, processed, pushed, skipped, queued, digests };
 }
 
+function countCleanupReasons(actions) {
+  const counts = {};
+  for (const action of actions) {
+    counts[action.reason] = (counts[action.reason] || 0) + 1;
+  }
+  return counts;
+}
+
+async function cleanupPushDevices(execute = false) {
+  const db = firestore();
+  const snap = await db.collectionGroup('devices').get();
+  const records = snap.docs
+    .map((doc) => {
+      const segments = doc.ref.path.split('/');
+      const uid = segments.length >= 4 && segments[0] === 'users' ? segments[1] : '';
+      return uid ? deviceRecordFromDoc(uid, doc) : null;
+    })
+    .filter(Boolean);
+  const actions = planPushDeviceCleanup(records, {
+    includeLegacyStandalone: true,
+    includeFcmDuplicates: true,
+  });
+  let updated = 0;
+  const now = new Date();
+
+  if (execute) {
+    for (let i = 0; i < actions.length; i += 400) {
+      const batch = db.batch();
+      const chunk = actions.slice(i, i + 400);
+      for (const action of chunk) {
+        batch.set(action.ref, {
+          enabled: false,
+          disabledAt: now,
+          disabledReason: action.reason,
+          supersededBy: action.supersededBy,
+          updatedAt: now,
+        }, { merge: true });
+      }
+      await batch.commit();
+      updated += chunk.length;
+    }
+  }
+
+  return {
+    ok: true,
+    mode: execute ? 'execute' : 'dry-run',
+    scannedDevices: records.length,
+    scannedUsers: new Set(records.map((record) => record.uid)).size,
+    enabledDevices: records.filter((record) => record.enabled).length,
+    planned: actions.length,
+    updated,
+    reasons: countCleanupReasons(actions),
+  };
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -571,6 +630,14 @@ module.exports = async (req, res) => {
   const provided = String(req.headers['x-ingest-secret'] || '');
   if (!secret || provided !== secret) {
     return json(res, 401, { error: 'Unauthorized ingest' });
+  }
+
+  if (req.body?.action === 'cleanup-devices') {
+    try {
+      return json(res, 200, await cleanupPushDevices(req.body?.execute === true));
+    } catch (error) {
+      return json(res, 500, { error: error.message || 'cleanup failed' });
+    }
   }
 
   const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
@@ -591,3 +658,4 @@ module.exports = async (req, res) => {
 };
 
 module.exports.processRows = processRows;
+module.exports.cleanupPushDevices = cleanupPushDevices;
