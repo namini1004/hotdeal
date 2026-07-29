@@ -77,6 +77,7 @@ class PwaAndFavoritePersistenceTests(unittest.TestCase):
         ).read_text(encoding='utf-8'))
 
         self.assertIn('sendEachForMulticast', ingest)
+        self.assertIn('const tokens = [...new Set(', ingest)
         self.assertIn('sendWebPushNotification', ingest)
         self.assertIn('webPushCount', ingest)
         self.assertIn('webPushConfigMissing', ingest)

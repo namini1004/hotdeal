@@ -170,7 +170,7 @@ module.exports = async (req, res) => {
     }
 
     await db.collection('users').doc(uid).collection('devices').doc(deviceId).set(devicePatch, { merge: true });
-    const cleanup = webPushSubscription
+    const cleanup = token || webPushSubscription
       ? await disableSupersededPushDevices(db, uid, now)
       : { disabled: 0, reasons: {} };
 

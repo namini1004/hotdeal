@@ -213,9 +213,11 @@ function splitDevices(devicesSnap) {
   const hasStandaloneWebPush = devicesSnap.docs.some(isStandaloneWebPushDevice);
   let suppressedBrowserWebPushCount = 0;
 
-  const tokens = devicesSnap.docs
-    .map((d) => String(d.get('fcmToken') || '').trim())
-    .filter(Boolean);
+  const tokens = [...new Set(
+    devicesSnap.docs
+      .map((d) => String(d.get('fcmToken') || '').trim())
+      .filter(Boolean),
+  )];
 
   const webDevices = devicesSnap.docs
     .map((d) => {

@@ -86,3 +86,27 @@ test('preserves distinct identified PWA installations on the same user agent', (
 
   assert.deepEqual(actions, []);
 });
+
+test('keeps newest document when an FCM token was registered twice', () => {
+  const actions = planPushDeviceCleanup([
+    record({
+      id: 'old-fcm',
+      hasWebPush: false,
+      hasFcmToken: true,
+      fcmTokenHash: 'same-token',
+      lastSeenAtMs: 10,
+    }),
+    record({
+      id: 'new-fcm',
+      hasWebPush: false,
+      hasFcmToken: true,
+      fcmTokenHash: 'same-token',
+      lastSeenAtMs: 20,
+    }),
+  ], { includeFcmDuplicates: true });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].id, 'old-fcm');
+  assert.equal(actions[0].reason, 'duplicate_fcm_token');
+  assert.equal(actions[0].supersededBy, 'new-fcm');
+});
