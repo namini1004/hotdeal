@@ -17,14 +17,14 @@ class RefreshPolicyTests(unittest.TestCase):
         self.assertIn("async function loadMoreFeed()", html)
         self.assertIn("loadMoreFeed();", html)
 
-    def test_init_entry_full_refreshes_only_after_24_hours(self):
+    def test_init_entry_uses_shared_full_feed_cache(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
 
         self.assertIn("const FULL_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;", html)
         self.assertIn("function shouldUseDeltaRefresh(mode = 'auto')", html)
         self.assertIn("function feedTemperatureLooksIncomplete(items = state.feedItems)", html)
         self.assertIn("if(feedTemperatureLooksIncomplete()) return false;", html)
-        self.assertIn("if(mode === 'entry') return !isFeedSyncExpired();", html)
+        self.assertIn("if(mode === 'entry') return false;", html)
         self.assertIn("const needsFreshTemperature = feedTemperatureLooksIncomplete(state.feedItems);", html)
         self.assertIn("await refreshFeed({ silent: true, mode: needsFreshTemperature ? 'manual' : 'entry' });", html)
 
@@ -50,15 +50,20 @@ class RefreshPolicyTests(unittest.TestCase):
         self.assertIn("function filterStaleFeedItems(items)", html)
         self.assertIn("const cleaned = filterStaleFeedItems(filterDeleted(dedupeItems(items)));", html)
 
-    def test_feed_api_fetches_each_source_independently(self):
+    def test_feed_api_fetches_all_sources_in_one_request(self):
         js = (ROOT / "api" / "_lib" / "deals.js").read_text(encoding="utf-8")
 
         self.assertIn("const FEED_SOURCES = ['ppomppu', 'quasar', 'fmkorea', 'ruliweb'];", js)
-        self.assertIn("source=eq.${encodeURIComponent(source)}", js)
+        self.assertIn("source=in.(${sourceFilter})", js)
         self.assertIn("const FEED_LOOKBACK_HOURS = 48;", js)
         self.assertIn("registered_at=gte.${encodeURIComponent(cutoffIso)}", js)
-        self.assertIn("Promise.all(FEED_SOURCES.map", js)
+        self.assertNotIn("Promise.all(FEED_SOURCES.map", js)
         self.assertNotIn("deals?source=neq.user&deleted_at=is.null&select=*&order=registered_at.desc&limit=3000", js)
+
+    def test_feed_api_uses_shared_five_minute_cdn_cache(self):
+        js = (ROOT / "api" / "deals.js").read_text(encoding="utf-8")
+
+        self.assertIn("s-maxage=300", js)
 
     def test_deals_api_applies_response_limit(self):
         js = (ROOT / "api" / "deals.js").read_text(encoding="utf-8")

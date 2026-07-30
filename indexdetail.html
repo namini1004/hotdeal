@@ -9,6 +9,7 @@
   <meta name="theme-color" content="#7c3aed" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="가지" />
+  <script defer src="/_vercel/insights/script.js"></script>
   <title>가지 - 핫딜 상세</title>
   <meta name="description" content="커뮤니티 핫딜과 특가 정보를 가지에서 빠르게 확인하세요." />
   <meta name="robots" content="index,follow" />
@@ -754,13 +755,11 @@
       clearLocalComments(item);
       renderComments([]);
       try{
-        const remoteItems = [];
-        for(const key of getCommentDealKeys(item)){
-          const res = await fetch(`${COMMENT_API}&dealKey=${encodeURIComponent(key)}`, { cache:'no-store', credentials:'include' });
-          if(!res.ok) continue;
-          const data = await res.json();
-          if(Array.isArray(data.items)) remoteItems.push(...data.items);
-        }
+        const dealKeys = getCommentDealKeys(item);
+        const res = await fetch(`${COMMENT_API}&dealKeys=${encodeURIComponent(JSON.stringify(dealKeys))}`, { cache:'no-store', credentials:'include' });
+        if(!res.ok) throw new Error('comment fetch failed');
+        const data = await res.json();
+        const remoteItems = Array.isArray(data.items) ? data.items : [];
         currentComments = normalizeComments(remoteItems);
         renderComments(currentComments);
       }catch(_){

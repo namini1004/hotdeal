@@ -35,7 +35,7 @@ class DetailConversionUxTests(unittest.TestCase):
         html = DETAIL_HTML.read_text(encoding='utf-8')
 
         self.assertIn("const COMMENT_API = '/api/deals?action=comments';", html)
-        self.assertIn('fetch(`${COMMENT_API}&dealKey=${encodeURIComponent(key)}`', html)
+        self.assertIn('fetch(`${COMMENT_API}&dealKeys=${encodeURIComponent(JSON.stringify(dealKeys))}`', html)
         self.assertNotIn('function readLocalComments', html)
         self.assertNotIn('function saveLocalComments', html)
         self.assertNotIn('localStorage.setItem(commentStorageKey', html)

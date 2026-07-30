@@ -84,6 +84,22 @@ function cleanCommentString(value = '', max = 500) {
   return String(value || '').trim().slice(0, max);
 }
 
+function parseCommentDealKeys(req) {
+  const rawKeys = req.query?.dealKeys || req.query?.deal_keys || '';
+  let values = [];
+  if (rawKeys) {
+    try {
+      const parsed = JSON.parse(String(rawKeys));
+      if (Array.isArray(parsed)) values = parsed;
+    } catch (_) {
+      values = String(rawKeys).split('\n');
+    }
+  }
+  const single = req.query?.dealKey || req.query?.deal_key || '';
+  if (single) values.push(single);
+  return [...new Set(values.map((value) => cleanCommentString(value, 800)).filter(Boolean))].slice(0, 10);
+}
+
 function reportValue(value = '', max = 500) {
   return String(value || '').trim().slice(0, max);
 }
@@ -129,10 +145,20 @@ function normalizeCommentRow(row = {}) {
 
 async function handleCommentRequest(req, res) {
   if (req.method === 'GET') {
-    const dealKey = cleanCommentString(req.query?.dealKey || req.query?.deal_key || '', 800);
-    if (!dealKey) return json(res, 400, { error: 'dealKey is required' });
-    const rows = await supabaseRequest(`deal_comments?deal_key=eq.${encodeURIComponent(dealKey)}&select=id,deal_key,nickname,body,guest_key,created_at&order=created_at.desc&limit=100`);
-    return json(res, 200, { items: (rows || []).map(normalizeCommentRow) });
+    const dealKeys = parseCommentDealKeys(req);
+    if (!dealKeys.length) return json(res, 400, { error: 'dealKey is required' });
+    const batches = await Promise.all(dealKeys.map((dealKey) =>
+      supabaseRequest(`deal_comments?deal_key=eq.${encodeURIComponent(dealKey)}&select=id,deal_key,nickname,body,guest_key,created_at&order=created_at.desc&limit=100`)
+        .catch(() => [])
+    ));
+    const seen = new Set();
+    const items = batches.flat().map(normalizeCommentRow).filter((item) => {
+      const key = item.id || `${item.dealKey}:${item.nickname}:${item.createdAt}:${item.body}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return json(res, 200, { items });
   }
 
   if (req.method === 'POST') {
@@ -378,7 +404,7 @@ module.exports = async (req, res) => {
       const hasMore = pageItems.length > limit;
       const items = pageItems.slice(0, limit);
       const etag = makeEtag(scope, items);
-      res.setHeader('Cache-Control', 'public, max-age=10, stale-while-revalidate=60');
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=60');
       res.setHeader('ETag', etag);
 
       if (req.headers['if-none-match'] === etag) {

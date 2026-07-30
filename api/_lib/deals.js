@@ -345,12 +345,10 @@ function shouldReplaceFeedDuplicate(prev = {}, item = {}) {
 async function readFeedItems() {
   try {
     const cutoffIso = new Date(Date.now() - FEED_LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
-    const batches = await Promise.all(FEED_SOURCES.map((source) =>
-      supabaseRequest(
-        `deals?source=eq.${encodeURIComponent(source)}&deleted_at=is.null&registered_at=gte.${encodeURIComponent(cutoffIso)}&select=*&order=registered_at.desc&limit=${FEED_SOURCE_LIMIT}`
-      ).catch(() => [])
-    ));
-    const rows = batches.flat();
+    const sourceFilter = FEED_SOURCES.map((source) => encodeURIComponent(source)).join(',');
+    const rows = await supabaseRequest(
+      `deals?source=in.(${sourceFilter})&deleted_at=is.null&registered_at=gte.${encodeURIComponent(cutoffIso)}&select=*&order=registered_at.desc&limit=${FEED_SOURCE_LIMIT}`
+    );
     const normalized = (rows || []).map(normalizeFeedDbRow).filter((v) => v.sourceLink);
     if (normalized.length) {
       const dedupMap = new Map();

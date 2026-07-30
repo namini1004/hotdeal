@@ -4,9 +4,10 @@ import io
 import json
 import os
 import re
+import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set
 from urllib.parse import parse_qs, quote, urlencode, urlparse
 
 import requests
@@ -112,6 +113,14 @@ IMAGE_HEADERS_BY_SOURCE = {
     },
 }
 MAX_MIRROR_IMAGE_BYTES = int(os.environ.get("MAX_MIRROR_IMAGE_BYTES", "3145728"))
+ORPHAN_IMAGE_GRACE_HOURS = int(os.environ.get("HOTDEAL_ORPHAN_IMAGE_GRACE_HOURS", "72"))
+ORPHAN_IMAGE_DELETE_BATCH_SIZE = int(os.environ.get("HOTDEAL_ORPHAN_IMAGE_DELETE_BATCH_SIZE", "100"))
+ORPHAN_IMAGE_CLEANUP_ENABLED = os.environ.get("HOTDEAL_ORPHAN_IMAGE_CLEANUP_ENABLED", "true").strip().lower() not in {
+    "0",
+    "false",
+    "no",
+    "off",
+}
 _bucket_ready = False
 
 
@@ -261,6 +270,153 @@ def storage_public_prefix(supabase_url: str) -> str:
 
 def is_storage_image_url(img: str, supabase_url: str) -> bool:
     return str(img or "").startswith(storage_public_prefix(supabase_url))
+
+
+def storage_object_path_from_url(value: str, supabase_url: str) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+
+    try:
+        parsed = urlparse(raw)
+        if parsed.netloc.lower() == "wsrv.nl":
+            proxied = str((parse_qs(parsed.query).get("url") or [""])[0]).strip()
+            if proxied and not proxied.startswith(("http://", "https://")):
+                proxied = f"https://{proxied}"
+            return storage_object_path_from_url(proxied, supabase_url)
+    except Exception:
+        return ""
+
+    prefix = storage_public_prefix(supabase_url)
+    if not raw.startswith(prefix):
+        return ""
+    return raw[len(prefix):].split("?", 1)[0].split("#", 1)[0].lstrip("/")
+
+
+def referenced_storage_object_paths(rows: List[Dict], supabase_url: str) -> Set[str]:
+    paths: Set[str] = set()
+    for row in rows or []:
+        for field in ("img", "detail_img"):
+            object_path = storage_object_path_from_url(row.get(field) or "", supabase_url)
+            if object_path:
+                paths.add(object_path)
+    return paths
+
+
+def list_feed_storage_objects(supabase_url: str, service_key: str) -> List[Dict]:
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": "application/json",
+    }
+    objects: List[Dict] = []
+    for source in sorted(IMAGE_HEADERS_BY_SOURCE):
+        offset = 0
+        while True:
+            res = requests.post(
+                f"{supabase_url}/storage/v1/object/list/{quote(IMAGE_BUCKET, safe='')}",
+                headers=headers,
+                json={
+                    "prefix": source,
+                    "limit": 1000,
+                    "offset": offset,
+                    "sortBy": {"column": "name", "order": "asc"},
+                },
+                timeout=60,
+            )
+            if not res.ok:
+                raise RuntimeError(f"Supabase storage list failed ({res.status_code}): {res.text}")
+            page = res.json() or []
+            for item in page:
+                if not item.get("id") or not item.get("name"):
+                    continue
+                objects.append({**item, "path": f"{source}/{item['name']}"})
+            if len(page) < 1000:
+                break
+            offset += len(page)
+    return objects
+
+
+def orphan_storage_objects(objects: List[Dict], referenced_paths: Set[str], cutoff: datetime) -> List[Dict]:
+    candidates: List[Dict] = []
+    for item in objects or []:
+        if item.get("path") in referenced_paths:
+            continue
+        updated_at = parse_iso_datetime(item.get("updated_at") or item.get("created_at") or "")
+        if not updated_at or updated_at.astimezone(timezone.utc) >= cutoff.astimezone(timezone.utc):
+            continue
+        candidates.append(item)
+    return candidates
+
+
+def delete_storage_objects(objects: List[Dict], supabase_url: str, service_key: str) -> int:
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": "application/json",
+    }
+    deleted = 0
+    batch_size = max(1, min(1000, ORPHAN_IMAGE_DELETE_BATCH_SIZE))
+    for batch in chunked(objects, batch_size):
+        prefixes = [str(item.get("path") or "").strip() for item in batch if item.get("path")]
+        if not prefixes:
+            continue
+        res = requests.delete(
+            f"{supabase_url}/storage/v1/object/{quote(IMAGE_BUCKET, safe='')}",
+            headers=headers,
+            json={"prefixes": prefixes},
+            timeout=60,
+        )
+        if not res.ok:
+            raise RuntimeError(f"Supabase storage delete failed ({res.status_code}): {res.text}")
+        deleted += len(prefixes)
+    return deleted
+
+
+def cleanup_orphaned_feed_images(
+    supabase_url: str,
+    service_key: str,
+    rows: Optional[List[Dict]] = None,
+    *,
+    dry_run: bool = False,
+    grace_hours: Optional[int] = None,
+) -> Dict:
+    current_rows = rows if rows is not None else fetch_existing_rows(supabase_url, service_key)
+    referenced_paths = referenced_storage_object_paths(current_rows, supabase_url)
+    objects = list_feed_storage_objects(supabase_url, service_key)
+    storage_bytes = sum(int((item.get("metadata") or {}).get("size") or 0) for item in objects)
+    object_paths = {str(item.get("path") or "") for item in objects if item.get("path")}
+    missing_references = sorted(referenced_paths - object_paths)
+    if missing_references:
+        sample = ",".join(missing_references[:5])
+        raise RuntimeError(
+            f"Storage reference integrity failed: missing={len(missing_references)} sample={sample}"
+        )
+    grace = max(1, grace_hours if grace_hours is not None else ORPHAN_IMAGE_GRACE_HOURS)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=grace)
+    orphans = orphan_storage_objects(objects, referenced_paths, cutoff)
+    orphan_bytes = sum(int((item.get("metadata") or {}).get("size") or 0) for item in orphans)
+    deleted = 0 if dry_run else delete_storage_objects(orphans, supabase_url, service_key)
+    stats = {
+        "mode": "dry-run" if dry_run else "apply",
+        "objects": len(objects),
+        "storage_bytes": storage_bytes,
+        "referenced": len(referenced_paths),
+        "missing_references": len(missing_references),
+        "orphans": len(orphans),
+        "orphan_bytes": orphan_bytes,
+        "deleted": deleted,
+        "grace_hours": grace,
+    }
+    print(
+        "STORAGE_GC "
+        f"mode={stats['mode']} objects={stats['objects']} storage_mib={stats['storage_bytes'] / 1024 / 1024:.2f} "
+        f"referenced={stats['referenced']} "
+        f"missing_references={stats['missing_references']} "
+        f"orphans={stats['orphans']} orphan_mib={stats['orphan_bytes'] / 1024 / 1024:.2f} "
+        f"deleted={stats['deleted']} grace_hours={stats['grace_hours']}"
+    )
+    return stats
 
 
 def decode_proxy_image_url(src: str) -> str:
@@ -937,6 +1093,16 @@ def main():
     if not supabase_url or not service_key:
         raise SystemExit("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
 
+    cleanup_only = "--cleanup-images-only" in sys.argv
+    dry_run_cleanup = "--dry-run" in sys.argv
+    if cleanup_only:
+        cleanup_orphaned_feed_images(
+            supabase_url,
+            service_key,
+            dry_run=dry_run_cleanup,
+        )
+        return
+
     raw_items, stale_fallback_sources = load_feed_data()
     use_source_post_id = database_has_source_post_id(supabase_url, service_key)
     norm_items = [normalize(v) for v in raw_items if (v.get("sourceLink") or "").strip()]
@@ -982,7 +1148,6 @@ def main():
 
     if not changed_rows and not deleted_rows:
         print("NO_CHANGE")
-        return
 
     conflict_columns = "source,source_post_id" if use_source_post_id else "source,source_link"
     endpoint_upsert = f"{supabase_url}/rest/v1/deals?on_conflict={conflict_columns}"
@@ -1019,8 +1184,13 @@ def main():
         written += soft_delete_rows(deleted_rows, supabase_url, headers)
 
     purged = purge_soft_deleted_feed_rows(supabase_url, headers)
-    ingest_status = send_push_ingest(push_ingest_rows)
+    ingest_status = send_push_ingest(push_ingest_rows) if changed_rows else "SKIP"
     print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} purged={purged} push_candidates={len(push_ingest_rows)} ingest={ingest_status}")
+    if ORPHAN_IMAGE_CLEANUP_ENABLED:
+        try:
+            cleanup_orphaned_feed_images(supabase_url, service_key)
+        except Exception as exc:
+            print(f"WARN_STORAGE_GC_FAILED reason={exc}")
 
 
 if __name__ == "__main__":
