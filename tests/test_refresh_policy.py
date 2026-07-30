@@ -60,10 +60,26 @@ class RefreshPolicyTests(unittest.TestCase):
         self.assertNotIn("Promise.all(FEED_SOURCES.map", js)
         self.assertNotIn("deals?source=neq.user&deleted_at=is.null&select=*&order=registered_at.desc&limit=3000", js)
 
-    def test_feed_api_uses_shared_five_minute_cdn_cache(self):
+    def test_feed_api_uses_shared_fifteen_minute_cdn_cache(self):
         js = (ROOT / "api" / "deals.js").read_text(encoding="utf-8")
 
-        self.assertIn("s-maxage=300", js)
+        self.assertIn("s-maxage=900", js)
+        self.assertIn("stale-while-revalidate=120", js)
+
+    def test_feed_api_queries_only_the_requested_database_page(self):
+        js = (ROOT / "api" / "_lib" / "deals.js").read_text(encoding="utf-8")
+        handler = (ROOT / "api" / "deals.js").read_text(encoding="utf-8")
+
+        self.assertIn("async function readFeedPage({ limit = 100, offset = 0, since = '' } = {})", js)
+        self.assertIn("limit=${safeLimit + 1}&offset=${safeOffset}", js)
+        self.assertIn("select=${FEED_SCORE_COLUMNS}", js)
+        self.assertIn("const page = await readFeedPage({ limit, offset, since });", handler)
+
+    def test_delta_refresh_keeps_existing_pagination_cursor(self):
+        html = (ROOT / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn("if(!append && !data.delta) state.feedEtag", html)
+        self.assertIn("if(!data.delta || append){", html)
 
     def test_deals_api_applies_response_limit(self):
         js = (ROOT / "api" / "deals.js").read_text(encoding="utf-8")

@@ -10,6 +10,42 @@ const FEED_FILES = [
 const FEED_SOURCES = ['ppomppu', 'quasar', 'fmkorea', 'ruliweb'];
 const FEED_SOURCE_LIMIT = 900;
 const FEED_LOOKBACK_HOURS = 48;
+const FEED_PAGE_COLUMNS = [
+  'id',
+  'title',
+  'area',
+  'dist',
+  'time',
+  'price',
+  'category',
+  'desc',
+  'img',
+  'detail_img',
+  'source_link',
+  'source_post_id',
+  'buy_link',
+  'likes',
+  'dislikes',
+  'views',
+  'comments',
+  'comment_signal_score',
+  'positive_comment_signals',
+  'negative_comment_signals',
+  'date',
+  'registered_at',
+  'source',
+  'edited',
+  'updated_at',
+].join(',');
+const FEED_SCORE_COLUMNS = [
+  'source',
+  'views',
+  'comments',
+  'likes',
+  'dislikes',
+  'comment_signal_score',
+  'registered_at',
+].join(',');
 
 const HOT_SCORE_CONFIG = {
   commentWeight: 1.8,
@@ -157,8 +193,7 @@ function shouldCapNegativeTemperature(item = {}) {
   );
 }
 
-function applyTemperatureNormalization(items = []) {
-  const nowMs = Date.now();
+function buildTemperatureProfile(items = [], nowMs = Date.now()) {
   const bySource = new Map();
 
   for (const item of items) {
@@ -175,19 +210,15 @@ function applyTemperatureNormalization(items = []) {
     avgBySource.set(source, { views: sumViews / n, comments: sumComments / n });
   }
 
-  const scored = items.map((item) => {
+  const scoreGroups = new Map();
+  for (const item of items) {
     const source = item.source || 'feed';
     const hotScore = computeHotScore(item, nowMs, avgBySource.get(source));
-    return { ...item, hotScore };
-  });
+    if (!scoreGroups.has(source)) scoreGroups.set(source, []);
+    scoreGroups.get(source).push(hotScore);
+  }
 
   const statsBySource = new Map();
-  const scoreGroups = new Map();
-  for (const item of scored) {
-    const source = item.source || 'feed';
-    if (!scoreGroups.has(source)) scoreGroups.set(source, []);
-    scoreGroups.get(source).push(item.hotScore);
-  }
   for (const [source, scores] of scoreGroups.entries()) {
     const min = Math.min(...scores);
     const max = Math.max(...scores);
@@ -195,11 +226,17 @@ function applyTemperatureNormalization(items = []) {
     statsBySource.set(source, { min, max, span });
   }
 
-  return scored.map((item) => {
-    const stats = statsBySource.get(item.source || 'feed') || { min: 0, span: 0 };
+  return { nowMs, avgBySource, statsBySource };
+}
+
+function applyTemperatureProfile(items = [], profile = buildTemperatureProfile(items)) {
+  return items.map((item) => {
+    const source = item.source || 'feed';
+    const hotScore = computeHotScore(item, profile.nowMs, profile.avgBySource.get(source));
+    const stats = profile.statsBySource.get(source) || { min: 0, span: 0 };
     let temperature = 50;
     if (stats.span > 0) {
-      temperature = ((item.hotScore - stats.min) / stats.span) * 100;
+      temperature = ((hotScore - stats.min) / stats.span) * 100;
     }
 
     let clamped = Math.max(0, Math.min(100, Math.round(temperature)));
@@ -212,8 +249,12 @@ function applyTemperatureNormalization(items = []) {
       clamped = Math.min(clamped, HOT_SCORE_CONFIG.negativeSignalTemperatureCap);
     }
 
-    return { ...item, hotScore: Number(item.hotScore.toFixed(4)), temperature: clamped };
+    return { ...item, hotScore: Number(hotScore.toFixed(4)), temperature: clamped };
   });
+}
+
+function applyTemperatureNormalization(items = []) {
+  return applyTemperatureProfile(items, buildTemperatureProfile(items));
 }
 
 function normalizeFeedItems(items = []) {
@@ -303,6 +344,18 @@ function normalizeFeedDbRow(row = {}) {
   };
 }
 
+function normalizeFeedScoreRow(row = {}) {
+  return {
+    source: row.source || 'feed',
+    views: Number(row.views || 0),
+    comments: Number(row.comments || 0),
+    likes: Number(row.likes || 0),
+    dislikes: Number(row.dislikes || 0),
+    commentSignalScore: Number(row.comment_signal_score || 0),
+    registeredAt: row.registered_at || '',
+  };
+}
+
 function canonicalFeedKey(item = {}) {
   const source = item.source || 'feed';
   const sourceLink = item.sourceLink || '';
@@ -367,6 +420,59 @@ async function readFeedItems() {
     // fallback to file feeds
   }
   return readFeedItemsFromFiles();
+}
+
+async function readFeedPage({ limit = 100, offset = 0, since = '' } = {}) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 100, 600));
+  const safeOffset = Math.max(0, Number(offset) || 0);
+  try {
+    const cutoffIso = new Date(Date.now() - FEED_LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
+    const sourceFilter = FEED_SOURCES.map((source) => encodeURIComponent(source)).join(',');
+    const commonFilters = [
+      `source=in.(${sourceFilter})`,
+      'deleted_at=is.null',
+      `registered_at=gte.${encodeURIComponent(cutoffIso)}`,
+    ];
+    const pageFilters = [...commonFilters];
+    if (since) pageFilters.push(`updated_at=gt.${encodeURIComponent(since)}`);
+    const pageOrder = since ? 'updated_at.desc' : 'registered_at.desc';
+
+    const [pageRows, scoreRows] = await Promise.all([
+      supabaseRequest(
+        `deals?${pageFilters.join('&')}&select=${FEED_PAGE_COLUMNS}&order=${pageOrder}&limit=${safeLimit + 1}&offset=${safeOffset}`
+      ),
+      supabaseRequest(
+        `deals?${commonFilters.join('&')}&select=${FEED_SCORE_COLUMNS}&limit=${FEED_SOURCE_LIMIT}`
+      ).catch(() => []),
+    ]);
+
+    const rows = pageRows || [];
+    const consumedRows = Math.min(rows.length, safeLimit);
+    const normalized = rows
+      .slice(0, safeLimit)
+      .map(normalizeFeedDbRow)
+      .filter((item) => item.sourceLink);
+    const scoreItems = (scoreRows || []).map(normalizeFeedScoreRow);
+    const profile = buildTemperatureProfile(scoreItems.length ? scoreItems : normalized);
+
+    return {
+      items: applyTemperatureProfile(normalized, profile),
+      hasMore: rows.length > safeLimit,
+      nextOffset: safeOffset + consumedRows,
+    };
+  } catch (_) {
+    const fallbackItems = readFeedItemsFromFiles();
+    const sinceMs = parseDateMs(since);
+    const filtered = sinceMs
+      ? fallbackItems.filter((item) => parseDateMs(item.updatedAt || item.registeredAt || item.date || '') > sinceMs)
+      : fallbackItems;
+    const pageItems = filtered.slice(safeOffset, safeOffset + safeLimit + 1);
+    return {
+      items: pageItems.slice(0, safeLimit),
+      hasMore: pageItems.length > safeLimit,
+      nextOffset: safeOffset + Math.min(pageItems.length, safeLimit),
+    };
+  }
 }
 
 function normalizeUserRow(row) {
@@ -466,11 +572,14 @@ function mapPayload(body = {}) {
 
 module.exports = {
   readFeedItems,
+  readFeedPage,
   readFeedItemsFromFiles,
   normalizeFeedDbRow,
   normalizeUserRow,
   parseUserId,
   computeHotScore,
+  buildTemperatureProfile,
+  applyTemperatureProfile,
   applyTemperatureNormalization,
   canonicalFeedKey,
   shouldReplaceFeedDuplicate,

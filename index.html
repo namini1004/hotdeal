@@ -1024,8 +1024,8 @@
         const res = await fetch(`${DEALS_API}?scope=feed&limit=${FEED_PAGE_SIZE}${offsetQuery}${sinceQuery}`, { cache: 'no-store', headers });
         if(res.status === 304) return;
         if(res.ok){
-          if(!append) state.feedEtag = res.headers.get('etag') || state.feedEtag;
           const data = await res.json();
+          if(!append && !data.delta) state.feedEtag = res.headers.get('etag') || state.feedEtag;
           const incoming = normalizeItems(data.items || []);
           const prevFingerprint = makeFeedFingerprint(getCurrentTabItems());
 
@@ -1040,8 +1040,10 @@
           }else{
             state.feedItems = incoming;
           }
-          state.feedHasMore = Boolean(data.hasMore);
-          state.feedNextOffset = Number(data.nextOffset || state.feedItems.length || 0);
+          if(!data.delta || append){
+            state.feedHasMore = Boolean(data.hasMore);
+            state.feedNextOffset = Number(data.nextOffset || state.feedItems.length || 0);
+          }
 
           applyItems([...state.userItems, ...state.feedItems]);
           persistLastFeedSyncAt(data.serverTime || new Date().toISOString());

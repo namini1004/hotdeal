@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { readSession } = require('./_lib/auth');
 const { getActor, getActorId } = require('./_lib/anonymous');
-const { readFeedItems, normalizeFeedDbRow, normalizeUserRow, parseUserId, supabaseRequest, mapPayload } = require('./_lib/deals');
+const { readFeedItems, readFeedPage, normalizeFeedDbRow, normalizeUserRow, parseUserId, supabaseRequest, mapPayload } = require('./_lib/deals');
 const ingestHandler = require('./push/ingest');
 
 function json(res, code, data) {
@@ -384,11 +384,20 @@ module.exports = async (req, res) => {
       const limit = parseLimit(url.searchParams.get('limit') || req.query?.limit);
       const offset = parseOffset(url.searchParams.get('offset') || req.query?.offset);
 
-      const fullFeedItems = scope === 'user' ? [] : await readFeedItems();
-      const feedItems = since && scope !== 'user' ? filterBySince(fullFeedItems, since) : fullFeedItems;
-      let userItems = [];
+      let items = [];
+      let hasMore = false;
+      let nextOffset = offset;
 
-      if (scope !== 'feed') {
+      if (scope === 'feed') {
+        const page = await readFeedPage({ limit, offset, since });
+        items = sortDealsForResponse(dedupe(page.items));
+        hasMore = page.hasMore;
+        nextOffset = page.nextOffset;
+      } else {
+        const fullFeedItems = scope === 'user' ? [] : await readFeedItems();
+        const feedItems = since && scope !== 'user' ? filterBySince(fullFeedItems, since) : fullFeedItems;
+        let userItems = [];
+
         try {
           const query = [`source=eq.user`, `deleted_at=is.null`, 'order=created_at.desc'];
           if (since) query.push(`updated_at=gt.${encodeURIComponent(since)}`);
@@ -397,14 +406,16 @@ module.exports = async (req, res) => {
         } catch (_) {
           userItems = [];
         }
+
+        const allItems = sortDealsForResponse(dedupe([...userItems, ...feedItems]));
+        const pageItems = allItems.slice(offset, offset + limit + 1);
+        hasMore = pageItems.length > limit;
+        items = pageItems.slice(0, limit);
+        nextOffset = offset + items.length;
       }
 
-      const allItems = sortDealsForResponse(dedupe([...userItems, ...feedItems]));
-      const pageItems = allItems.slice(offset, offset + limit + 1);
-      const hasMore = pageItems.length > limit;
-      const items = pageItems.slice(0, limit);
       const etag = makeEtag(scope, items);
-      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=60');
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=900, stale-while-revalidate=120');
       res.setHeader('ETag', etag);
 
       if (req.headers['if-none-match'] === etag) {
@@ -412,7 +423,7 @@ module.exports = async (req, res) => {
         return res.end();
       }
 
-      return json(res, 200, { items, delta: Boolean(since), hasMore, nextOffset: offset + items.length, serverTime: new Date().toISOString() });
+      return json(res, 200, { items, delta: Boolean(since), hasMore, nextOffset, serverTime: new Date().toISOString() });
     }
 
     if (req.method === 'PATCH' || req.method === 'DELETE') {
