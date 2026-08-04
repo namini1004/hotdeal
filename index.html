@@ -78,7 +78,12 @@
 
     .search-wrap{display:none;margin-top:10px}
     .search-wrap.show{display:block}
-    .search-input{width:100%;height:42px;border:1px solid #d9dde3;border-radius:10px;padding:0 12px;font-size:14px}
+    .search-field{position:relative}
+    .search-input{width:100%;height:42px;border:1px solid #d9dde3;border-radius:10px;padding:0 44px 0 12px;font-size:14px}
+    .search-clear{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:#7b8490;font-size:23px;line-height:1;cursor:pointer}
+    .search-clear:hover,.search-clear:active{background:#eef0f3;color:#374151}
+    .search-clear:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+    .search-clear[hidden]{display:none}
 
     .feed-controls{display:flex;align-items:center;gap:10px;padding:12px 0 2px}
     .chips{display:flex;gap:8px;overflow:auto;min-width:0;flex:1;-ms-overflow-style:none;scrollbar-width:none}
@@ -235,7 +240,10 @@
         </div>
       </div>
       <div class="search-wrap" id="searchWrap">
-        <input class="search-input" id="searchInput" type="text" placeholder="최근 48시간 핫딜 검색" />
+        <div class="search-field">
+          <input class="search-input" id="searchInput" type="text" placeholder="최근 48시간 핫딜 검색" />
+          <button class="search-clear" id="searchClear" type="button" aria-label="검색어 지우기" hidden>&times;</button>
+        </div>
       </div>
       <nav class="mobile-tabs" aria-label="모바일 주요 메뉴">
         <a class="mobile-tab active home-tab-hidden" href="index.html" aria-current="page">홈</a>
@@ -822,17 +830,39 @@
       });
     }
 
+    function syncSearchStateFromInput(){
+      const wrap = document.getElementById('searchWrap');
+      const input = document.getElementById('searchInput');
+      const clear = document.getElementById('searchClear');
+      if(!input) return false;
+
+      const nextKeyword = input.value || '';
+      const changed = state.keyword !== nextKeyword;
+      state.keyword = nextKeyword;
+      if(clear) clear.hidden = nextKeyword.length === 0;
+      if(nextKeyword && wrap) wrap.classList.add('show');
+      return changed;
+    }
+
     function bindSearch(){
       const wrap = document.getElementById('searchWrap');
       const input = document.getElementById('searchInput');
+      const clear = document.getElementById('searchClear');
       document.getElementById('searchToggle').addEventListener('click', () => {
         wrap.classList.toggle('show');
         if(wrap.classList.contains('show')) input.focus();
       });
-      input.addEventListener('input', (e) => {
-        state.keyword = e.target.value || '';
+      input.addEventListener('input', () => {
+        syncSearchStateFromInput();
         render();
       });
+      clear.addEventListener('click', () => {
+        input.value = '';
+        syncSearchStateFromInput();
+        render();
+        input.focus();
+      });
+      syncSearchStateFromInput();
     }
 
     function loadCachedUser(){
@@ -928,7 +958,10 @@
       window.addEventListener('storage', (event) => {
         if(event.key === READ_HIGHLIGHT_TOGGLE_KEY) render();
       });
-      window.addEventListener('pageshow', () => render());
+      window.addEventListener('pageshow', () => {
+        syncSearchStateFromInput();
+        render();
+      });
     }
 
     function saveDetailBootstrapItem(item){
@@ -1162,6 +1195,7 @@
       // 앱 진입/init + 화면 복귀 + 사용자의 당겨서 새로고침에서만 갱신한다.
       document.addEventListener('visibilitychange', () => {
         if(document.visibilityState !== 'visible') return;
+        if(syncSearchStateFromInput()) render();
         refreshFeed({ silent: true });
         refreshNaminDealsBackground();
       });
