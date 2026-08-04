@@ -320,6 +320,8 @@
     const LAST_TAB_KEY = 'hotdeal_last_tab_v1';
     const SCROLL_Y_KEY = 'hotdeal_list_scroll_y_v1';
     const SCROLL_RESTORE_PENDING_KEY = 'hotdeal_list_scroll_restore_pending_v1';
+    const SEARCH_QUERY_KEY = 'hotdeal_home_search_query_v1';
+    const SEARCH_RESTORE_PENDING_KEY = 'hotdeal_home_search_restore_pending_v1';
     const DETAIL_BOOTSTRAP_KEY = 'hotdeal_detail_bootstrap_v1';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const VIEW_MODE_KEY = 'hotdeal_web_view_mode_v1';
@@ -844,6 +846,22 @@
       return changed;
     }
 
+    function saveSearchStateForDetailReturn(){
+      const input = document.getElementById('searchInput');
+      sessionStorage.setItem(SEARCH_QUERY_KEY, input?.value || state.keyword || '');
+      sessionStorage.setItem(SEARCH_RESTORE_PENDING_KEY, '1');
+    }
+
+    function restoreSearchStateForDetailReturn(){
+      const pending = sessionStorage.getItem(SEARCH_RESTORE_PENDING_KEY) === '1';
+      const input = document.getElementById('searchInput');
+      if(!pending || !input) return false;
+
+      input.value = sessionStorage.getItem(SEARCH_QUERY_KEY) || '';
+      sessionStorage.removeItem(SEARCH_RESTORE_PENDING_KEY);
+      return true;
+    }
+
     function bindSearch(){
       const wrap = document.getElementById('searchWrap');
       const input = document.getElementById('searchInput');
@@ -858,10 +876,13 @@
       });
       clear.addEventListener('click', () => {
         input.value = '';
+        sessionStorage.removeItem(SEARCH_QUERY_KEY);
+        sessionStorage.removeItem(SEARCH_RESTORE_PENDING_KEY);
         syncSearchStateFromInput();
         render();
         input.focus();
       });
+      restoreSearchStateForDetailReturn();
       syncSearchStateFromInput();
     }
 
@@ -959,6 +980,7 @@
         if(event.key === READ_HIGHLIGHT_TOGGLE_KEY) render();
       });
       window.addEventListener('pageshow', () => {
+        restoreSearchStateForDetailReturn();
         syncSearchStateFromInput();
         render();
       });
@@ -980,6 +1002,7 @@
         const a = e.target.closest('a.item');
         if(!a) return;
         saveListScrollState();
+        saveSearchStateForDetailReturn();
         sessionStorage.setItem(SCROLL_RESTORE_PENDING_KEY, '1');
         const idParam = new URL(a.href, location.href).searchParams.get('id');
         const item = state.allItems.find(v => String(v.id) === String(idParam));
@@ -1195,6 +1218,7 @@
       // 앱 진입/init + 화면 복귀 + 사용자의 당겨서 새로고침에서만 갱신한다.
       document.addEventListener('visibilitychange', () => {
         if(document.visibilityState !== 'visible') return;
+        restoreSearchStateForDetailReturn();
         if(syncSearchStateFromInput()) render();
         refreshFeed({ silent: true });
         refreshNaminDealsBackground();
