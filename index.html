@@ -419,6 +419,20 @@
       return withTemperature < Math.min(3, Math.ceil(feed.length * 0.05));
     }
 
+    function preserveExistingTemperatures(items, existingItems = state.feedItems){
+      const existingByKey = new Map((existingItems || []).map(item => [getDealKey(item), item]));
+      return (items || []).map(item => {
+        const existing = existingByKey.get(getDealKey(item));
+        if(!existing?.hasTemperature) return item;
+        return {
+          ...item,
+          temperature: existing.temperature,
+          hasTemperature: true,
+          hotScore: existing.hotScore
+        };
+      });
+    }
+
     function shouldUseDeltaRefresh(mode = 'auto'){
       if(!state.lastFeedSyncAt) return false;
       if(feedTemperatureLooksIncomplete()) return false;
@@ -1131,7 +1145,11 @@
         if(res.ok){
           const data = await res.json();
           if(!append && !data.delta) state.feedEtag = res.headers.get('etag') || state.feedEtag;
-          const incoming = normalizeItems(data.items || []);
+          const normalizedIncoming = normalizeItems(data.items || []);
+          const acceptsRecalculatedTemperature = mode === 'entry' || mode === 'manual';
+          const incoming = acceptsRecalculatedTemperature
+            ? normalizedIncoming
+            : preserveExistingTemperatures(normalizedIncoming);
           const prevFingerprint = makeFeedFingerprint(getCurrentTabItems());
 
           if(append){
@@ -1394,7 +1412,7 @@
       applyItems(cached);
       state.initialFeedLoading = state.allItems.length === 0;
       const needsFreshTemperature = feedTemperatureLooksIncomplete(state.feedItems);
-      const preserveReturnedList = !state.initialFeedLoading && Date.now() < detailReturnRefreshBlockedUntil;
+      const preserveReturnedList = !state.initialFeedLoading && !needsFreshTemperature && Date.now() < detailReturnRefreshBlockedUntil;
       if(state.initialFeedLoading){
         render();
       }else if(preserveReturnedList || !needsFreshTemperature){
@@ -1403,7 +1421,7 @@
       }
 
       if(await loadRemoteFavorites()){
-        if(!preserveReturnedList) render();
+        if(!preserveReturnedList && !needsFreshTemperature) render();
         restoreListScrollState();
       }
 

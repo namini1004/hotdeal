@@ -236,11 +236,6 @@
       });
     }
 
-    function saveItems(items){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
-    }
-
     function canonicalDealKey(item = {}){
       const source = item?.source || 'feed';
       const sourceLink = String(item?.sourceLink || '').trim();
@@ -1188,14 +1183,9 @@
             loadComments(latest);
           }
           refreshFavoriteUI();
-          const existingIdx = cachedItems.findIndex(v => String(v.id) === String(latest.id));
-          const next = [...cachedItems];
-          if(existingIdx >= 0){
-            next[existingIdx] = { ...next[existingIdx], ...latest };
-          }else{
-            next.push(latest);
-          }
-          saveItems(dedupeItems(next));
+          // A single-detail response does not carry a feed-wide comparable temperature.
+          // Keep it in the detail cache and never rewrite the ordered home feed cache here.
+          saveCachedDetail(latest);
         }
       }catch(error){
         if(error?.status === 404){

@@ -36,6 +36,6 @@ def test_detail_return_skips_immediate_feed_refresh_and_keeps_cached_order():
     assert "detailReturnRefreshBlockedUntil = Date.now() + DETAIL_RETURN_REFRESH_BLOCK_MS;" in html
     visibility = html.split("function bindAutoSync(){", 1)[1].split("function bindPwaInstallPrompt(){", 1)[0]
     assert visibility.index("if(Date.now() < detailReturnRefreshBlockedUntil) return;") < visibility.index("refreshFeed({ silent: true });")
-    assert "const preserveReturnedList = !state.initialFeedLoading && Date.now() < detailReturnRefreshBlockedUntil;" in html
+    assert "const preserveReturnedList = !state.initialFeedLoading && !needsFreshTemperature && Date.now() < detailReturnRefreshBlockedUntil;" in html
     assert "}else if(preserveReturnedList || !needsFreshTemperature){" in html
     assert "if(!preserveReturnedList){\n        await refreshFeed" in html
