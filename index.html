@@ -322,6 +322,7 @@
     const SCROLL_RESTORE_PENDING_KEY = 'hotdeal_list_scroll_restore_pending_v1';
     const SEARCH_QUERY_KEY = 'hotdeal_home_search_query_v1';
     const SEARCH_RESTORE_PENDING_KEY = 'hotdeal_home_search_restore_pending_v1';
+    const FAILED_IMAGE_URLS_KEY = 'hotdeal_failed_image_urls_v1';
     const DETAIL_BOOTSTRAP_KEY = 'hotdeal_detail_bootstrap_v1';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const VIEW_MODE_KEY = 'hotdeal_web_view_mode_v1';
@@ -331,9 +332,12 @@
     const FULL_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
     const FEED_PAGE_SIZE = 100;
     const FEED_LOOKBACK_MS = 48 * 60 * 60 * 1000;
+    const DETAIL_RETURN_REFRESH_BLOCK_MS = 2000;
     let state = { allItems: [], feedItems: [], ppomppuItems: [], quasarItems: [], fmkoreaItems: [], ruliwebItems: [], userItems: [], keyword: '', activeTab: 'all', viewMode: 'grid', feedEtag: '', userEtag: '', lastUserSyncAt: '', lastFeedSyncAt: '', feedNextOffset: 0, feedHasMore: true, initialFeedLoading: true };
     let isRefreshing = false;
     let isLoadingMoreFeed = false;
+    let detailReturnRefreshBlockedUntil = 0;
+    let failedImageUrlsCache = null;
 
     function normalizeItems(items){
       return (items || []).map((item, idx) => {
@@ -500,6 +504,14 @@
       return raw === '1';
     }
 
+    function syncReadHighlightClasses(){
+      const readKeys = getReadKeys();
+      const enabled = isReadHighlightEnabled();
+      document.querySelectorAll('#list a.item[data-key]').forEach(element => {
+        element.classList.toggle('viewed', enabled && readKeys.has(element.dataset.key || ''));
+      });
+    }
+
     function getCurrentUserId(){
       try{
         const user = JSON.parse(localStorage.getItem(USER_CACHE_KEY) || 'null');
@@ -620,6 +632,27 @@
 
     const FALLBACK_IMAGE = 'assets/gaji-eggplant.jpg';
 
+    function getFailedImageUrls(){
+      if(failedImageUrlsCache) return failedImageUrlsCache;
+      try{
+        const saved = JSON.parse(sessionStorage.getItem(FAILED_IMAGE_URLS_KEY) || '[]');
+        failedImageUrlsCache = new Set(Array.isArray(saved) ? saved : []);
+      }catch(_){
+        failedImageUrlsCache = new Set();
+      }
+      return failedImageUrlsCache;
+    }
+
+    function rememberFailedImageUrl(url){
+      const value = String(url || '').trim();
+      if(!value || value === FALLBACK_IMAGE) return;
+      const failed = getFailedImageUrls();
+      failed.add(value);
+      const recent = [...failed].slice(-200);
+      failedImageUrlsCache = new Set(recent);
+      try{ sessionStorage.setItem(FAILED_IMAGE_URLS_KEY, JSON.stringify(recent)); }catch(_){ }
+    }
+
     function optimizeImageUrl(src){
       const raw = String(src || '').trim();
       if(!raw) return FALLBACK_IMAGE;
@@ -629,6 +662,20 @@
       return /^https:\/\/cdn2\.ppomppu\.co\.kr\//i.test(raw)
         ? raw.replace(/^https:\/\/cdn2\.ppomppu\.co\.kr\//i, 'https://cdn3.ppomppu.co.kr/')
         : raw;
+    }
+
+    function resolveListImageUrl(src){
+      const optimized = optimizeImageUrl(src);
+      return getFailedImageUrls().has(optimized) ? FALLBACK_IMAGE : optimized;
+    }
+
+    function useFallbackListImage(image){
+      const failedUrl = image?.getAttribute('src') || '';
+      rememberFailedImageUrl(failedUrl);
+      if(image){
+        image.onerror = null;
+        image.src = FALLBACK_IMAGE;
+      }
     }
 
     function hexToRgb(hex){
@@ -692,7 +739,7 @@
         return `
         <a class="item ${viewedClass}" data-key="${dealKey}" href="indexdetail.html?id=${encodeURIComponent(item.id)}">
           <div class="thumb-wrap">
-            <img class="thumb" src="${optimizeImageUrl(item.img)}" alt="${item.title}" loading="${imageLoading}" decoding="async" fetchpriority="${imageFetchPriority}" onerror="this.onerror=null;this.src='${FALLBACK_IMAGE}'">
+            <img class="thumb" src="${resolveListImageUrl(item.img)}" alt="${item.title}" loading="${imageLoading}" decoding="async" fetchpriority="${imageFetchPriority}" onerror="useFallbackListImage(this)">
             ${favBadge}
           </div>
           <div class="item-body">
@@ -859,6 +906,7 @@
 
       input.value = sessionStorage.getItem(SEARCH_QUERY_KEY) || '';
       sessionStorage.removeItem(SEARCH_RESTORE_PENDING_KEY);
+      detailReturnRefreshBlockedUntil = Date.now() + DETAIL_RETURN_REFRESH_BLOCK_MS;
       return true;
     }
 
@@ -981,8 +1029,9 @@
       });
       window.addEventListener('pageshow', () => {
         restoreSearchStateForDetailReturn();
-        syncSearchStateFromInput();
-        render();
+        if(syncSearchStateFromInput()) render();
+        else syncReadHighlightClasses();
+        restoreListScrollState();
       });
     }
 
@@ -1220,6 +1269,7 @@
         if(document.visibilityState !== 'visible') return;
         restoreSearchStateForDetailReturn();
         if(syncSearchStateFromInput()) render();
+        if(Date.now() < detailReturnRefreshBlockedUntil) return;
         refreshFeed({ silent: true });
         refreshNaminDealsBackground();
       });
@@ -1344,22 +1394,25 @@
       applyItems(cached);
       state.initialFeedLoading = state.allItems.length === 0;
       const needsFreshTemperature = feedTemperatureLooksIncomplete(state.feedItems);
+      const preserveReturnedList = !state.initialFeedLoading && Date.now() < detailReturnRefreshBlockedUntil;
       if(state.initialFeedLoading){
         render();
-      }else if(!needsFreshTemperature){
+      }else if(preserveReturnedList || !needsFreshTemperature){
         render();
         restoreListScrollState();
       }
 
       if(await loadRemoteFavorites()){
-        render();
+        if(!preserveReturnedList) render();
         restoreListScrollState();
       }
 
-      await refreshFeed({ silent: true, mode: needsFreshTemperature ? 'manual' : 'entry' });
-      refreshNaminDealsBackground();
+      if(!preserveReturnedList){
+        await refreshFeed({ silent: true, mode: needsFreshTemperature ? 'manual' : 'entry' });
+        refreshNaminDealsBackground();
 
-      render();
+        render();
+      }
       restoreListScrollState();
     }
 

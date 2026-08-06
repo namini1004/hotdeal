@@ -31,7 +31,7 @@ def test_restored_search_input_is_reapplied_on_page_resume():
     assert "function syncSearchStateFromInput()" in html
     assert "const nextKeyword = input.value || '';" in html
     assert "state.keyword = nextKeyword;" in html
-    assert "window.addEventListener('pageshow', () => {\n        restoreSearchStateForDetailReturn();\n        syncSearchStateFromInput();\n        render();" in html
+    assert "window.addEventListener('pageshow', () => {\n        restoreSearchStateForDetailReturn();\n        if(syncSearchStateFromInput()) render();" in html
     assert "saveListScrollState();\n        saveSearchStateForDetailReturn();" in html
     assert "if(syncSearchStateFromInput()) render();" in html
 
