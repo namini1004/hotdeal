@@ -111,7 +111,8 @@
   <script src="assets/anonymous-identity.js?v=20260607"></script>
   <script>
     const BOARD_API = '/api/board-posts';
-    const STORAGE_KEY = 'gaji_board_posts_v1';
+    const STORAGE_KEY = 'gaji_board_posts_v2';
+    const LEGACY_STORAGE_KEY = 'gaji_board_posts_v1';
     const FALLBACK_IMAGE = 'assets/gaji-eggplant.jpg';
     const USER_CACHE_KEY = 'gaji_auth_user_cache_v1';
     const GUEST_KEY = 'gaji_guest_key_v1';
@@ -156,6 +157,7 @@
 
     function saveLocalPosts(posts){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizePosts(posts)));
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     }
 
     function formatTime(value){
@@ -190,6 +192,13 @@
       if(cached){ renderPost(cached); loadComments(cached); }
       try{
         const res = await fetch(`${BOARD_API}/${encodeURIComponent(id)}`, { cache:'no-store' });
+        if(res.status === 404){
+          saveLocalPosts(readLocalPosts().filter(post => String(post.id) !== String(id)));
+          const missing = { id, title:'게시글 없음', body:'게시글을 찾을 수 없습니다.', author:'', img:'', createdAt:'' };
+          renderPost(missing);
+          loadComments(missing);
+          return;
+        }
         if(!res.ok) throw new Error('not found');
         const data = await res.json();
         if(data.item){

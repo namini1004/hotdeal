@@ -226,7 +226,8 @@
   <script>
     const BOARD_API = '/api/board-posts';
     const LINK_PREVIEW_API = '/api/link-preview';
-    const STORAGE_KEY = 'gaji_board_posts_v1';
+    const STORAGE_KEY = 'gaji_board_posts_v2';
+    const LEGACY_STORAGE_KEY = 'gaji_board_posts_v1';
     const FALLBACK_IMAGE = 'assets/gaji-eggplant.jpg';
     let state = { posts: [], keyword: '', category: 'tips', selectedImage: '', previewImage: '', previewUrl: '' };
 
@@ -280,16 +281,7 @@
 
     function saveLocalPosts(posts){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizePosts(posts)));
-    }
-
-    function mergePosts(primary = [], secondary = []){
-      const seen = new Set();
-      return normalizePosts([...primary, ...secondary]).filter(post => {
-        const key = String(post.id || '');
-        if(seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     }
 
     function formatTime(value){
@@ -360,15 +352,13 @@
 
     async function loadPosts(){
       const local = readLocalPosts();
-      state.posts = local;
-      renderList();
       try{
         const res = await fetch(`${BOARD_API}?_ts=${Date.now()}`, { credentials:'include', cache:'no-store' });
         if(!res.ok) throw new Error('api failed');
         const data = await res.json();
         const remote = normalizePosts(data.items || []);
-        state.posts = mergePosts(remote, local);
-        saveLocalPosts(state.posts);
+        state.posts = remote;
+        saveLocalPosts(remote);
         renderList();
       }catch(_){
         state.posts = local;
@@ -381,6 +371,11 @@
       if(cached) renderDetail(cached);
       try{
         const res = await fetch(`${BOARD_API}/${encodeURIComponent(id)}`, { cache:'no-store' });
+        if(res.status === 404){
+          saveLocalPosts(readLocalPosts().filter(post => String(post.id) !== String(id)));
+          renderDetail({ title:'게시글 없음', body:'게시글을 찾을 수 없습니다.', author:'', img:'', createdAt:'' });
+          return;
+        }
         if(!res.ok) throw new Error('api failed');
         const data = await res.json();
         if(data.item) renderDetail(normalizePosts([data.item])[0]);
