@@ -144,6 +144,7 @@ function normalizeUserImageUrl(value = '') {
   try {
     const url = new URL(raw);
     if (/wsrv\.nl$/i.test(url.hostname)) return raw;
+    if (/\.supabase\.co$/i.test(url.hostname) && url.pathname.startsWith('/storage/v1/object/public/')) return raw;
     return `https://wsrv.nl/?url=${encodeURIComponent(url.host + url.pathname + url.search)}&w=640&h=640&fit=inside&output=webp`;
   } catch (_) {
     return raw;
@@ -597,6 +598,7 @@ module.exports = {
   buildTemperatureProfile,
   applyTemperatureProfile,
   applyTemperatureNormalization,
+  normalizeUserImageUrl,
   canonicalFeedKey,
   shouldReplaceFeedDuplicate,
   isFeedTimestampInWindow,

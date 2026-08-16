@@ -102,6 +102,11 @@ IMAGE_HEADERS_BY_SOURCE = {
         "Referer": "https://m.ppomppu.co.kr/",
         "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
     },
+    "quasar": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
+        "Referer": "https://quasarzone.com/bbs/qb_saleinfo",
+        "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    },
     "ruliweb": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
         "Referer": "https://m.ruliweb.com/market/board/1020",
