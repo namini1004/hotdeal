@@ -89,6 +89,7 @@ TRACKED_FIELDS = [
 ]
 
 IMAGE_BUCKET = os.environ.get("SUPABASE_IMAGE_BUCKET", "deal-images").strip() or "deal-images"
+IMAGE_RELAY_URL = os.environ.get("HOTDEAL_IMAGE_RELAY_URL", "https://gaji.run/api/image-proxy").strip()
 THUMBNAIL_MAX_SIZE = int(os.environ.get("MIRROR_THUMBNAIL_MAX_SIZE", "320"))
 DETAIL_IMAGE_MAX_SIZE = int(os.environ.get("MIRROR_DETAIL_IMAGE_MAX_SIZE", "640"))
 DEFAULT_PUSH_INGEST_BATCH_SIZE = 10
@@ -540,6 +541,15 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
 
     ensure_public_image_bucket(supabase_url, service_key)
     res = requests.get(src, headers=IMAGE_HEADERS_BY_SOURCE[source], timeout=25)
+    if not res.ok and source == "quasar" and IMAGE_RELAY_URL:
+        relay_res = requests.get(
+            IMAGE_RELAY_URL,
+            params={"url": src},
+            headers={"Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"},
+            timeout=30,
+        )
+        if relay_res.ok:
+            res = relay_res
     if not res.ok:
         raise RuntimeError(f"{source} image download failed ({res.status_code})")
 
