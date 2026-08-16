@@ -606,6 +606,76 @@ def mirror_feed_images(rows: List[Dict], existing_map: Dict[str, Dict], supabase
             print(f"WARN_IMAGE_MIRROR_SKIP source={row.get('source')} source_link={row.get('source_link')} reason={exc}")
 
 
+def build_existing_image_repair_rows(
+    existing_rows: List[Dict],
+    supabase_url: str,
+    prune_before: Optional[datetime] = None,
+    future_after: Optional[datetime] = None,
+) -> List[Dict]:
+    write_fields = {"source", "source_link", "updated_at", "deleted_at", *TRACKED_FIELDS}
+    repairs: List[Dict] = []
+    seen = set()
+
+    for existing in existing_rows:
+        if existing.get("deleted_at"):
+            continue
+        source = str(existing.get("source") or "").strip()
+        source_link = str(existing.get("source_link") or "").strip()
+        src = decode_proxy_image_url(existing.get("img") or "")
+        if source not in IMAGE_HEADERS_BY_SOURCE or not source_link or is_blocked_image_candidate(source, src):
+            continue
+        if prune_before is not None and is_older_than(existing, prune_before):
+            continue
+        if future_after is not None and is_future_dated(existing, future_after):
+            continue
+
+        detail_img = str(existing.get("detail_img") or "").strip()
+        if (
+            is_reusable_storage_webp(src, source, supabase_url, "thumb")
+            and is_reusable_storage_webp(detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT)
+        ):
+            continue
+
+        key = sync_key(existing)
+        if key in seen:
+            continue
+        seen.add(key)
+        repair = {field: existing.get(field) for field in write_fields}
+        repair["source"] = source
+        repair["source_link"] = source_link
+        repair["source_post_id"] = (
+            str(existing.get("source_post_id") or "").strip()
+            or source_post_id_or_fallback(source, source_link)
+        )
+        repairs.append(repair)
+
+    return repairs
+
+
+def append_image_repair_changes(
+    changed_rows: List[Dict],
+    repair_rows: List[Dict],
+    existing_map: Dict[str, Dict],
+    now_iso: str,
+    use_source_post_id: bool,
+) -> int:
+    changed_keys = {sync_key(row) for row in changed_rows}
+    appended = 0
+    for row in repair_rows:
+        key = sync_key(row)
+        prev = existing_map.get(key) or existing_map.get(legacy_sync_key(row))
+        if not prev or key in changed_keys or not row_changed(row, prev):
+            continue
+        row["updated_at"] = now_iso
+        row["deleted_at"] = None
+        if not use_source_post_id:
+            row.pop("source_post_id", None)
+        changed_rows.append(row)
+        changed_keys.add(key)
+        appended += 1
+    return appended
+
+
 def fetch_existing_rows(supabase_url: str, service_key: str) -> List[Dict]:
     headers = {
         "apikey": service_key,
@@ -1175,6 +1245,14 @@ def main():
         mirror_feed_images(sync_rows, existing_map, supabase_url, service_key)
     elif not rows:
         print("NO_ROWS")
+    image_repair_rows = build_existing_image_repair_rows(
+        existing_rows,
+        supabase_url,
+        prune_before=prune_before,
+        future_after=future_after,
+    )
+    if image_repair_rows:
+        mirror_feed_images(image_repair_rows, existing_map, supabase_url, service_key)
     changed_rows, deleted_rows, skipped_delete_sources = build_sync_plan(
         sync_rows,
         existing_map,
@@ -1182,6 +1260,15 @@ def main():
         stale_fallback_sources,
         prune_before=prune_before,
     )
+    repaired_images = append_image_repair_changes(
+        changed_rows,
+        image_repair_rows,
+        existing_map,
+        now_iso,
+        use_source_post_id,
+    )
+    if image_repair_rows:
+        print(f"IMAGE_REPAIR candidates={len(image_repair_rows)} changed={repaired_images}")
     push_ingest_rows = build_push_ingest_rows(changed_rows, existing_map)
     append_id_delete_rows(deleted_rows, build_duplicate_delete_rows(existing_rows, now_iso))
     append_id_delete_rows(deleted_rows, build_prune_delete_rows(existing_rows, now_iso, prune_before))
