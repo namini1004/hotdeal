@@ -37,6 +37,7 @@ BACKOFF_BASE_SECONDS = int(os.environ.get("HOTDEAL_FMKOREA_BACKOFF_BASE_SECONDS"
 BACKOFF_MAX_SECONDS = int(os.environ.get("HOTDEAL_FMKOREA_BACKOFF_MAX_SECONDS", "86400"))
 BACKOFF_JITTER_RATIO = float(os.environ.get("HOTDEAL_FMKOREA_BACKOFF_JITTER_RATIO", "0.15"))
 KST = timezone(timedelta(hours=9))
+MAX_FUTURE_SKEW = timedelta(minutes=10)
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -142,10 +143,17 @@ def parse_time_token(token: str, now: datetime):
     token = (token or "").strip()
     ymd = re.match(r"^(20\d{2})\.(\d{2})\.(\d{2})$", token)
     if ymd:
-        return datetime(int(ymd.group(1)), int(ymd.group(2)), int(ymd.group(3)), 0, 0, tzinfo=KST)
+        try:
+            candidate = datetime(int(ymd.group(1)), int(ymd.group(2)), int(ymd.group(3)), 0, 0, tzinfo=KST)
+        except ValueError:
+            return None
+        return candidate if candidate <= now + MAX_FUTURE_SKEW else None
     hm = re.match(r"^(\d{2}):(\d{2})$", token)
     if hm:
-        candidate = now.replace(hour=int(hm.group(1)), minute=int(hm.group(2)), second=0, microsecond=0)
+        hour, minute = int(hm.group(1)), int(hm.group(2))
+        if not (0 <= hour <= 23 and 0 <= minute <= 59):
+            return None
+        candidate = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
         if candidate > now + timedelta(minutes=5):
             candidate = candidate - timedelta(days=1)
         return candidate
@@ -153,12 +161,19 @@ def parse_time_token(token: str, now: datetime):
     if md:
         mm, dd = int(md.group(1)), int(md.group(2))
         if not (1 <= mm <= 12 and 1 <= dd <= 31):
-            return now
+            return None
         year = now.year
-        if now.month == 1 and mm == 12:
-            year -= 1
-        return datetime(year, mm, dd, 0, 0, tzinfo=KST)
-    return now
+        try:
+            candidate = datetime(year, mm, dd, 0, 0, tzinfo=KST)
+        except ValueError:
+            return None
+        if candidate > now + MAX_FUTURE_SKEW:
+            try:
+                candidate = candidate.replace(year=year - 1)
+            except ValueError:
+                return None
+        return candidate
+    return None
 
 
 def extract_price_from_title(title: str) -> str:
@@ -235,7 +250,9 @@ def run_page_extract(page, url):
         const imgEl = li.querySelector("img");
         const img = imgEl ? ((imgEl.getAttribute('data-src') || imgEl.getAttribute('data-original') || imgEl.getAttribute('src') || '').trim()) : "";
         const lines = txt.split("\\n").map(s => s.trim()).filter(Boolean);
-        rows.push({ title, href, img, lines, raw: txt });
+        const timeToken = ((li.querySelector('.regdate') || {}).textContent || '').trim();
+        const category = ((li.querySelector('.category') || {}).textContent || '').replace(/\\/\\s*$/, '').trim();
+        rows.push({ title, href, img, lines, raw: txt, timeToken, category });
       }
       return rows;
     }'''
@@ -311,7 +328,16 @@ def parse_static_html_rows(page_html: str, base_url: str) -> List[Dict]:
         views = views_m.group(1) if views_m else "0"
         info_line = f"쇼핑몰: {shop} / 가격: {price} / 배송: {delivery}".strip()
         meta_line = f"{category} / {time_token} / 추천 {likes} / 조회 {views}".strip()
-        rows.append({"title": title, "href": href, "img": img, "lines": [title, info_line, meta_line], "raw": raw, "_listParser": "static"})
+        rows.append({
+            "title": title,
+            "href": href,
+            "img": img,
+            "lines": [title, info_line, meta_line],
+            "raw": raw,
+            "timeToken": time_token,
+            "category": category,
+            "_listParser": "static",
+        })
     return rows
 
 
@@ -660,23 +686,38 @@ def page_tail_seen_in_previous(rows: List[Dict], previous_keys: set) -> bool:
 
 
 def extract_row_meta(row: Dict, now: datetime) -> Dict:
-    line_meta = ""
-    for ln in row.get("lines") or []:
-        if " / " in ln and ("추천" in ln or "조회" in ln):
-            line_meta = ln
+    lines = [str(ln or "").strip() for ln in (row.get("lines") or []) if str(ln or "").strip()]
+    title = str(row.get("title") or "").strip()
+    time_pattern = r'(?:\d{2}:\d{2}|20\d{2}\.\d{2}\.\d{2}|\d{2}\.\d{2})'
+    time_token = str(row.get("timeToken") or "").strip()
+    if not re.fullmatch(time_pattern, time_token):
+        time_token = ""
+    category = str(row.get("category") or "").strip(" /\t") or "기타"
+    time_line = ""
+    stats_line = next((ln for ln in lines if "추천" in ln or "조회" in ln), "")
+
+    if not time_token:
+        for ln in lines:
+            if ln == title:
+                continue
+            m_meta = re.search(rf'^(.*?)\s*/\s*({time_pattern})(?:\s*/|\s*$)', ln)
+            if not m_meta:
+                continue
+            category = m_meta.group(1).strip(" /\t") or category
+            time_token = m_meta.group(2).strip()
+            time_line = ln
             break
 
-    time_token = ""
-    category = "기타"
-    time_pattern = r'(?:\d{2}:\d{2}|20\d{2}\.\d{2}\.\d{2}|\d{2}\.\d{2})'
-    m_meta = re.search(rf'^(.*?)\s*/\s*({time_pattern})\s*/', line_meta)
-    if m_meta:
-        category = m_meta.group(1).strip() or "기타"
-        time_token = m_meta.group(2).strip()
-    else:
-        tm = re.search(time_pattern, line_meta or row.get("raw") or "")
-        if tm:
-            time_token = tm.group(0)
+    if not time_token:
+        for ln in lines:
+            if ln == title:
+                continue
+            if re.fullmatch(time_pattern, ln):
+                time_token = ln
+                time_line = ln
+                break
+
+    line_meta = " / ".join(dict.fromkeys(value for value in (time_line, stats_line) if value))
 
     return {
         "line_meta": line_meta,
@@ -690,6 +731,8 @@ def should_keep_row_by_time(row: Dict, now: datetime, since: datetime) -> bool:
     meta = extract_row_meta(row, now)
     row["_meta"] = meta
     dt = meta["dt"]
+    if not dt or dt > now + MAX_FUTURE_SKEW:
+        return False
     return not (dt < since and dt.date() != since.date())
 
 
@@ -754,7 +797,10 @@ def item_is_within_window(item: Dict, now: datetime, since: datetime) -> bool:
         dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
     except Exception:
         return True
-    return not (dt.astimezone(KST) < since and dt.astimezone(KST).date() != since.date())
+    local_dt = dt.astimezone(KST)
+    if local_dt > now + MAX_FUTURE_SKEW:
+        return False
+    return not (local_dt < since and local_dt.date() != since.date())
 
 
 def filter_items_within_window(items: List[Dict], now: datetime, since: datetime) -> List[Dict]:
@@ -916,6 +962,8 @@ def main():
         time_token = meta["time_token"]
         category = meta["category"]
         dt = meta["dt"]
+        if not dt or dt > now + MAX_FUTURE_SKEW:
+            continue
         if dt < since and dt.date() != since.date():
             continue
 

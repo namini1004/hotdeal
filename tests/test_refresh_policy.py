@@ -47,6 +47,8 @@ class RefreshPolicyTests(unittest.TestCase):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
 
         self.assertIn("const FEED_LOOKBACK_MS = 48 * 60 * 60 * 1000;", html)
+        self.assertIn("const FEED_FUTURE_SKEW_MS = 10 * 60 * 1000;", html)
+        self.assertIn("if(ms > nowMs + FEED_FUTURE_SKEW_MS) return false;", html)
         self.assertIn("function filterStaleFeedItems(items)", html)
         self.assertIn("const cleaned = filterStaleFeedItems(filterDeleted(dedupeItems(items)));", html)
 
@@ -57,6 +59,7 @@ class RefreshPolicyTests(unittest.TestCase):
         self.assertIn("source=in.(${sourceFilter})", js)
         self.assertIn("const FEED_LOOKBACK_HOURS = 48;", js)
         self.assertIn("registered_at=gte.${encodeURIComponent(cutoffIso)}", js)
+        self.assertIn("registered_at=lte.${encodeURIComponent(futureCutoffIso)}", js)
         self.assertNotIn("Promise.all(FEED_SOURCES.map", js)
         self.assertNotIn("deals?source=neq.user&deleted_at=is.null&select=*&order=registered_at.desc&limit=3000", js)
 

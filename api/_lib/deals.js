@@ -10,6 +10,7 @@ const FEED_FILES = [
 const FEED_SOURCES = ['ppomppu', 'quasar', 'fmkorea', 'ruliweb'];
 const FEED_SOURCE_LIMIT = 900;
 const FEED_LOOKBACK_HOURS = 48;
+const FEED_FUTURE_SKEW_MINUTES = 10;
 const FEED_PAGE_COLUMNS = [
   'id',
   'title',
@@ -153,6 +154,14 @@ function parseDateMs(value) {
   if (!value) return 0;
   const ms = Date.parse(String(value));
   return Number.isFinite(ms) ? ms : 0;
+}
+
+function isFeedTimestampInWindow(item = {}, nowMs = Date.now()) {
+  const registeredMs = parseDateMs(item.registeredAt || item.date || '');
+  if (!registeredMs) return false;
+  const minMs = nowMs - FEED_LOOKBACK_HOURS * 60 * 60 * 1000;
+  const maxMs = nowMs + FEED_FUTURE_SKEW_MINUTES * 60 * 1000;
+  return registeredMs >= minMs && registeredMs <= maxMs;
 }
 
 function computeHotScore(item, nowMs, sourceAvg = { views: 0, comments: 0 }) {
@@ -307,7 +316,7 @@ function readFeedItemsFromFiles() {
       // ignore missing/invalid feed file
     }
   }
-  return applyTemperatureNormalization(merged);
+  return applyTemperatureNormalization(merged.filter((item) => isFeedTimestampInWindow(item)));
 }
 
 function normalizeFeedDbRow(row = {}) {
@@ -398,11 +407,14 @@ function shouldReplaceFeedDuplicate(prev = {}, item = {}) {
 async function readFeedItems() {
   try {
     const cutoffIso = new Date(Date.now() - FEED_LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
+    const futureCutoffIso = new Date(Date.now() + FEED_FUTURE_SKEW_MINUTES * 60 * 1000).toISOString();
     const sourceFilter = FEED_SOURCES.map((source) => encodeURIComponent(source)).join(',');
     const rows = await supabaseRequest(
-      `deals?source=in.(${sourceFilter})&deleted_at=is.null&registered_at=gte.${encodeURIComponent(cutoffIso)}&select=*&order=registered_at.desc&limit=${FEED_SOURCE_LIMIT}`
+      `deals?source=in.(${sourceFilter})&deleted_at=is.null&registered_at=gte.${encodeURIComponent(cutoffIso)}&registered_at=lte.${encodeURIComponent(futureCutoffIso)}&select=*&order=registered_at.desc&limit=${FEED_SOURCE_LIMIT}`
     );
-    const normalized = (rows || []).map(normalizeFeedDbRow).filter((v) => v.sourceLink);
+    const normalized = (rows || [])
+      .map(normalizeFeedDbRow)
+      .filter((item) => item.sourceLink && isFeedTimestampInWindow(item));
     if (normalized.length) {
       const dedupMap = new Map();
       for (const item of normalized) {
@@ -427,11 +439,13 @@ async function readFeedPage({ limit = 100, offset = 0, since = '' } = {}) {
   const safeOffset = Math.max(0, Number(offset) || 0);
   try {
     const cutoffIso = new Date(Date.now() - FEED_LOOKBACK_HOURS * 60 * 60 * 1000).toISOString();
+    const futureCutoffIso = new Date(Date.now() + FEED_FUTURE_SKEW_MINUTES * 60 * 1000).toISOString();
     const sourceFilter = FEED_SOURCES.map((source) => encodeURIComponent(source)).join(',');
     const commonFilters = [
       `source=in.(${sourceFilter})`,
       'deleted_at=is.null',
       `registered_at=gte.${encodeURIComponent(cutoffIso)}`,
+      `registered_at=lte.${encodeURIComponent(futureCutoffIso)}`,
     ];
     const pageFilters = [...commonFilters];
     if (since) pageFilters.push(`updated_at=gt.${encodeURIComponent(since)}`);
@@ -451,8 +465,10 @@ async function readFeedPage({ limit = 100, offset = 0, since = '' } = {}) {
     const normalized = rows
       .slice(0, safeLimit)
       .map(normalizeFeedDbRow)
-      .filter((item) => item.sourceLink);
-    const scoreItems = (scoreRows || []).map(normalizeFeedScoreRow);
+      .filter((item) => item.sourceLink && isFeedTimestampInWindow(item));
+    const scoreItems = (scoreRows || [])
+      .map(normalizeFeedScoreRow)
+      .filter((item) => isFeedTimestampInWindow(item));
     const profile = buildTemperatureProfile(scoreItems.length ? scoreItems : normalized);
 
     return {
@@ -583,6 +599,7 @@ module.exports = {
   applyTemperatureNormalization,
   canonicalFeedKey,
   shouldReplaceFeedDuplicate,
+  isFeedTimestampInWindow,
   supabaseRequest,
   mapPayload,
 };

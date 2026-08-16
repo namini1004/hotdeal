@@ -373,6 +373,32 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
 
         self.assertEqual([row["id"] for row in deleted_rows], [1, 2])
 
+    def test_future_delete_rows_remove_active_feed_rows(self):
+        rows = [
+            {
+                "id": 10,
+                "source": "fmkorea",
+                "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=10200694703",
+                "registered_at": "2026-10-17T00:00:00+09:00",
+                "deleted_at": None,
+            },
+            {
+                "id": 11,
+                "source": "fmkorea",
+                "source_link": "https://m.fmkorea.com/?mid=hotdeal&document_srl=10200694704",
+                "registered_at": "2026-08-16T02:55:00+00:00",
+                "deleted_at": None,
+            },
+        ]
+
+        deleted_rows = sync.build_future_delete_rows(
+            rows,
+            "2026-08-16T03:00:00+00:00",
+            sync.datetime(2026, 8, 16, 3, 10, tzinfo=sync.timezone.utc),
+        )
+
+        self.assertEqual([row["id"] for row in deleted_rows], [10])
+
     def test_existing_map_prefers_active_row_over_deleted_newer_row(self):
         rows = [
             {

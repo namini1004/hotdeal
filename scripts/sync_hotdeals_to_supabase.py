@@ -29,6 +29,7 @@ DEFAULT_FEED_FILES = [
 ]
 DEFAULT_EXPECTED_FEED_SOURCES = {"ppomppu", "quasar", "fmkorea", "ruliweb"}
 PRUNE_FEED_AGE_HOURS = int(os.environ.get("HOTDEAL_PRUNE_FEED_AGE_HOURS", "48"))
+MAX_FUTURE_SKEW_MINUTES = int(os.environ.get("HOTDEAL_MAX_FUTURE_SKEW_MINUTES", "10"))
 MIN_SOURCE_DELETE_GUARD_EXISTING_ROWS = int(os.environ.get("HOTDEAL_MIN_SOURCE_DELETE_GUARD_EXISTING_ROWS", "10"))
 SOURCE_DELETE_GUARD_MIN_RATIO = float(os.environ.get("HOTDEAL_SOURCE_DELETE_GUARD_MIN_RATIO", "0.5"))
 
@@ -733,6 +734,29 @@ def build_prune_delete_rows(existing_rows: List[Dict], now_iso: str, prune_befor
     return deleted_rows
 
 
+def build_future_delete_rows(existing_rows: List[Dict], now_iso: str, future_after: datetime) -> List[Dict]:
+    deleted_rows: List[Dict] = []
+    for row in existing_rows:
+        if row.get("deleted_at"):
+            continue
+        source = str(row.get("source") or "").strip()
+        source_link = str(row.get("source_link") or "").strip()
+        if not source or not source_link or source not in EXPECTED_FEED_SOURCES:
+            continue
+        if not is_future_dated(row, future_after):
+            continue
+        deleted_rows.append(
+            {
+                "id": row.get("id"),
+                "source": source,
+                "source_link": source_link,
+                "deleted_at": now_iso,
+                "updated_at": now_iso,
+            }
+        )
+    return deleted_rows
+
+
 def append_id_delete_rows(deleted_rows: List[Dict], candidates: List[Dict]) -> None:
     deleted_ids = {row.get("id") for row in deleted_rows if row.get("id")}
     for row in candidates:
@@ -960,6 +984,15 @@ def is_older_than(row: Dict, cutoff: datetime) -> bool:
     return dt.astimezone(timezone.utc) < cutoff.astimezone(timezone.utc)
 
 
+def is_future_dated(row: Dict, cutoff: datetime) -> bool:
+    dt = parse_iso_datetime(row.get("registered_at") or row.get("created_at") or "")
+    if not dt:
+        return False
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc) > cutoff.astimezone(timezone.utc)
+
+
 def build_sync_plan(rows: List[Dict], existing_map: Dict[str, Dict], now_iso: str, stale_fallback_sources=None, prune_before=None):
     """변경 upsert 대상과 soft-delete 대상을 계산한다.
 
@@ -1125,7 +1158,11 @@ def main():
     now_dt = datetime.now(timezone.utc)
     now_iso = now_dt.isoformat()
     prune_before = now_dt - timedelta(hours=PRUNE_FEED_AGE_HOURS)
-    sync_rows = [row for row in rows if not is_older_than(row, prune_before)]
+    future_after = now_dt + timedelta(minutes=MAX_FUTURE_SKEW_MINUTES)
+    sync_rows = [
+        row for row in rows
+        if not is_older_than(row, prune_before) and not is_future_dated(row, future_after)
+    ]
 
     existing_rows = fetch_existing_rows(supabase_url, service_key)
     existing_map = build_existing_map(existing_rows)
@@ -1143,6 +1180,7 @@ def main():
     push_ingest_rows = build_push_ingest_rows(changed_rows, existing_map)
     append_id_delete_rows(deleted_rows, build_duplicate_delete_rows(existing_rows, now_iso))
     append_id_delete_rows(deleted_rows, build_prune_delete_rows(existing_rows, now_iso, prune_before))
+    append_id_delete_rows(deleted_rows, build_future_delete_rows(existing_rows, now_iso, future_after))
     if skipped_delete_sources:
         print(f"WARN_SOFT_DELETE_GUARD skipped_sources={','.join(sorted(skipped_delete_sources))}")
 

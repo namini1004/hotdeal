@@ -5,7 +5,13 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 
-from update_fmkorea_feed import KST, parse_static_html_rows, should_keep_row_by_time
+from update_fmkorea_feed import (
+    KST,
+    extract_row_meta,
+    item_is_within_window,
+    parse_static_html_rows,
+    should_keep_row_by_time,
+)
 
 
 def test_parse_static_fmkorea_webzine_rows_extracts_deal_fields():
@@ -39,3 +45,26 @@ def test_parse_static_fmkorea_webzine_rows_extracts_deal_fields():
 def test_parse_static_fmkorea_security_page_returns_empty():
     rows = parse_static_html_rows('<title>에펨코리아 보안 시스템</title>', 'https://www.fmkorea.com/')
     assert rows == []
+
+
+def test_title_sale_dates_are_not_used_as_the_post_date():
+    title = '10.17 ~ 10.20 Busan Fukuoka flight deal'
+    row = {
+        'title': title,
+        'lines': [title, 'travel / 09:33 / author', 'recommend 5 / views 100'],
+        'raw': title,
+    }
+    now = datetime(2026, 8, 12, 10, 0, tzinfo=KST)
+
+    meta = extract_row_meta(row, now)
+
+    assert meta['time_token'] == '09:33'
+    assert meta['dt'].isoformat() == '2026-08-12T09:33:00+09:00'
+
+
+def test_future_cached_fmkorea_item_is_rejected():
+    now = datetime(2026, 8, 16, 12, 0, tzinfo=KST)
+    since = now - timedelta(hours=48)
+    item = {'registeredAt': '2026-10-17T00:00:00+09:00'}
+
+    assert item_is_within_window(item, now, since) is False
