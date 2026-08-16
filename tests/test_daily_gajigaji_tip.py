@@ -1,5 +1,6 @@
 import unittest
 from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
 from scripts import post_daily_gajigaji_tip as tips
 
@@ -7,13 +8,13 @@ from scripts import post_daily_gajigaji_tip as tips
 NOW = datetime(2026, 8, 17, 0, 0, tzinfo=timezone.utc)
 
 
-def make_source(url="https://www.youtube.com/watch?v=new-source"):
+def make_source(url="https://www.youtube.com/watch?v=newsource01"):
     return tips.SourceCandidate(
         channel="노써치",
         title="새 제품 구매 가이드",
         url=url,
         published_at=NOW - timedelta(days=1),
-        thumbnail_url="https://i.ytimg.com/vi/new-source/hqdefault.jpg",
+        thumbnail_url="https://i.ytimg.com/vi/newsource01/hqdefault.jpg",
         description="",
     )
 
@@ -44,7 +45,7 @@ def make_draft(**overrides):
         "title": "충전기는 숫자보다 포트 구성이 먼저다",
         "product": "충전기",
         "body": body,
-        "source_url": "https://www.youtube.com/watch?v=new-source",
+        "source_url": "https://www.youtube.com/watch?v=newsource01",
     }
     draft.update(overrides)
     return draft
@@ -107,7 +108,7 @@ class DailyGajigajiTipTests(unittest.TestCase):
 
         self.assertEqual(tips.recent_product_conflict("무선 선풍기", posts, NOW), "")
 
-    def test_build_payload_restores_old_author_photo_and_source_style(self):
+    def test_build_payload_uses_photo_without_visible_source_section(self):
         source = make_source()
 
         payload = tips.build_payload(make_draft(), source)
@@ -115,7 +116,31 @@ class DailyGajigajiTipTests(unittest.TestCase):
         self.assertEqual(payload["author"], "가지딜")
         self.assertEqual(payload["img"], source.thumbnail_url)
         self.assertTrue(payload["body"].startswith("<!--gaji-category:tips-->\n# 충전기는"))
-        self.assertIn(f"]({source.url})", payload["body"])
+        self.assertNotIn("참고 자료", payload["body"])
+        self.assertNotIn(source.url, payload["body"])
+        self.assertNotIn(source.channel, payload["body"])
+
+    def test_source_reuse_is_detected_from_thumbnail_without_visible_link(self):
+        source = make_source()
+        posts = [{"body": "링크가 없는 본문", "img": source.thumbnail_url}]
+
+        self.assertIn(tips.source_key_from_url(source.url), tips.source_keys_from_posts(posts))
+
+    @patch.object(tips, "validate_image_url", return_value=True)
+    def test_source_image_must_match_source_video(self, validate_image):
+        source = make_source()
+
+        self.assertTrue(tips.validate_source_image(source))
+        validate_image.assert_called_once_with(source.thumbnail_url)
+
+        wrong_image = tips.SourceCandidate(
+            channel=source.channel,
+            title=source.title,
+            url=source.url,
+            published_at=source.published_at,
+            thumbnail_url="https://i.ytimg.com/vi/different01/hqdefault.jpg",
+        )
+        self.assertFalse(tips.validate_source_image(wrong_image))
 
     def test_today_guard_accepts_only_one_automation_post_per_kst_day(self):
         posts = [

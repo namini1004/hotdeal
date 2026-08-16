@@ -14,6 +14,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -177,11 +178,43 @@ def text_similarity(left: str, right: str) -> float:
     return max(sequence_score, token_score)
 
 
-def source_urls_from_posts(posts: Iterable[dict]) -> set[str]:
-    urls: set[str] = set()
+def source_keys_from_posts(posts: Iterable[dict]) -> set[str]:
+    keys: set[str] = set()
     for post in posts:
-        urls.update(match.rstrip(".,") for match in URL_PATTERN.findall(str(post.get("body") or "")))
-    return urls
+        values = [str(post.get("img") or "")]
+        values.extend(match.rstrip(".,") for match in URL_PATTERN.findall(str(post.get("body") or "")))
+        for value in values:
+            key = source_key_from_url(value)
+            if key:
+                keys.add(key)
+    return keys
+
+
+def youtube_video_id(value: str) -> str:
+    try:
+        parsed = urllib.parse.urlparse(str(value or "").strip())
+    except ValueError:
+        return ""
+    host = (parsed.hostname or "").lower()
+    if host in {"youtube.com", "www.youtube.com", "m.youtube.com"}:
+        if parsed.path == "/watch":
+            video_id = (urllib.parse.parse_qs(parsed.query).get("v") or [""])[0]
+        else:
+            match = re.match(r"/(?:embed|shorts)/([0-9A-Za-z_-]{6,})", parsed.path)
+            video_id = match.group(1) if match else ""
+    elif host == "youtu.be":
+        video_id = parsed.path.strip("/").split("/")[0]
+    elif host == "img.youtube.com" or host == "i.ytimg.com" or re.fullmatch(r"i\d+\.ytimg\.com", host):
+        match = re.match(r"/vi(?:_webp)?/([0-9A-Za-z_-]{6,})/", parsed.path)
+        video_id = match.group(1) if match else ""
+    else:
+        video_id = ""
+    return video_id if re.fullmatch(r"[0-9A-Za-z_-]{6,}", video_id or "") else ""
+
+
+def source_key_from_url(value: str) -> str:
+    video_id = youtube_video_id(value)
+    return f"youtube:{video_id}" if video_id else ""
 
 
 def has_automation_post_today(posts: Iterable[dict], now: datetime) -> bool:
@@ -230,7 +263,7 @@ def parse_youtube_feed(channel: str, channel_id: str, now: datetime) -> list[Sou
 
 
 def collect_source_candidates(posts: Iterable[dict], now: datetime) -> list[SourceCandidate]:
-    used_urls = source_urls_from_posts(posts)
+    used_source_keys = source_keys_from_posts(posts)
     candidates: list[SourceCandidate] = []
     errors: list[str] = []
     for channel, channel_id in SOURCE_CHANNELS:
@@ -239,7 +272,11 @@ def collect_source_candidates(posts: Iterable[dict], now: datetime) -> list[Sour
         except Exception as exc:
             errors.append(f"{channel}:{type(exc).__name__}")
             continue
-        candidates.extend(item for item in channel_candidates[:10] if item.url not in used_urls)
+        candidates.extend(
+            item
+            for item in channel_candidates[:10]
+            if source_key_from_url(item.url) not in used_source_keys
+        )
 
     unique: dict[str, SourceCandidate] = {}
     for candidate in sorted(candidates, key=lambda item: item.published_at, reverse=True):
@@ -274,7 +311,7 @@ def build_generation_prompt(posts: list[dict], candidates: list[SourceCandidate]
 - 투자·의료·법률 조언은 쓰지 않습니다.
 - 본문은 500~900자 정도로, 첫 줄은 '# 제목'이어야 합니다.
 - 짧은 문제 제기, 생활 체감 중심 설명, '구매 전 체크:' bullet 4~6개, 마지막 '한 줄 팁:'을 포함합니다.
-- 출처 링크나 '참고 자료' 구역은 본문에 직접 쓰지 마세요. 검증 후 시스템이 붙입니다.
+- 출처 링크, 채널명, 영상명, '참고 자료' 구역은 본문에 쓰지 마세요. 출처는 검증과 대표 사진 선택에만 사용합니다.
 - 출처 제목만으로 확인할 수 없는 숫자나 단정적인 사실을 만들지 않습니다.
 - product는 중복 검사에 쓸 짧고 일반적인 제품군 이름으로 씁니다.
 
@@ -402,7 +439,7 @@ def validate_draft(
         reasons.append("unexpected_body_url")
     if source_url not in source_map:
         reasons.append("untrusted_source")
-    if source_url in source_urls_from_posts(posts):
+    if source_key_from_url(source_url) in source_keys_from_posts(posts):
         reasons.append("source_already_used")
 
     for post in posts:
@@ -448,18 +485,32 @@ def pick_valid_draft(
 
 def validate_image_url(url: str) -> bool:
     try:
+        parsed = urllib.parse.urlparse(str(url or "").strip())
+    except ValueError:
+        return False
+    if parsed.scheme != "https" or not parsed.hostname:
+        return False
+    try:
         raw, headers = request_bytes(
             url,
-            headers={"Accept": "image/avif,image/webp,image/png,image/jpeg,*/*", "Range": "bytes=0-4095"},
+            headers={"Accept": "image/avif,image/webp,image/png,image/jpeg,*/*", "Range": "bytes=0-8191"},
             timeout=30,
         )
     except Exception:
         return False
     content_type = str(headers.get("Content-Type") or "").lower()
-    return content_type.startswith("image/") and len(raw) >= 64
+    return content_type.startswith("image/") and len(raw) >= 1024
 
 
-def prepare_body(title: str, body: str, source: SourceCandidate) -> str:
+def validate_source_image(source: SourceCandidate) -> bool:
+    source_video_id = youtube_video_id(source.url)
+    image_video_id = youtube_video_id(source.thumbnail_url)
+    if not source_video_id or image_video_id != source_video_id:
+        return False
+    return validate_image_url(source.thumbnail_url)
+
+
+def prepare_body(title: str, body: str) -> str:
     clean = strip_board_markup(body)
     lines = clean.splitlines()
     if lines and lines[0].strip().startswith("#"):
@@ -467,15 +518,14 @@ def prepare_body(title: str, body: str, source: SourceCandidate) -> str:
     else:
         lines = [f"# {title}", "", *lines]
     clean = "\n".join(lines).strip()
-    reference = f"## 참고 자료\n- [{source.channel}: {source.title}]({source.url})"
-    return f"<!--gaji-category:tips-->\n{clean}\n\n{reference}"
+    return f"<!--gaji-category:tips-->\n{clean}"
 
 
 def build_payload(draft: dict, source: SourceCandidate) -> dict:
     title = compact_text(draft.get("title") or "")
     return {
         "title": title,
-        "body": prepare_body(title, draft.get("body") or "", source),
+        "body": prepare_body(title, draft.get("body") or ""),
         "category": "tips",
         "img": source.thumbnail_url,
         "author": AUTHOR,
@@ -518,8 +568,8 @@ def main() -> int:
         codex_path = find_codex_path(args.codex_path)
         drafts = generate_drafts(build_generation_prompt(posts, candidates), codex_path)
         draft, source, rejected = pick_valid_draft(drafts, posts, candidates, now)
-        if not validate_image_url(source.thumbnail_url):
-            raise RuntimeError(f"Source image validation failed: {source.thumbnail_url}")
+        if not validate_source_image(source):
+            raise RuntimeError(f"Source image validation failed or mismatched its video: {source.thumbnail_url}")
         payload = build_payload(draft, source)
 
         if args.dry_run:
