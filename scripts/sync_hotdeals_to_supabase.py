@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import atexit
 import hashlib
 import io
 import json
@@ -89,6 +90,12 @@ TRACKED_FIELDS = [
 ]
 
 IMAGE_BUCKET = os.environ.get("SUPABASE_IMAGE_BUCKET", "deal-images").strip() or "deal-images"
+NAVER_DEFAULT_THUMB_OBJECT = "defaults/naver-thumb-v1.webp"
+NAVER_DEFAULT_DETAIL_OBJECT = "defaults/naver-detail640-v1.webp"
+CURATED_DEFAULT_OBJECT_PATHS = {
+    NAVER_DEFAULT_THUMB_OBJECT,
+    NAVER_DEFAULT_DETAIL_OBJECT,
+}
 THUMBNAIL_MAX_SIZE = int(os.environ.get("MIRROR_THUMBNAIL_MAX_SIZE", "320"))
 DETAIL_IMAGE_MAX_SIZE = int(os.environ.get("MIRROR_DETAIL_IMAGE_MAX_SIZE", "640"))
 DEFAULT_PUSH_INGEST_BATCH_SIZE = 10
@@ -128,6 +135,7 @@ ORPHAN_IMAGE_CLEANUP_ENABLED = os.environ.get("HOTDEAL_ORPHAN_IMAGE_CLEANUP_ENAB
     "off",
 }
 _bucket_ready = False
+_quasar_browser_fetcher = None
 
 
 def load_feed_data():
@@ -202,6 +210,12 @@ def source_post_id_or_fallback(source: str, source_link: str) -> str:
     if not source_link:
         return ""
     return f"link:{hashlib.sha1(source_link.encode('utf-8')).hexdigest()[:12]}"
+
+
+def is_excluded_feed_item(item: Dict) -> bool:
+    source = str(item.get("source") or "").strip().lower()
+    title = re.sub(r"\s+", " ", str(item.get("title") or "")).strip().lower()
+    return source == "quasar" and "블라인드 처리된 글" in title
 
 
 def normalize(item: Dict) -> Dict:
@@ -282,6 +296,32 @@ def storage_public_prefix(supabase_url: str) -> str:
     return f"{supabase_url}/storage/v1/object/public/{IMAGE_BUCKET}/"
 
 
+def curated_default_image_urls(supabase_url: str) -> Dict[str, str]:
+    prefix = storage_public_prefix(supabase_url)
+    return {
+        "img": f"{prefix}{NAVER_DEFAULT_THUMB_OBJECT}",
+        "detail_img": f"{prefix}{NAVER_DEFAULT_DETAIL_OBJECT}",
+    }
+
+
+def is_naver_default_candidate(row: Dict) -> bool:
+    if str(row.get("img") or "").strip():
+        return False
+    title = str(row.get("title") or "").strip()
+    return bool(re.match(r"^\[\s*네이버(?:\s*페이)?\s*\]", title, re.I))
+
+
+def apply_curated_default_images(rows: List[Dict], supabase_url: str) -> int:
+    defaults = curated_default_image_urls(supabase_url)
+    changed = 0
+    for row in rows or []:
+        if not is_naver_default_candidate(row):
+            continue
+        row.update(defaults)
+        changed += 1
+    return changed
+
+
 def is_storage_image_url(img: str, supabase_url: str) -> bool:
     return str(img or "").startswith(storage_public_prefix(supabase_url))
 
@@ -324,7 +364,7 @@ def list_feed_storage_objects(supabase_url: str, service_key: str) -> List[Dict]
         "Content-Type": "application/json",
     }
     objects: List[Dict] = []
-    for source in sorted(IMAGE_HEADERS_BY_SOURCE):
+    for source in sorted({*IMAGE_HEADERS_BY_SOURCE, "defaults"}):
         offset = 0
         while True:
             res = requests.post(
@@ -400,6 +440,7 @@ def cleanup_orphaned_feed_images(
     objects = list_feed_storage_objects(supabase_url, service_key)
     storage_bytes = sum(int((item.get("metadata") or {}).get("size") or 0) for item in objects)
     object_paths = {str(item.get("path") or "") for item in objects if item.get("path")}
+    referenced_paths.update(object_paths & CURATED_DEFAULT_OBJECT_PATHS)
     missing_references = sorted(referenced_paths - object_paths)
     if missing_references:
         sample = ",".join(missing_references[:5])
@@ -528,6 +569,64 @@ def ensure_public_image_bucket(supabase_url: str, service_key: str):
     _bucket_ready = True
 
 
+def upload_naver_default_images(content: bytes, supabase_url: str, service_key: str) -> Dict[str, str]:
+    ensure_public_image_bucket(supabase_url, service_key)
+    variants = {
+        NAVER_DEFAULT_THUMB_OBJECT: make_webp_image(content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY),
+        NAVER_DEFAULT_DETAIL_OBJECT: make_webp_image(content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY),
+    }
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": "image/webp",
+        "Cache-Control": "31536000",
+        "x-upsert": "true",
+    }
+    for object_path, body in variants.items():
+        upload_url = f"{supabase_url}/storage/v1/object/{IMAGE_BUCKET}/{object_path}"
+        response = requests.post(upload_url, headers=headers, data=body, timeout=60)
+        if not response.ok:
+            raise RuntimeError(f"Supabase default image upload failed ({response.status_code}): {response.text}")
+    return curated_default_image_urls(supabase_url)
+
+
+def close_quasar_browser_fetcher():
+    global _quasar_browser_fetcher
+    if _quasar_browser_fetcher is not None:
+        _quasar_browser_fetcher.close()
+        _quasar_browser_fetcher = None
+
+
+def get_quasar_browser_fetcher():
+    global _quasar_browser_fetcher
+    if _quasar_browser_fetcher is None:
+        try:
+            from quasar_browser_fetch import QuasarBrowserFetcher
+        except ModuleNotFoundError:
+            from scripts.quasar_browser_fetch import QuasarBrowserFetcher
+        _quasar_browser_fetcher = QuasarBrowserFetcher().start()
+        atexit.register(close_quasar_browser_fetcher)
+    return _quasar_browser_fetcher
+
+
+def download_feed_image(row: Dict, source: str, src: str) -> tuple[bytes, str]:
+    image_mode = os.environ.get("HOTDEAL_QUASAR_IMAGE_FETCH_MODE", "requests").strip().lower()
+    if source == "quasar" and image_mode == "browser":
+        try:
+            body = get_quasar_browser_fetcher().capture_image(row.get("source_link") or "", src)
+            print(f"QUASAR_IMAGE_FETCH mode=browser-cdp source_link={row.get('source_link')}")
+            return body, "image/png"
+        except Exception as exc:
+            if getattr(exc, "blocked", False):
+                raise
+            print(f"WARN_QUASAR_BROWSER_IMAGE_FALLBACK reason={exc} source_link={row.get('source_link')}")
+
+    res = requests.get(src, headers=IMAGE_HEADERS_BY_SOURCE[source], timeout=25)
+    if not res.ok:
+        raise RuntimeError(f"{source} image download failed ({res.status_code})")
+    return res.content, res.headers.get("content-type") or ""
+
+
 def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, service_key: str) -> Dict[str, str]:
     """뽐딜/루딜/펨딜 원본 이미지를 목록용 320px와 상세용 640px WebP로 저장한다."""
     source = str(row.get("source") or "").strip()
@@ -547,16 +646,12 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
         return {"img": prev_img, "detail_img": prev_detail_img}
 
     ensure_public_image_bucket(supabase_url, service_key)
-    res = requests.get(src, headers=IMAGE_HEADERS_BY_SOURCE[source], timeout=25)
-    if not res.ok:
-        raise RuntimeError(f"{source} image download failed ({res.status_code})")
-
-    content_type = res.headers.get("content-type") or ""
+    content, content_type = download_feed_image(row, source, src)
     if not content_type.lower().startswith("image/"):
         raise RuntimeError(f"{source} image response is not image ({content_type})")
-    if len(res.content) < 500:
+    if len(content) < 500:
         raise RuntimeError(f"{source} image response too small")
-    if source == "ppomppu" and is_ppomppu_forbidden_warning_image(res.content):
+    if source == "ppomppu" and is_ppomppu_forbidden_warning_image(content):
         reusable_prev = {
             "img": prev_img,
             "detail_img": prev_detail_img,
@@ -565,20 +660,20 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
             return reusable_prev
         print(f"WARN_PPOMPPU_FORBIDDEN_IMAGE_FALLBACK source_link={row.get('source_link')}")
         return {"img": "", "detail_img": ""}
-    if len(res.content) > MAX_MIRROR_IMAGE_BYTES:
-        raise RuntimeError(f"{source} image too large ({len(res.content)} bytes)")
+    if len(content) > MAX_MIRROR_IMAGE_BYTES:
+        raise RuntimeError(f"{source} image too large ({len(content)} bytes)")
 
     variants = {}
     public_urls = {}
     if source != "fmkorea" and is_reusable_storage_webp(prev_img, source, supabase_url, "thumb"):
         public_urls["thumb"] = prev_img
     else:
-        variants["thumb"] = make_webp_image(res.content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY)
+        variants["thumb"] = make_webp_image(content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY)
 
     if source != "fmkorea" and is_reusable_storage_webp(prev_detail_img, source, supabase_url, DETAIL_IMAGE_VARIANT):
         public_urls[DETAIL_IMAGE_VARIANT] = prev_detail_img
     else:
-        variants[DETAIL_IMAGE_VARIANT] = make_webp_image(res.content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY)
+        variants[DETAIL_IMAGE_VARIANT] = make_webp_image(content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY)
     digest = hashlib.sha1(src.encode("utf-8")).hexdigest()[:12]
     row_id = row_id_from_source_link(source, row.get("source_link") or "")
     upload_headers = {
@@ -833,6 +928,23 @@ def build_future_delete_rows(existing_rows: List[Dict], now_iso: str, future_aft
                 "id": row.get("id"),
                 "source": source,
                 "source_link": source_link,
+                "deleted_at": now_iso,
+                "updated_at": now_iso,
+            }
+        )
+    return deleted_rows
+
+
+def build_policy_delete_rows(existing_rows: List[Dict], now_iso: str) -> List[Dict]:
+    deleted_rows: List[Dict] = []
+    for row in existing_rows or []:
+        if row.get("deleted_at") or not is_excluded_feed_item(row):
+            continue
+        deleted_rows.append(
+            {
+                "id": row.get("id"),
+                "source": row.get("source"),
+                "source_link": row.get("source_link"),
                 "deleted_at": now_iso,
                 "updated_at": now_iso,
             }
@@ -1221,7 +1333,11 @@ def main():
 
     raw_items, stale_fallback_sources = load_feed_data()
     use_source_post_id = database_has_source_post_id(supabase_url, service_key)
-    norm_items = [normalize(v) for v in raw_items if (v.get("sourceLink") or "").strip()]
+    norm_items = [
+        normalize(v)
+        for v in raw_items
+        if (v.get("sourceLink") or "").strip() and not is_excluded_feed_item(v)
+    ]
 
     # source+source_link / exact title 기준 중복 제거(최신 항목 우선)
     dedup = {}
@@ -1251,6 +1367,9 @@ def main():
     existing_map = build_existing_map(existing_rows)
     if sync_rows:
         mirror_feed_images(sync_rows, existing_map, supabase_url, service_key)
+        defaulted_images = apply_curated_default_images(sync_rows, supabase_url)
+        if defaulted_images:
+            print(f"CURATED_DEFAULT_IMAGES applied={defaulted_images}")
     elif not rows:
         print("NO_ROWS")
     image_repair_rows = build_existing_image_repair_rows(
@@ -1281,6 +1400,7 @@ def main():
     append_id_delete_rows(deleted_rows, build_duplicate_delete_rows(existing_rows, now_iso))
     append_id_delete_rows(deleted_rows, build_prune_delete_rows(existing_rows, now_iso, prune_before))
     append_id_delete_rows(deleted_rows, build_future_delete_rows(existing_rows, now_iso, future_after))
+    append_id_delete_rows(deleted_rows, build_policy_delete_rows(existing_rows, now_iso))
     if skipped_delete_sources:
         print(f"WARN_SOFT_DELETE_GUARD skipped_sources={','.join(sorted(skipped_delete_sources))}")
 

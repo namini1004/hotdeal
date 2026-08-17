@@ -353,16 +353,22 @@
             <div class="term">${escapeHtml(item.term || item.termNormalized || '')}</div>
             <div class="meta">알림 사용중</div>
           </div>
-          <button class="del" type="button" data-id="${item.id}">삭제</button>
+          <button class="del" type="button" data-id="${item.id}" data-term="${escapeHtml(item.termNormalized || item.term || '')}">삭제</button>
         </article>
       `).join('');
 
       document.querySelectorAll('.del').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = btn.getAttribute('data-id');
+          const termNormalized = btn.getAttribute('data-term') || '';
           if(!id) return;
           try{
-            const res = await fetch(`/api/push/keywords?id=${encodeURIComponent(id)}`, { method:'DELETE', credentials:'include' });
+            const res = await fetch(`/api/push/keywords?id=${encodeURIComponent(id)}`, {
+              method:'DELETE',
+              credentials:'include',
+              headers:{ 'Content-Type':'application/json' },
+              body: JSON.stringify({ id, termNormalized })
+            });
             if(!res.ok) throw new Error('delete');
             const nextItems = loadCachedKeywords().filter(item => String(item.id) !== String(id));
             saveCachedKeywords(nextItems);

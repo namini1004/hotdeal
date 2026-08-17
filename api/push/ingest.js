@@ -87,6 +87,10 @@ function keywordWindowId(uid, term) {
   return crypto.createHash('sha1').update(`${uid}::${term}`).digest('hex');
 }
 
+function isEnabledKeywordSubscription(snapshot) {
+  return Boolean(snapshot?.exists && snapshot.get('enabled') === true);
+}
+
 function sortMatchedTerms(termSet) {
   return [...termSet]
     .map((term) => String(term || '').trim())
@@ -282,10 +286,16 @@ async function sendPayloadToDevices({ msg, devicesSnap, tokens, webDevices, payl
 
 async function planKeywordAlert(db, uid, term, rowInfo, now) {
   const ref = db.collection('keyword_alert_windows').doc(keywordWindowId(uid, term));
+  const subscriptionRef = db.collection('keyword_subscriptions').doc(keywordWindowId(uid, term));
   const dueAt = new Date(now.getTime() + KEYWORD_ALERT_WINDOW_MS);
 
   return db.runTransaction(async (tx) => {
+    const subscriptionSnap = await tx.get(subscriptionRef);
     const snap = await tx.get(ref);
+    if (!isEnabledKeywordSubscription(subscriptionSnap)) {
+      if (snap.exists) tx.delete(ref);
+      return { action: 'skip', reason: 'keyword_deleted' };
+    }
     const data = snap.exists ? (snap.data() || {}) : {};
     const windowStartedAtMs = toMillis(data.windowStartedAt);
     const expired = !windowStartedAtMs || now.getTime() - windowStartedAtMs >= KEYWORD_ALERT_WINDOW_MS;
@@ -345,6 +355,12 @@ async function flushDueKeywordDigests(db, msg, deviceCache, now) {
     const uid = String(data.uid || '').trim();
     const term = String(data.term || data.termNormalized || '').trim();
     if (!uid || !term || pendingCount <= 0) {
+      await doc.ref.delete();
+      continue;
+    }
+
+    const subscriptionSnap = await db.collection('keyword_subscriptions').doc(keywordWindowId(uid, term)).get();
+    if (!isEnabledKeywordSubscription(subscriptionSnap)) {
       await doc.ref.delete();
       continue;
     }
@@ -486,6 +502,11 @@ async function processRows(rows = []) {
       const clickUrl = buildClickUrl(row, rowId, buyLink, sourceLink);
       const payload = buildNotificationPayload({ clickUrl, dealId, matchedTerms, source, title });
       const alertPlan = await planKeywordAlert(db, uid, primaryTerm, { dealId, title, clickUrl }, now);
+
+      if (alertPlan.action === 'skip') {
+        skipped += 1;
+        continue;
+      }
 
       if (alertPlan.action === 'queue') {
         await matchRef.set({
@@ -661,3 +682,5 @@ module.exports = async (req, res) => {
 
 module.exports.processRows = processRows;
 module.exports.cleanupPushDevices = cleanupPushDevices;
+module.exports.keywordWindowId = keywordWindowId;
+module.exports.isEnabledKeywordSubscription = isEnabledKeywordSubscription;

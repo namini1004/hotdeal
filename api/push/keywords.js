@@ -77,16 +77,30 @@ module.exports = async (req, res) => {
       if (!id) return json(res, 400, { error: 'id is required' });
 
       const keywordSnap = await baseRef.doc(id).get();
-      const termNormalized = String(keywordSnap.get('termNormalized') || '').trim();
+      const requestedTerm = normalizeTerm(req.query?.term || req.body?.termNormalized || req.body?.term || '');
+      const termsToDelete = new Set();
+      const storedTerm = normalizeTerm(keywordSnap.get('termNormalized') || '');
+      if (storedTerm) termsToDelete.add(storedTerm);
+      if (requestedTerm && makeId(requestedTerm) === id) termsToDelete.add(requestedTerm);
+
+      // Recover orphaned index rows too. A stale local keyword cache can issue a
+      // delete after the user document disappeared while the global index remains.
+      const indexSnap = await indexRef.where('uid', '==', uid).get();
+      indexSnap.docs.forEach((doc) => {
+        const indexedTerm = normalizeTerm(doc.get('termNormalized') || doc.get('term') || '');
+        if (indexedTerm && makeId(indexedTerm) === id) termsToDelete.add(indexedTerm);
+      });
 
       const batch = db.batch();
       batch.delete(baseRef.doc(id));
-      if (termNormalized) {
-        batch.delete(indexRef.doc(makeIndexId(uid, termNormalized)));
-      }
+      termsToDelete.forEach((termNormalized) => {
+        const subscriptionId = makeIndexId(uid, termNormalized);
+        batch.delete(indexRef.doc(subscriptionId));
+        batch.delete(db.collection('keyword_alert_windows').doc(subscriptionId));
+      });
       await batch.commit();
 
-      return json(res, 200, { ok: true });
+      return json(res, 200, { ok: true, deletedTerms: [...termsToDelete] });
     }
 
     res.setHeader('Allow', 'GET, POST, DELETE');
@@ -102,3 +116,7 @@ module.exports = async (req, res) => {
     return json(res, 500, { error: msg });
   }
 };
+
+module.exports.normalizeTerm = normalizeTerm;
+module.exports.makeId = makeId;
+module.exports.makeIndexId = makeIndexId;

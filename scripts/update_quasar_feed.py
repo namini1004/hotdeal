@@ -2,7 +2,9 @@
 import html
 import json
 import os
+import random
 import re
+import time
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -25,6 +27,8 @@ PARTIAL_SNAPSHOT = os.environ.get("HOTDEAL_QUASAR_PARTIAL_SNAPSHOT", "").strip()
     "yes",
     "on",
 }
+FETCH_MODE = os.environ.get("HOTDEAL_QUASAR_FETCH_MODE", "requests").strip().lower()
+NEW_DETAIL_DELAY_SECONDS = max(0.0, float(os.environ.get("HOTDEAL_QUASAR_NEW_DETAIL_DELAY_SECONDS", "0")))
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = Path(
     os.environ.get("HOTDEAL_QUASAR_JSON_PATH", str(ROOT / "assets" / "quasar_hotdeals_2days.json"))
@@ -645,10 +649,15 @@ def dedupe_items_by_title(items: List[Dict]) -> List[Dict]:
     return deduped
 
 
+def is_blinded_item(item: Dict) -> bool:
+    title = clean(str(item.get("title") or "")).lower()
+    return "블라인드 처리된 글" in title
+
+
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
-    previous_items = load_previous_items()
+    previous_items = [item for item in load_previous_items() if not is_blinded_item(item)]
     previous_lookup = build_previous_detail_lookup(previous_items)
     previous_keys = build_previous_link_keys(previous_items)
     sess = requests.Session()
@@ -656,27 +665,115 @@ def main():
 
     filtered = []
     seen = set()
+    browser = None
+    browser_failures = 0
+    list_fetches = 0
+    detail_fetches = 0
+    cached_details = 0
 
-    for page in range(1, MAX_PAGES + 1):
-        page_url = LIST_URL if page == 1 else f"{LIST_URL}?page={page}"
-        html_text = sess.get(page_url, timeout=25).text
-        rows = parse_list_items(html_text, seen)
-        if not rows:
-            jina_text = sess.get(to_jina_url(page_url), timeout=45).text
-            rows = parse_jina_list_items(jina_text, seen)
-        if not rows:
-            continue
+    if FETCH_MODE == "browser":
+        try:
+            try:
+                from quasar_browser_fetch import QuasarBrowserFetchError, QuasarBrowserFetcher
+            except ModuleNotFoundError:
+                from scripts.quasar_browser_fetch import QuasarBrowserFetchError, QuasarBrowserFetcher
+            browser = QuasarBrowserFetcher().start()
+            print("QUASAR_FETCH_MODE browser-cdp")
+        except Exception as exc:
+            browser_failures += 1
+            print(f"WARN_QUASAR_BROWSER_FALLBACK reason={exc}")
 
-        old_count = 0
-        for row in rows:
-            dt = parse_time_to_datetime(row.get("time", ""), now)
-            date_label = parse_time_to_date_label(row.get("time", ""), now)
-            # MM-DD만 있는 경계일은 상세 작성시각을 봐야 48시간 포함 여부를 정확히 알 수 있다.
-            if dt < since and dt.date() != since.date():
-                old_count += 1
+    active_mode = "browser-cdp" if browser is not None else "requests"
+
+    def fetch_source_html(url: str, timeout: int) -> str:
+        nonlocal browser_failures
+        if browser is not None:
+            try:
+                return browser.get_html(url, timeout_seconds=timeout)
+            except QuasarBrowserFetchError as exc:
+                browser_failures += 1
+                if exc.blocked:
+                    raise
+                print(f"WARN_QUASAR_BROWSER_REQUEST reason={exc} url={url}")
+            except Exception as exc:
+                browser_failures += 1
+                print(f"WARN_QUASAR_BROWSER_REQUEST reason={exc} url={url}")
+        response = sess.get(url, timeout=timeout)
+        if response.status_code in {403, 429, 430}:
+            raise RuntimeError(f"Quasar request blocked ({response.status_code})")
+        response.raise_for_status()
+        return response.text
+
+    try:
+        for page in range(1, MAX_PAGES + 1):
+            page_url = LIST_URL if page == 1 else f"{LIST_URL}?page={page}"
+            list_fetches += 1
+            html_text = fetch_source_html(page_url, 45 if browser is not None else 25)
+            rows = parse_list_items(html_text, seen)
+            if not rows:
+                jina_text = sess.get(to_jina_url(page_url), timeout=45).text
+                rows = parse_jina_list_items(jina_text, seen)
+            rows = [row for row in rows if not is_blinded_item(row)]
+            if not rows:
                 continue
 
-            if apply_cached_detail_fields(row, previous_lookup):
+            old_count = 0
+            for row in rows:
+                dt = parse_time_to_datetime(row.get("time", ""), now)
+                date_label = parse_time_to_date_label(row.get("time", ""), now)
+                if dt < since and dt.date() != since.date():
+                    old_count += 1
+                    continue
+
+                if apply_cached_detail_fields(row, previous_lookup):
+                    cached_details += 1
+                    try:
+                        registered_dt = datetime.fromisoformat(row["registeredAt"])
+                    except Exception:
+                        registered_dt = dt
+                    if registered_dt < since:
+                        old_count += 1
+                        continue
+                    row["date"] = registered_dt.strftime("%Y-%m-%d")
+                    row.pop("_detailViaJina", None)
+                    row.pop("_detailCached", None)
+                    filtered.append(row)
+                    continue
+
+                detail_html = ""
+                try:
+                    if NEW_DETAIL_DELAY_SECONDS:
+                        jitter = random.uniform(0, min(1.0, NEW_DETAIL_DELAY_SECONDS))
+                        time.sleep(NEW_DETAIL_DELAY_SECONDS + jitter)
+                    detail_fetches += 1
+                    if row.get("_detailViaJina"):
+                        detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
+                    else:
+                        detail_html = fetch_source_html(row["sourceLink"], 45 if browser is not None else 25)
+                        has_timestamp = re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}', detail_html)
+                        if not extract_buy_link_from_detail(detail_html) and not has_timestamp:
+                            detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
+                    real_link = extract_buy_link_from_detail(detail_html)
+                    body_img = extract_body_image_from_detail(detail_html)
+                    row["buyLink"] = real_link or row["sourceLink"]
+                    row["desc"] = extract_body_text_from_detail(detail_html)
+                    comment_quality = analyze_comment_quality(detail_html)
+                    row["commentSignalScore"] = comment_quality["score"]
+                    row["positiveCommentSignals"] = comment_quality["positiveCount"]
+                    row["negativeCommentSignals"] = comment_quality["negativeCount"]
+                    if body_img:
+                        row["img"] = body_img
+                    if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:
+                        row["buyLink"] = row["sourceLink"]
+                except Exception:
+                    row["buyLink"] = row["sourceLink"]
+
+                row["date"] = date_label
+                try:
+                    row["registeredAt"] = extract_registered_at_from_detail(detail_html, date_label, now=now)
+                except Exception:
+                    row["registeredAt"] = f"{date_label}T00:00:00+09:00"
+
                 try:
                     registered_dt = datetime.fromisoformat(row["registeredAt"])
                 except Exception:
@@ -684,58 +781,24 @@ def main():
                 if registered_dt < since:
                     old_count += 1
                     continue
-                row["date"] = registered_dt.strftime("%Y-%m-%d")
+
                 row.pop("_detailViaJina", None)
-                row.pop("_detailCached", None)
                 filtered.append(row)
-                continue
 
-            # 사이트별 룰: 상세에서 실제 구매처 링크/작성시각 추출
-            detail_html = ""
-            try:
-                if row.get("_detailViaJina"):
-                    detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
-                else:
-                    detail_html = sess.get(row["sourceLink"], timeout=25).text
-                    if not extract_buy_link_from_detail(detail_html) and not re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}', detail_html):
-                        detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
-                real_link = extract_buy_link_from_detail(detail_html)
-                body_img = extract_body_image_from_detail(detail_html)
-                row["buyLink"] = real_link or row["sourceLink"]
-                row["desc"] = extract_body_text_from_detail(detail_html)
-                comment_quality = analyze_comment_quality(detail_html)
-                row["commentSignalScore"] = comment_quality["score"]
-                row["positiveCommentSignals"] = comment_quality["positiveCount"]
-                row["negativeCommentSignals"] = comment_quality["negativeCount"]
-                if body_img:
-                    row["img"] = body_img
-                if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:
-                    row["buyLink"] = row["sourceLink"]
-            except Exception:
-                row["buyLink"] = row["sourceLink"]
+            if old_count == len(rows):
+                break
+            if rows and page_tail_seen_in_previous(rows, previous_keys):
+                print(f"QUASAR_INCREMENTAL_STOP reason=page_tail_seen page={page} sample={max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)}")
+                break
+    finally:
+        if browser is not None:
+            browser.close()
 
-            row["date"] = date_label
-            try:
-                row["registeredAt"] = extract_registered_at_from_detail(detail_html, date_label, now=now)
-            except Exception:
-                row["registeredAt"] = f"{date_label}T00:00:00+09:00"
-
-            try:
-                registered_dt = datetime.fromisoformat(row["registeredAt"])
-            except Exception:
-                registered_dt = dt
-            if registered_dt < since:
-                old_count += 1
-                continue
-
-            row.pop("_detailViaJina", None)
-            filtered.append(row)
-
-        if old_count == len(rows):
-            break
-        if rows and page_tail_seen_in_previous(rows, previous_keys):
-            print(f"QUASAR_INCREMENTAL_STOP reason=page_tail_seen page={page} sample={max(1, INCREMENTAL_TAIL_SAMPLE_SIZE)}")
-            break
+    print(
+        "QUASAR_FETCH_SUMMARY "
+        f"mode={active_mode} lists={list_fetches} details={detail_fetches} "
+        f"cached={cached_details} browser_failures={browser_failures}"
+    )
 
     filtered = dedupe_items_by_title(filtered)
 

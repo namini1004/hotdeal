@@ -14,6 +14,34 @@ spec.loader.exec_module(sync)
 
 
 class SyncSoftDeleteGuardTests(unittest.TestCase):
+    def test_blinded_quasar_rows_are_excluded_and_deleted_by_policy(self):
+        blinded = {
+            "id": "row-id",
+            "source": "quasar",
+            "source_link": "https://quasarzone.com/bbs/qb_saleinfo/views/1",
+            "title": "블라인드 처리된 글입니다.",
+            "deleted_at": None,
+        }
+
+        self.assertTrue(sync.is_excluded_feed_item(blinded))
+        deleted = sync.build_policy_delete_rows([blinded], "2026-08-17T00:00:00+00:00")
+        self.assertEqual([row["id"] for row in deleted], ["row-id"])
+
+    def test_naver_default_image_applies_only_when_image_is_missing(self):
+        rows = [
+            {"title": "[네이버페이] 일일 적립", "img": "", "detail_img": ""},
+            {"title": "[네이버] 상품", "img": "https://example.test/product.jpg"},
+            {"title": "[지마켓] 상품", "img": ""},
+        ]
+
+        changed = sync.apply_curated_default_images(rows, "https://example.supabase.co")
+
+        self.assertEqual(changed, 1)
+        self.assertIn("/defaults/naver-thumb-v1.webp", rows[0]["img"])
+        self.assertIn("/defaults/naver-detail640-v1.webp", rows[0]["detail_img"])
+        self.assertEqual(rows[1]["img"], "https://example.test/product.jpg")
+        self.assertEqual(rows[2]["img"], "")
+
     def test_row_changed_treats_equivalent_timestamp_offsets_as_equal(self):
         new_row = {"registered_at": "2026-08-17T09:00:00+09:00"}
         old_row = {"registered_at": "2026-08-17T00:00:00+00:00"}

@@ -145,6 +145,12 @@ def main() -> int:
         env["HOTDEAL_QUASAR_JSON_PATH"] = str(FEED_PATH)
         env.setdefault("HOTDEAL_QUASAR_MAX_PAGES", "1")
         env["HOTDEAL_QUASAR_PARTIAL_SNAPSHOT"] = "1"
+        env.setdefault("HOTDEAL_QUASAR_FETCH_MODE", "browser")
+        env.setdefault("HOTDEAL_QUASAR_IMAGE_FETCH_MODE", "browser")
+        env.setdefault("HOTDEAL_QUASAR_BROWSER_CHANNEL", "chrome")
+        env.setdefault("HOTDEAL_QUASAR_BROWSER_HEADLESS", "1")
+        env.setdefault("HOTDEAL_QUASAR_BROWSER_PROFILE_DIR", str(ARTIFACT_DIR / "chrome-profile"))
+        env.setdefault("HOTDEAL_QUASAR_NEW_DETAIL_DELAY_SECONDS", "2")
         env["HOTDEAL_FEED_FILES"] = str(FEED_PATH)
         env["HOTDEAL_EXPECTED_FEED_SOURCES"] = "quasar"
         env.setdefault("PUSH_INGEST_BATCH_SIZE", "10")
@@ -153,6 +159,7 @@ def main() -> int:
         append_log(
             "QUASAR_LOCAL_START "
             f"feed={FEED_PATH} max_pages={env['HOTDEAL_QUASAR_MAX_PAGES']} "
+            f"fetch={env['HOTDEAL_QUASAR_FETCH_MODE']} image_fetch={env['HOTDEAL_QUASAR_IMAGE_FETCH_MODE']} "
             f"push={'enabled' if env.get('PUSH_INGEST_SECRET') else 'disabled'}"
         )
         parser_output = run_step(

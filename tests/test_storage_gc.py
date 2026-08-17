@@ -91,6 +91,36 @@ class StorageGarbageCollectionTests(unittest.TestCase):
         self.assertEqual(stats["deleted"], 0)
         self.assertEqual(stats["missing_references"], 0)
 
+    def test_cleanup_keeps_curated_default_images_without_row_references(self):
+        objects = [
+            {
+                "path": sync.NAVER_DEFAULT_THUMB_OBJECT,
+                "updated_at": "2026-07-01T00:00:00Z",
+                "metadata": {"size": 100},
+            },
+            {
+                "path": sync.NAVER_DEFAULT_DETAIL_OBJECT,
+                "updated_at": "2026-07-01T00:00:00Z",
+                "metadata": {"size": 200},
+            },
+        ]
+
+        with patch.object(sync, "list_feed_storage_objects", return_value=objects), patch.object(
+            sync, "delete_storage_objects"
+        ) as delete_mock, patch.object(sync, "datetime", wraps=sync.datetime) as datetime_mock:
+            datetime_mock.now.return_value = datetime(2026, 7, 30, tzinfo=timezone.utc)
+            stats = sync.cleanup_orphaned_feed_images(
+                "https://example.supabase.co",
+                "service-key",
+                [],
+                dry_run=True,
+                grace_hours=24,
+            )
+
+        delete_mock.assert_not_called()
+        self.assertEqual(stats["orphans"], 0)
+        self.assertEqual(stats["referenced"], 2)
+
     def test_cleanup_stops_when_database_references_a_missing_object(self):
         rows = [
             {

@@ -4,6 +4,10 @@ from scripts import update_quasar_feed as quasar
 
 
 class QuasarImageParsingTests(unittest.TestCase):
+    def test_blinded_post_is_excluded_before_detail_fetch(self):
+        self.assertTrue(quasar.is_blinded_item({"title": "블라인드 처리된 글입니다."}))
+        self.assertFalse(quasar.is_blinded_item({"title": "[네이버] 정상 할인 글"}))
+
     def test_uses_large_body_image_after_price_area(self):
         html = """
         <html><body>
