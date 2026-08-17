@@ -92,9 +92,32 @@ TRACKED_FIELDS = [
 IMAGE_BUCKET = os.environ.get("SUPABASE_IMAGE_BUCKET", "deal-images").strip() or "deal-images"
 NAVER_DEFAULT_THUMB_OBJECT = "defaults/naver-thumb-v1.webp"
 NAVER_DEFAULT_DETAIL_OBJECT = "defaults/naver-detail640-v1.webp"
+CURATED_DEFAULT_IMAGE_SPECS = {
+    "naver": {
+        "title_pattern": r"^\[\s*네이버(?:\s*페이)?\s*\]",
+        "thumb_object": NAVER_DEFAULT_THUMB_OBJECT,
+        "detail_object": NAVER_DEFAULT_DETAIL_OBJECT,
+    },
+    "gmarket": {
+        "title_pattern": r"^\[\s*(?:지마켓|g마켓)\s*\]",
+        "thumb_object": "defaults/gmarket-thumb-v1.webp",
+        "detail_object": "defaults/gmarket-detail640-v1.webp",
+    },
+    "ali": {
+        "title_pattern": r"^\[\s*알리\s*\]",
+        "thumb_object": "defaults/ali-thumb-v1.webp",
+        "detail_object": "defaults/ali-detail640-v1.webp",
+    },
+    "stove": {
+        "title_pattern": r"^\[\s*스토브\s*\]",
+        "thumb_object": "defaults/stove-thumb-v1.webp",
+        "detail_object": "defaults/stove-detail640-v1.webp",
+    },
+}
 CURATED_DEFAULT_OBJECT_PATHS = {
-    NAVER_DEFAULT_THUMB_OBJECT,
-    NAVER_DEFAULT_DETAIL_OBJECT,
+    object_path
+    for spec in CURATED_DEFAULT_IMAGE_SPECS.values()
+    for object_path in (spec["thumb_object"], spec["detail_object"])
 }
 THUMBNAIL_MAX_SIZE = int(os.environ.get("MIRROR_THUMBNAIL_MAX_SIZE", "320"))
 DETAIL_IMAGE_MAX_SIZE = int(os.environ.get("MIRROR_DETAIL_IMAGE_MAX_SIZE", "640"))
@@ -296,28 +319,38 @@ def storage_public_prefix(supabase_url: str) -> str:
     return f"{supabase_url}/storage/v1/object/public/{IMAGE_BUCKET}/"
 
 
-def curated_default_image_urls(supabase_url: str) -> Dict[str, str]:
+def curated_default_image_key(title: str) -> str:
+    normalized_title = str(title or "").strip()
+    for key, spec in CURATED_DEFAULT_IMAGE_SPECS.items():
+        if re.match(spec["title_pattern"], normalized_title, re.I):
+            return key
+    return ""
+
+
+def curated_default_image_urls(supabase_url: str, default_key: str = "naver") -> Dict[str, str]:
+    spec = CURATED_DEFAULT_IMAGE_SPECS.get(default_key)
+    if not spec:
+        raise ValueError(f"Unknown curated default image key: {default_key}")
     prefix = storage_public_prefix(supabase_url)
     return {
-        "img": f"{prefix}{NAVER_DEFAULT_THUMB_OBJECT}",
-        "detail_img": f"{prefix}{NAVER_DEFAULT_DETAIL_OBJECT}",
+        "img": f"{prefix}{spec['thumb_object']}",
+        "detail_img": f"{prefix}{spec['detail_object']}",
     }
 
 
-def is_naver_default_candidate(row: Dict) -> bool:
+def curated_default_image_key_for_row(row: Dict) -> str:
     if str(row.get("img") or "").strip():
-        return False
-    title = str(row.get("title") or "").strip()
-    return bool(re.match(r"^\[\s*네이버(?:\s*페이)?\s*\]", title, re.I))
+        return ""
+    return curated_default_image_key(row.get("title") or "")
 
 
 def apply_curated_default_images(rows: List[Dict], supabase_url: str) -> int:
-    defaults = curated_default_image_urls(supabase_url)
     changed = 0
     for row in rows or []:
-        if not is_naver_default_candidate(row):
+        default_key = curated_default_image_key_for_row(row)
+        if not default_key:
             continue
-        row.update(defaults)
+        row.update(curated_default_image_urls(supabase_url, default_key))
         changed += 1
     return changed
 
@@ -569,11 +602,19 @@ def ensure_public_image_bucket(supabase_url: str, service_key: str):
     _bucket_ready = True
 
 
-def upload_naver_default_images(content: bytes, supabase_url: str, service_key: str) -> Dict[str, str]:
+def upload_curated_default_images(
+    default_key: str,
+    content: bytes,
+    supabase_url: str,
+    service_key: str,
+) -> Dict[str, str]:
+    spec = CURATED_DEFAULT_IMAGE_SPECS.get(default_key)
+    if not spec:
+        raise ValueError(f"Unknown curated default image key: {default_key}")
     ensure_public_image_bucket(supabase_url, service_key)
     variants = {
-        NAVER_DEFAULT_THUMB_OBJECT: make_webp_image(content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY),
-        NAVER_DEFAULT_DETAIL_OBJECT: make_webp_image(content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY),
+        spec["thumb_object"]: make_webp_image(content, THUMBNAIL_MAX_SIZE, THUMBNAIL_WEBP_QUALITY),
+        spec["detail_object"]: make_webp_image(content, DETAIL_IMAGE_MAX_SIZE, DETAIL_IMAGE_WEBP_QUALITY),
     }
     headers = {
         "apikey": service_key,
@@ -587,7 +628,11 @@ def upload_naver_default_images(content: bytes, supabase_url: str, service_key: 
         response = requests.post(upload_url, headers=headers, data=body, timeout=60)
         if not response.ok:
             raise RuntimeError(f"Supabase default image upload failed ({response.status_code}): {response.text}")
-    return curated_default_image_urls(supabase_url)
+    return curated_default_image_urls(supabase_url, default_key)
+
+
+def upload_naver_default_images(content: bytes, supabase_url: str, service_key: str) -> Dict[str, str]:
+    return upload_curated_default_images("naver", content, supabase_url, service_key)
 
 
 def close_quasar_browser_fetcher():

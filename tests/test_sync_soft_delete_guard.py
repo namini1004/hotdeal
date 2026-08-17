@@ -27,20 +27,29 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
         deleted = sync.build_policy_delete_rows([blinded], "2026-08-17T00:00:00+00:00")
         self.assertEqual([row["id"] for row in deleted], ["row-id"])
 
-    def test_naver_default_image_applies_only_when_image_is_missing(self):
+    def test_curated_store_default_images_apply_only_when_image_is_missing(self):
         rows = [
             {"title": "[네이버페이] 일일 적립", "img": "", "detail_img": ""},
+            {"title": "[지마켓] 상품", "img": "", "detail_img": ""},
+            {"title": "[G마켓] 상품", "img": "", "detail_img": ""},
+            {"title": "[알리] 상품", "img": "", "detail_img": ""},
+            {"title": "[스토브] 게임", "img": "", "detail_img": ""},
             {"title": "[네이버] 상품", "img": "https://example.test/product.jpg"},
-            {"title": "[지마켓] 상품", "img": ""},
+            {"title": "[지마켓] 상품", "img": "https://example.test/gmarket.jpg"},
+            {"title": "[알리익스프레스] 상품", "img": ""},
         ]
 
         changed = sync.apply_curated_default_images(rows, "https://example.supabase.co")
 
-        self.assertEqual(changed, 1)
+        self.assertEqual(changed, 5)
         self.assertIn("/defaults/naver-thumb-v1.webp", rows[0]["img"])
-        self.assertIn("/defaults/naver-detail640-v1.webp", rows[0]["detail_img"])
-        self.assertEqual(rows[1]["img"], "https://example.test/product.jpg")
-        self.assertEqual(rows[2]["img"], "")
+        self.assertIn("/defaults/gmarket-thumb-v1.webp", rows[1]["img"])
+        self.assertIn("/defaults/gmarket-thumb-v1.webp", rows[2]["img"])
+        self.assertIn("/defaults/ali-thumb-v1.webp", rows[3]["img"])
+        self.assertIn("/defaults/stove-thumb-v1.webp", rows[4]["img"])
+        self.assertEqual(rows[5]["img"], "https://example.test/product.jpg")
+        self.assertEqual(rows[6]["img"], "https://example.test/gmarket.jpg")
+        self.assertEqual(rows[7]["img"], "")
 
     def test_row_changed_treats_equivalent_timestamp_offsets_as_equal(self):
         new_row = {"registered_at": "2026-08-17T09:00:00+09:00"}

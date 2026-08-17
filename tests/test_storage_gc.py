@@ -94,15 +94,11 @@ class StorageGarbageCollectionTests(unittest.TestCase):
     def test_cleanup_keeps_curated_default_images_without_row_references(self):
         objects = [
             {
-                "path": sync.NAVER_DEFAULT_THUMB_OBJECT,
+                "path": object_path,
                 "updated_at": "2026-07-01T00:00:00Z",
                 "metadata": {"size": 100},
-            },
-            {
-                "path": sync.NAVER_DEFAULT_DETAIL_OBJECT,
-                "updated_at": "2026-07-01T00:00:00Z",
-                "metadata": {"size": 200},
-            },
+            }
+            for object_path in sync.CURATED_DEFAULT_OBJECT_PATHS
         ]
 
         with patch.object(sync, "list_feed_storage_objects", return_value=objects), patch.object(
@@ -119,7 +115,7 @@ class StorageGarbageCollectionTests(unittest.TestCase):
 
         delete_mock.assert_not_called()
         self.assertEqual(stats["orphans"], 0)
-        self.assertEqual(stats["referenced"], 2)
+        self.assertEqual(stats["referenced"], len(sync.CURATED_DEFAULT_OBJECT_PATHS))
 
     def test_cleanup_stops_when_database_references_a_missing_object(self):
         rows = [
