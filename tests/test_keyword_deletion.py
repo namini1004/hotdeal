@@ -21,6 +21,7 @@ class KeywordDeletionTests(unittest.TestCase):
           const term = keywords.normalizeTerm(' Nintendo  Switch ');
           console.log(JSON.stringify({{
             keywordId: keywords.makeId(term),
+            ingestKeywordId: ingest.userKeywordId(term),
             indexId: keywords.makeIndexId(uid, term),
             windowId: ingest.keywordWindowId(uid, term),
             enabled: ingest.isEnabledKeywordSubscription({{ exists: true, get: () => true }}),
@@ -31,6 +32,7 @@ class KeywordDeletionTests(unittest.TestCase):
         data = json.loads(subprocess.check_output([NODE, "-e", script], cwd=ROOT, text=True))
 
         self.assertEqual(data["indexId"], data["windowId"])
+        self.assertEqual(data["keywordId"], data["ingestKeywordId"])
         self.assertTrue(data["enabled"])
         self.assertFalse(data["deleted"])
 
@@ -42,6 +44,7 @@ class KeywordDeletionTests(unittest.TestCase):
         self.assertIn("collection('keyword_alert_windows').doc(subscriptionId)", keywords_api)
         self.assertIn("indexRef.where('uid', '==', uid)", keywords_api)
         self.assertIn("if (alertPlan.action === 'skip')", ingest_api)
+        self.assertIn("collection('keywords').doc(userKeywordId(term))", ingest_api)
         self.assertIn("data-term=", page)
         self.assertIn("body: JSON.stringify({ id, termNormalized })", page)
 

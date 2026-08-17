@@ -87,6 +87,10 @@ function keywordWindowId(uid, term) {
   return crypto.createHash('sha1').update(`${uid}::${term}`).digest('hex');
 }
 
+function userKeywordId(term) {
+  return crypto.createHash('sha1').update(term).digest('hex').slice(0, 24);
+}
+
 function isEnabledKeywordSubscription(snapshot) {
   return Boolean(snapshot?.exists && snapshot.get('enabled') === true);
 }
@@ -287,12 +291,14 @@ async function sendPayloadToDevices({ msg, devicesSnap, tokens, webDevices, payl
 async function planKeywordAlert(db, uid, term, rowInfo, now) {
   const ref = db.collection('keyword_alert_windows').doc(keywordWindowId(uid, term));
   const subscriptionRef = db.collection('keyword_subscriptions').doc(keywordWindowId(uid, term));
+  const keywordRef = db.collection('users').doc(uid).collection('keywords').doc(userKeywordId(term));
   const dueAt = new Date(now.getTime() + KEYWORD_ALERT_WINDOW_MS);
 
   return db.runTransaction(async (tx) => {
     const subscriptionSnap = await tx.get(subscriptionRef);
+    const keywordSnap = await tx.get(keywordRef);
     const snap = await tx.get(ref);
-    if (!isEnabledKeywordSubscription(subscriptionSnap)) {
+    if (!isEnabledKeywordSubscription(subscriptionSnap) || !isEnabledKeywordSubscription(keywordSnap)) {
       if (snap.exists) tx.delete(ref);
       return { action: 'skip', reason: 'keyword_deleted' };
     }
@@ -359,8 +365,11 @@ async function flushDueKeywordDigests(db, msg, deviceCache, now) {
       continue;
     }
 
-    const subscriptionSnap = await db.collection('keyword_subscriptions').doc(keywordWindowId(uid, term)).get();
-    if (!isEnabledKeywordSubscription(subscriptionSnap)) {
+    const [subscriptionSnap, keywordSnap] = await Promise.all([
+      db.collection('keyword_subscriptions').doc(keywordWindowId(uid, term)).get(),
+      db.collection('users').doc(uid).collection('keywords').doc(userKeywordId(term)).get(),
+    ]);
+    if (!isEnabledKeywordSubscription(subscriptionSnap) || !isEnabledKeywordSubscription(keywordSnap)) {
       await doc.ref.delete();
       continue;
     }
@@ -683,4 +692,5 @@ module.exports = async (req, res) => {
 module.exports.processRows = processRows;
 module.exports.cleanupPushDevices = cleanupPushDevices;
 module.exports.keywordWindowId = keywordWindowId;
+module.exports.userKeywordId = userKeywordId;
 module.exports.isEnabledKeywordSubscription = isEnabledKeywordSubscription;
