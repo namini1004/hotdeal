@@ -1,6 +1,9 @@
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "sync_hotdeals_to_supabase.py"
@@ -11,6 +14,31 @@ spec.loader.exec_module(sync)
 
 
 class SyncSoftDeleteGuardTests(unittest.TestCase):
+    def test_row_changed_treats_equivalent_timestamp_offsets_as_equal(self):
+        new_row = {"registered_at": "2026-08-17T09:00:00+09:00"}
+        old_row = {"registered_at": "2026-08-17T00:00:00+00:00"}
+
+        self.assertFalse(sync.row_changed(new_row, old_row))
+
+    def test_partial_snapshot_marks_source_as_delete_protected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            feed = Path(tmp) / "quasar.json"
+            feed.write_text(
+                json.dumps(
+                    {
+                        "sourceKey": "quasar",
+                        "partialSnapshot": True,
+                        "items": [{"source": "quasar", "sourceLink": "https://example.test/1"}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(sync, "FEED_FILES", [feed]):
+                rows, protected_sources = sync.load_feed_data()
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(protected_sources, {"quasar"})
+
     def test_source_post_id_extraction_supports_all_feed_sources(self):
         cases = [
             ("ppomppu", "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&page=6&no=708770", "708770"),

@@ -4,16 +4,6 @@ function fail(res, code, message) {
   res.end(JSON.stringify({ error: message }));
 }
 
-function sourceHeadersForHost(hostname = '') {
-  if (/(^|\.)ruliweb\.com$/i.test(hostname)) {
-    return { referer: 'https://www.ruliweb.com/' };
-  }
-  if (/(^|\.)quasarzone\.com$/i.test(hostname)) {
-    return { referer: 'https://quasarzone.com/bbs/qb_saleinfo' };
-  }
-  return null;
-}
-
 module.exports = async (req, res) => {
   try {
     if (req.method !== 'GET') {
@@ -27,8 +17,8 @@ module.exports = async (req, res) => {
     }
 
     const u = new URL(url);
-    const sourceHeaders = sourceHeadersForHost(u.hostname);
-    if (!sourceHeaders) {
+    const allowedHost = /(^|\.)ruliweb\.com$/i.test(u.hostname);
+    if (!allowedHost) {
       return fail(res, 403, 'Host not allowed');
     }
 
@@ -36,7 +26,7 @@ module.exports = async (req, res) => {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36',
         'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-        'Referer': sourceHeaders.referer,
+        'Referer': 'https://www.ruliweb.com/',
       },
       redirect: 'follow',
     });
@@ -62,5 +52,3 @@ module.exports = async (req, res) => {
     return fail(res, 500, e?.message || 'proxy failed');
   }
 };
-
-module.exports.sourceHeadersForHost = sourceHeadersForHost;

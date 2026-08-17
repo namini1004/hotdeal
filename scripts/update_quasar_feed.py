@@ -17,10 +17,18 @@ except ModuleNotFoundError:
 
 LIST_URL = "https://quasarzone.com/bbs/qb_saleinfo"
 BASE = "https://quasarzone.com"
-MAX_PAGES = 8
+MAX_PAGES = max(1, int(os.environ.get("HOTDEAL_QUASAR_MAX_PAGES", "8")))
 INCREMENTAL_TAIL_SAMPLE_SIZE = int(os.environ.get("HOTDEAL_QUASAR_INCREMENTAL_TAIL_SAMPLE_SIZE", "3"))
+PARTIAL_SNAPSHOT = os.environ.get("HOTDEAL_QUASAR_PARTIAL_SNAPSHOT", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 ROOT = Path(__file__).resolve().parents[1]
-JSON_PATH = ROOT / "assets" / "quasar_hotdeals_2days.json"
+JSON_PATH = Path(
+    os.environ.get("HOTDEAL_QUASAR_JSON_PATH", str(ROOT / "assets" / "quasar_hotdeals_2days.json"))
+).expanduser()
 KST = timezone(timedelta(hours=9))
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
@@ -738,6 +746,8 @@ def main():
 
     out = {
         "source": LIST_URL,
+        "sourceKey": "quasar",
+        "partialSnapshot": PARTIAL_SNAPSHOT,
         "generatedAt": now.isoformat(),
         "rangeHours": 48,
         "since": since.isoformat(),
@@ -752,6 +762,7 @@ def main():
         "grouped": {"today": today_items, "yesterday": yesterday_items},
     }
 
+    JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
     JSON_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"saved: {JSON_PATH} ({len(filtered)} items)")
 

@@ -16,3 +16,10 @@ oauth_secret.txt
 codex_prompt.txt
 .vercel
 .env*.local
+.artifacts/
+.codex-remote-attachments/
+.tools/
+gaji_github_token.txt
+pat.txt
+push_ingest_secret.txt
+supabase_*.txt

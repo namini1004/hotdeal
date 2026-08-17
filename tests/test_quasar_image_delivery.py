@@ -1,20 +1,15 @@
 import importlib.util
-import io
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import shutil
 import subprocess
 import unittest
-from unittest.mock import Mock, patch
-
-from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SYNC_SCRIPT = ROOT / "scripts" / "sync_hotdeals_to_supabase.py"
 DEALS_MODULE = ROOT / "api" / "_lib" / "deals.js"
-IMAGE_PROXY_MODULE = ROOT / "api" / "image-proxy.js"
 NODE = shutil.which("node") or str(ROOT / ".tools" / "node-v24.14.0-win-x64" / "node.exe")
 
 spec = importlib.util.spec_from_file_location("sync_hotdeals_to_supabase", SYNC_SCRIPT)
@@ -93,64 +88,6 @@ class QuasarImageDeliveryTests(unittest.TestCase):
         self.assertEqual(changed_rows[0]["img"], storage_image)
         self.assertEqual(changed_rows[0]["detail_img"], storage_detail)
         self.assertIsNone(changed_rows[0]["deleted_at"])
-
-    def test_image_proxy_allows_only_supported_source_hosts_with_correct_referer(self):
-        module_path = json.dumps(str(IMAGE_PROXY_MODULE))
-        script = f"""
-          const proxy = require({module_path});
-          console.log(JSON.stringify({{
-            quasar: proxy.sourceHeadersForHost('img2.quasarzone.com'),
-            ruliweb: proxy.sourceHeadersForHost('i2.ruliweb.com'),
-            blocked: proxy.sourceHeadersForHost('example.com')
-          }}));
-        """
-
-        output = subprocess.check_output([NODE, "-e", script], cwd=ROOT, text=True).strip()
-        data = json.loads(output)
-
-        self.assertEqual(data["quasar"]["referer"], "https://quasarzone.com/bbs/qb_saleinfo")
-        self.assertEqual(data["ruliweb"]["referer"], "https://www.ruliweb.com/")
-        self.assertIsNone(data["blocked"])
-
-    def test_quasar_mirror_retries_through_gaji_relay_after_direct_403(self):
-        source_image = "https://img2.quasarzone.com/editor/2026/08/17/product.jpg"
-        row = {
-            "source": "quasar",
-            "source_post_id": "1978877",
-            "source_link": "https://quasarzone.com/bbs/qb_saleinfo/views/1978877",
-            "img": source_image,
-        }
-        image = Image.new("RGB", (640, 480), (120, 80, 200))
-        image_buffer = io.BytesIO()
-        image.save(image_buffer, format="JPEG")
-        relay_calls = []
-
-        def fake_get(url, *args, **kwargs):
-            if "/storage/v1/bucket/" in url:
-                return Mock(ok=True, status_code=200, text="{}")
-            if url == source_image:
-                return Mock(ok=False, status_code=403, text="forbidden")
-            if url == sync.IMAGE_RELAY_URL:
-                relay_calls.append(kwargs.get("params"))
-                return Mock(
-                    ok=True,
-                    status_code=200,
-                    headers={"content-type": "image/jpeg"},
-                    content=image_buffer.getvalue(),
-                )
-            raise AssertionError(f"unexpected GET: {url}")
-
-        with patch.object(sync.requests, "get", side_effect=fake_get), patch.object(
-            sync.requests,
-            "post",
-            return_value=Mock(ok=True, status_code=200, text="{}"),
-        ):
-            result = sync.mirror_feed_image(row, None, "https://example.supabase.co", "service-key")
-
-        self.assertEqual(relay_calls, [{"url": source_image}])
-        self.assertIn("/deal-images/quasar/1978877-thumb-", result["img"])
-        self.assertIn("/deal-images/quasar/1978877-detail640-", result["detail_img"])
-
 
 if __name__ == "__main__":
     unittest.main()

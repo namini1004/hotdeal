@@ -89,7 +89,6 @@ TRACKED_FIELDS = [
 ]
 
 IMAGE_BUCKET = os.environ.get("SUPABASE_IMAGE_BUCKET", "deal-images").strip() or "deal-images"
-IMAGE_RELAY_URL = os.environ.get("HOTDEAL_IMAGE_RELAY_URL", "https://gaji.run/api/image-proxy").strip()
 THUMBNAIL_MAX_SIZE = int(os.environ.get("MIRROR_THUMBNAIL_MAX_SIZE", "320"))
 DETAIL_IMAGE_MAX_SIZE = int(os.environ.get("MIRROR_DETAIL_IMAGE_MAX_SIZE", "640"))
 DEFAULT_PUSH_INGEST_BATCH_SIZE = 10
@@ -139,7 +138,7 @@ def load_feed_data():
             continue
         data = json.loads(f.read_text(encoding="utf-8"))
         source = str(data.get("sourceKey") or "").strip()
-        if data.get("staleFallback") and source:
+        if (data.get("staleFallback") or data.get("partialSnapshot")) and source:
             stale_fallback_sources.add(source)
         merged.extend(data.get("items", []))
     return merged, stale_fallback_sources
@@ -252,7 +251,15 @@ def positive_int_env(name: str, default: int) -> int:
 
 def row_changed(new_row: Dict, old_row: Dict) -> bool:
     for f in TRACKED_FIELDS:
-        if (new_row.get(f) or "") != (old_row.get(f) or ""):
+        new_value = new_row.get(f) or ""
+        old_value = old_row.get(f) or ""
+        if f == "registered_at":
+            new_dt = parse_iso_datetime(new_value)
+            old_dt = parse_iso_datetime(old_value)
+            if new_dt and old_dt:
+                new_value = new_dt.astimezone(timezone.utc)
+                old_value = old_dt.astimezone(timezone.utc)
+        if new_value != old_value:
             return True
     return False
 
@@ -541,15 +548,6 @@ def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, servic
 
     ensure_public_image_bucket(supabase_url, service_key)
     res = requests.get(src, headers=IMAGE_HEADERS_BY_SOURCE[source], timeout=25)
-    if not res.ok and source == "quasar" and IMAGE_RELAY_URL:
-        relay_res = requests.get(
-            IMAGE_RELAY_URL,
-            params={"url": src},
-            headers={"Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"},
-            timeout=30,
-        )
-        if relay_res.ok:
-            res = relay_res
     if not res.ok:
         raise RuntimeError(f"{source} image download failed ({res.status_code})")
 
