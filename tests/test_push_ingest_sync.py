@@ -14,6 +14,15 @@ spec.loader.exec_module(sync)
 
 
 class PushIngestSyncTests(unittest.TestCase):
+    def test_main_flushes_due_digests_even_without_changed_rows(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("ingest_status = send_push_ingest(push_ingest_rows)", source)
+        self.assertNotIn(
+            'send_push_ingest(push_ingest_rows) if changed_rows else "SKIP"',
+            source,
+        )
+
     def test_build_push_ingest_rows_keeps_only_new_or_reactivated_deals(self):
         active_existing = {
             "source": "ppomppu",

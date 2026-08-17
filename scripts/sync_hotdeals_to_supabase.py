@@ -1442,7 +1442,7 @@ def main():
         written += soft_delete_rows(deleted_rows, supabase_url, headers)
 
     purged = purge_soft_deleted_feed_rows(supabase_url, headers)
-    ingest_status = send_push_ingest(push_ingest_rows) if changed_rows else "SKIP"
+    ingest_status = send_push_ingest(push_ingest_rows)
     print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} purged={purged} push_candidates={len(push_ingest_rows)} ingest={ingest_status}")
     if ORPHAN_IMAGE_CLEANUP_ENABLED:
         try:
