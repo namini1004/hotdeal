@@ -15,11 +15,15 @@ class GithubRefreshResilienceTests(unittest.TestCase):
         self.assertIn('cron: "7,37 * * * *"', workflow)
         self.assertNotIn('cron: "*/15 * * * *"', workflow)
 
-    def test_refresh_workflow_runs_sources_as_independent_jobs_before_upsert(self):
+    def test_refresh_workflow_leaves_quasar_to_the_local_collector(self):
         workflow = REFRESH_WORKFLOW.read_text(encoding="utf-8")
 
-        for job in ("refresh-ppomppu", "refresh-quasar", "refresh-fmkorea", "refresh-ruliweb"):
+        for job in ("refresh-ppomppu", "refresh-fmkorea", "refresh-ruliweb"):
             self.assertIn(f"  {job}:", workflow)
+        self.assertNotIn("  refresh-quasar:", workflow)
+        self.assertNotIn("needs.refresh-quasar.result", workflow)
+        self.assertNotIn("name: feed-quasar", workflow)
+        self.assertIn('HOTDEAL_EXPECTED_FEED_SOURCES: "ppomppu,fmkorea,ruliweb"', workflow)
         self.assertIn('HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES: "1"', workflow)
         self.assertIn('HOTDEAL_FMKOREA_BROWSER_FALLBACK_MAX_PAGES: "1"', workflow)
         self.assertIn("name: Download refreshed feed artifacts", workflow)

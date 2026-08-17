@@ -665,53 +665,103 @@ def main():
 
     filtered = []
     seen = set()
+    fetch_mode = FETCH_MODE if FETCH_MODE in {"requests", "browser", "hybrid"} else "requests"
     browser = None
     browser_failures = 0
+    browser_fallbacks = 0
+    browser_fetches = 0
+    request_fetches = 0
+    jina_fetches = 0
+    last_transport = ""
     list_fetches = 0
     detail_fetches = 0
     cached_details = 0
 
-    if FETCH_MODE == "browser":
-        try:
+    def ensure_browser():
+        nonlocal browser
+        if browser is None:
             try:
-                from quasar_browser_fetch import QuasarBrowserFetchError, QuasarBrowserFetcher
+                from quasar_browser_fetch import QuasarBrowserFetcher
             except ModuleNotFoundError:
-                from scripts.quasar_browser_fetch import QuasarBrowserFetchError, QuasarBrowserFetcher
-            browser = QuasarBrowserFetcher().start()
-            print("QUASAR_FETCH_MODE browser-cdp")
-        except Exception as exc:
-            browser_failures += 1
-            print(f"WARN_QUASAR_BROWSER_FALLBACK reason={exc}")
-
-    active_mode = "browser-cdp" if browser is not None else "requests"
-
-    def fetch_source_html(url: str, timeout: int) -> str:
-        nonlocal browser_failures
-        if browser is not None:
+                from scripts.quasar_browser_fetch import QuasarBrowserFetcher
             try:
-                return browser.get_html(url, timeout_seconds=timeout)
-            except QuasarBrowserFetchError as exc:
-                browser_failures += 1
-                if exc.blocked:
-                    raise
-                print(f"WARN_QUASAR_BROWSER_REQUEST reason={exc} url={url}")
-            except Exception as exc:
-                browser_failures += 1
-                print(f"WARN_QUASAR_BROWSER_REQUEST reason={exc} url={url}")
+                browser = QuasarBrowserFetcher().start()
+                print("QUASAR_BROWSER_START mode=playwright-chrome")
+            except Exception:
+                raise
+        return browser
+
+    def fetch_requests_html(url: str, timeout: int) -> str:
+        nonlocal last_transport, request_fetches
+        request_fetches += 1
         response = sess.get(url, timeout=timeout)
         if response.status_code in {403, 429, 430}:
             raise RuntimeError(f"Quasar request blocked ({response.status_code})")
         response.raise_for_status()
+        last_transport = "requests"
         return response.text
+
+    def fetch_browser_html(url: str, timeout: int) -> str:
+        nonlocal browser_failures, browser_fetches, last_transport
+        browser_fetches += 1
+        try:
+            html_text = ensure_browser().get_html(url, timeout_seconds=timeout)
+            last_transport = "browser"
+            return html_text
+        except Exception:
+            browser_failures += 1
+            raise
+
+    def fetch_source_html(url: str, request_timeout: int = 25, browser_timeout: int = 45) -> str:
+        nonlocal browser_fallbacks
+        if fetch_mode == "browser":
+            try:
+                return fetch_browser_html(url, browser_timeout)
+            except Exception as exc:
+                if getattr(exc, "blocked", False):
+                    raise
+                print(f"WARN_QUASAR_BROWSER_REQUEST reason={exc} url={url}")
+                return fetch_requests_html(url, request_timeout)
+
+        if fetch_mode == "hybrid":
+            try:
+                return fetch_requests_html(url, request_timeout)
+            except Exception as exc:
+                browser_fallbacks += 1
+                print(f"QUASAR_BROWSER_FALLBACK reason=request_failed error={exc} url={url}")
+                return fetch_browser_html(url, browser_timeout)
+
+        return fetch_requests_html(url, request_timeout)
+
+    def retry_in_browser(url: str, reason: str, timeout: int = 45) -> str:
+        nonlocal browser_fallbacks
+        if fetch_mode != "hybrid" or last_transport == "browser":
+            return ""
+        browser_fallbacks += 1
+        print(f"QUASAR_BROWSER_FALLBACK reason={reason} url={url}")
+        return fetch_browser_html(url, timeout)
+
+    def fetch_jina_html(url: str, timeout: int) -> str:
+        nonlocal jina_fetches
+        jina_fetches += 1
+        return sess.get(to_jina_url(url), timeout=timeout).text
+
+    print(f"QUASAR_FETCH_MODE {fetch_mode}{' requests-first' if fetch_mode == 'hybrid' else ''}")
 
     try:
         for page in range(1, MAX_PAGES + 1):
             page_url = LIST_URL if page == 1 else f"{LIST_URL}?page={page}"
             list_fetches += 1
-            html_text = fetch_source_html(page_url, 45 if browser is not None else 25)
+            html_text = fetch_source_html(page_url)
             rows = parse_list_items(html_text, seen)
+            if not rows and fetch_mode == "hybrid" and last_transport != "browser":
+                try:
+                    browser_text = retry_in_browser(page_url, "list_parse_empty")
+                    rows = parse_list_items(browser_text, seen) if browser_text else []
+                except Exception as exc:
+                    print(f"WARN_QUASAR_BROWSER_LIST_PARSE reason={exc} url={page_url}")
             if not rows:
-                jina_text = sess.get(to_jina_url(page_url), timeout=45).text
+                jina_text = fetch_jina_html(page_url, 45)
                 rows = parse_jina_list_items(jina_text, seen)
             rows = [row for row in rows if not is_blinded_item(row)]
             if not rows:
@@ -747,12 +797,25 @@ def main():
                         time.sleep(NEW_DETAIL_DELAY_SECONDS + jitter)
                     detail_fetches += 1
                     if row.get("_detailViaJina"):
-                        detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
+                        detail_html = fetch_jina_html(row["sourceLink"], 25)
                     else:
-                        detail_html = fetch_source_html(row["sourceLink"], 45 if browser is not None else 25)
+                        detail_html = fetch_source_html(row["sourceLink"])
                         has_timestamp = re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}', detail_html)
+                        if (
+                            fetch_mode == "hybrid"
+                            and last_transport != "browser"
+                            and not extract_buy_link_from_detail(detail_html)
+                            and not has_timestamp
+                        ):
+                            browser_text = retry_in_browser(row["sourceLink"], "detail_parse_incomplete")
+                            if browser_text:
+                                detail_html = browser_text
+                                has_timestamp = re.search(
+                                    r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}',
+                                    detail_html,
+                                )
                         if not extract_buy_link_from_detail(detail_html) and not has_timestamp:
-                            detail_html = sess.get(to_jina_url(row["sourceLink"]), timeout=25).text
+                            detail_html = fetch_jina_html(row["sourceLink"], 25)
                     real_link = extract_buy_link_from_detail(detail_html)
                     body_img = extract_body_image_from_detail(detail_html)
                     row["buyLink"] = real_link or row["sourceLink"]
@@ -796,8 +859,9 @@ def main():
 
     print(
         "QUASAR_FETCH_SUMMARY "
-        f"mode={active_mode} lists={list_fetches} details={detail_fetches} "
-        f"cached={cached_details} browser_failures={browser_failures}"
+        f"mode={fetch_mode} lists={list_fetches} details={detail_fetches} cached={cached_details} "
+        f"requests={request_fetches} browser={browser_fetches} browser_fallbacks={browser_fallbacks} "
+        f"browser_failures={browser_failures} jina={jina_fetches}"
     )
 
     filtered = dedupe_items_by_title(filtered)

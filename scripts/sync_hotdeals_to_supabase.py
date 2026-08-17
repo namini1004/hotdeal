@@ -666,10 +666,23 @@ def download_feed_image(row: Dict, source: str, src: str) -> tuple[bytes, str]:
                 raise
             print(f"WARN_QUASAR_BROWSER_IMAGE_FALLBACK reason={exc} source_link={row.get('source_link')}")
 
-    res = requests.get(src, headers=IMAGE_HEADERS_BY_SOURCE[source], timeout=25)
-    if not res.ok:
-        raise RuntimeError(f"{source} image download failed ({res.status_code})")
-    return res.content, res.headers.get("content-type") or ""
+    try:
+        res = requests.get(src, headers=IMAGE_HEADERS_BY_SOURCE[source], timeout=25)
+        if not res.ok:
+            raise RuntimeError(f"{source} image download failed ({res.status_code})")
+        content_type = res.headers.get("content-type") or ""
+        if not content_type.lower().startswith("image/") or len(res.content) < 500:
+            raise RuntimeError(f"{source} image response is invalid ({content_type}, {len(res.content)} bytes)")
+        if source == "quasar" and image_mode == "hybrid":
+            print(f"QUASAR_IMAGE_FETCH mode=requests source_link={row.get('source_link')}")
+        return res.content, content_type
+    except Exception as exc:
+        if source != "quasar" or image_mode != "hybrid":
+            raise
+        print(f"QUASAR_IMAGE_BROWSER_FALLBACK reason={exc} source_link={row.get('source_link')}")
+        body = get_quasar_browser_fetcher().capture_image(row.get("source_link") or "", src)
+        print(f"QUASAR_IMAGE_FETCH mode=browser-cdp source_link={row.get('source_link')}")
+        return body, "image/png"
 
 
 def mirror_feed_image(row: Dict, prev: Optional[Dict], supabase_url: str, service_key: str) -> Dict[str, str]:
@@ -770,7 +783,12 @@ def build_existing_image_repair_rows(
         source = str(existing.get("source") or "").strip()
         source_link = str(existing.get("source_link") or "").strip()
         src = decode_proxy_image_url(existing.get("img") or "")
-        if source not in IMAGE_HEADERS_BY_SOURCE or not source_link or is_blocked_image_candidate(source, src):
+        if (
+            source not in EXPECTED_FEED_SOURCES
+            or source not in IMAGE_HEADERS_BY_SOURCE
+            or not source_link
+            or is_blocked_image_candidate(source, src)
+        ):
             continue
         if prune_before is not None and is_older_than(existing, prune_before):
             continue

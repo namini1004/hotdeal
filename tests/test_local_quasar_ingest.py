@@ -18,6 +18,12 @@ spec.loader.exec_module(ingest)
 
 
 class LocalQuasarIngestTests(unittest.TestCase):
+    def test_local_collector_uses_requests_first_hybrid_mode(self):
+        source = INGEST_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('HOTDEAL_QUASAR_FETCH_MODE", "hybrid"', source)
+        self.assertIn('HOTDEAL_QUASAR_IMAGE_FETCH_MODE", "hybrid"', source)
+
     def test_validate_feed_requires_nonempty_quasar_rows(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "feed.json"

@@ -145,8 +145,8 @@ def main() -> int:
         env["HOTDEAL_QUASAR_JSON_PATH"] = str(FEED_PATH)
         env.setdefault("HOTDEAL_QUASAR_MAX_PAGES", "1")
         env["HOTDEAL_QUASAR_PARTIAL_SNAPSHOT"] = "1"
-        env.setdefault("HOTDEAL_QUASAR_FETCH_MODE", "browser")
-        env.setdefault("HOTDEAL_QUASAR_IMAGE_FETCH_MODE", "browser")
+        env.setdefault("HOTDEAL_QUASAR_FETCH_MODE", "hybrid")
+        env.setdefault("HOTDEAL_QUASAR_IMAGE_FETCH_MODE", "hybrid")
         env.setdefault("HOTDEAL_QUASAR_BROWSER_CHANNEL", "chrome")
         env.setdefault("HOTDEAL_QUASAR_BROWSER_HEADLESS", "1")
         env.setdefault("HOTDEAL_QUASAR_BROWSER_PROFILE_DIR", str(ARTIFACT_DIR / "chrome-profile"))
