@@ -16,7 +16,13 @@ except ModuleNotFoundError:
 
 LIST_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"
 BASE = "https://www.ppomppu.co.kr"
-MAX_PAGES = 10
+MAX_PAGES = max(1, int(os.environ.get("HOTDEAL_PPOMPPU_MAX_PAGES", "1")))
+MAX_NEW_DETAILS = max(1, int(os.environ.get("HOTDEAL_PPOMPPU_MAX_NEW_DETAILS", "15")))
+REQUEST_TIMEOUT = (
+    max(1.0, float(os.environ.get("HOTDEAL_PPOMPPU_CONNECT_TIMEOUT_SECONDS", "3"))),
+    max(1.0, float(os.environ.get("HOTDEAL_PPOMPPU_READ_TIMEOUT_SECONDS", "8"))),
+)
+REMOTE_CACHE_HOURS = max(48, int(os.environ.get("HOTDEAL_PPOMPPU_REMOTE_CACHE_HOURS", "60")))
 INCREMENTAL_TAIL_SAMPLE_SIZE = int(os.environ.get("HOTDEAL_PPOMPPU_INCREMENTAL_TAIL_SAMPLE_SIZE", "3"))
 ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "ppomppu_hotdeals_2days.json"
@@ -209,7 +215,7 @@ def bbs_no_from_url(url: str) -> str:
     return (q.get("no", [""])[0] or "").strip()
 
 
-def load_previous_items():
+def load_local_previous_items():
     if not JSON_PATH.exists():
         return []
     try:
@@ -219,11 +225,108 @@ def load_previous_items():
         return []
 
 
+def db_row_to_feed_item(row: dict) -> dict:
+    registered_at = (row.get('registered_at') or '').strip()
+    date_label = (row.get('date') or '').strip() or registered_at[:10]
+    category = (row.get('category') or '').strip() or '기타'
+    return {
+        'id': str(row.get('id') or ''),
+        'title': row.get('title') or '',
+        'area': row.get('area') or '뽐뿌 핫딜',
+        'dist': category,
+        'time': date_label,
+        'registeredAt': registered_at,
+        'price': row.get('price') or '',
+        'likes': int(row.get('likes') or 0),
+        'dislikes': int(row.get('dislikes') or 0),
+        'views': int(row.get('views') or 0),
+        'comments': int(row.get('comments') or 0),
+        'commentSignalScore': int(row.get('comment_signal_score') or 0),
+        'positiveCommentSignals': int(row.get('positive_comment_signals') or 0),
+        'negativeCommentSignals': int(row.get('negative_comment_signals') or 0),
+        'category': category,
+        'desc': row.get('desc') or '',
+        'img': row.get('img') or '',
+        'buyLink': row.get('buy_link') or '',
+        'sourceLink': row.get('source_link') or '',
+        'source': 'ppomppu',
+        'date': date_label,
+    }
+
+
+def load_remote_previous_items():
+    supabase_url = (os.environ.get('SUPABASE_URL') or '').strip().rstrip('/')
+    service_key = (os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or '').strip()
+    if not supabase_url or not service_key:
+        return []
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=REMOTE_CACHE_HOURS)
+    params = {
+        'source': 'eq.ppomppu',
+        'deleted_at': 'is.null',
+        'registered_at': f'gte.{cutoff.isoformat()}',
+        'select': (
+            'id,title,area,category,date,registered_at,price,likes,dislikes,views,comments,'
+            'comment_signal_score,positive_comment_signals,negative_comment_signals,'
+            'desc,img,buy_link,source_link'
+        ),
+        'order': 'registered_at.desc',
+        'limit': '500',
+    }
+    headers = {
+        'apikey': service_key,
+        'Authorization': f'Bearer {service_key}',
+    }
+    try:
+        response = requests.get(
+            f'{supabase_url}/rest/v1/deals',
+            params=params,
+            headers=headers,
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        rows = response.json()
+        if not isinstance(rows, list):
+            raise ValueError('Supabase cache response is not a list')
+        items = [db_row_to_feed_item(row) for row in rows if isinstance(row, dict)]
+        print(f'PPOMPPU_REMOTE_CACHE loaded={len(items)}', flush=True)
+        return items
+    except (requests.RequestException, ValueError) as exc:
+        print(f'WARN_PPOMPPU_REMOTE_CACHE_FAILED error={type(exc).__name__}', flush=True)
+        return []
+
+
+def previous_item_identity(item: dict) -> str:
+    source_link = (item.get('sourceLink') or '').strip()
+    no = bbs_no_from_url(source_link)
+    return f'no:{no}' if no else f'source:{source_link}'
+
+
+def load_previous_items():
+    local_items = load_local_previous_items()
+    remote_items = load_remote_previous_items()
+    merged = {}
+    for item in [*local_items, *remote_items]:
+        key = previous_item_identity(item)
+        if key == 'source:':
+            continue
+        previous = merged.get(key, {})
+        combined = dict(previous)
+        for field, value in item.items():
+            if value not in (None, ''):
+                combined[field] = value
+        merged[key] = combined
+    print(
+        f'PPOMPPU_CACHE_SUMMARY local={len(local_items)} remote={len(remote_items)} merged={len(merged)}',
+        flush=True,
+    )
+    return list(merged.values())
+
+
 def has_reusable_detail_fields(item: dict) -> bool:
     return bool(
         (item.get('title') or '').strip()
         and (item.get('registeredAt') or '').strip()
-        and (item.get('desc') or '').strip()
     )
 
 
@@ -286,6 +389,35 @@ def apply_cached_detail_fields(row: dict, lookup: dict) -> bool:
             row[key] = value
     row['_detailCached'] = True
     return True
+
+
+def cached_item_to_feed_item(item: dict, item_id: int) -> dict:
+    registered_at = (item.get('registeredAt') or '').strip()
+    date_label = (item.get('date') or '').strip() or registered_at[:10]
+    category = (item.get('category') or item.get('dist') or '').strip() or '기타'
+    return {
+        'id': str(item_id),
+        'title': item.get('title') or '',
+        'area': item.get('area') or '뽐뿌 핫딜',
+        'dist': category,
+        'time': date_label,
+        'registeredAt': registered_at,
+        'price': item.get('price') or '',
+        'likes': int(item.get('likes') or 0),
+        'dislikes': int(item.get('dislikes') or 0),
+        'views': int(item.get('views') or 0),
+        'comments': int(item.get('comments') or 0),
+        'commentSignalScore': int(item.get('commentSignalScore') or 0),
+        'positiveCommentSignals': int(item.get('positiveCommentSignals') or 0),
+        'negativeCommentSignals': int(item.get('negativeCommentSignals') or 0),
+        'category': category,
+        'desc': item.get('desc') or '',
+        'img': item.get('img') or '',
+        'buyLink': item.get('buyLink') or '',
+        'sourceLink': item.get('sourceLink') or '',
+        'source': 'ppomppu',
+        'date': date_label,
+    }
 
 
 def strip_tags(value: str) -> str:
@@ -373,21 +505,40 @@ def parse_list_rows(list_html: str):
     return rows
 
 
-def parse_items():
-    s = requests.Session()
+def parse_items(session=None, previous_items=None):
+    s = session or requests.Session()
     s.headers.update(HEADERS)
-    previous_items = load_previous_items()
+    if previous_items is None:
+        previous_items = load_previous_items()
     previous_lookup = build_previous_detail_lookup(previous_items)
     previous_keys = build_previous_link_keys(previous_items)
 
-    # 페이지를 순회해서(더보기 포함) 링크를 충분히 수집
+    list_requests = 0
+    list_failures = 0
+    detail_requests = 0
+    detail_failures = 0
+    cached_details = 0
+
+    # 30분 주기에서는 첫 페이지로 새 글을 찾고, 알려진 글이 보이면 즉시 멈춘다.
     link_rows = []
     seen_links = set()
     for page in range(1, MAX_PAGES + 1):
         page_url = LIST_URL if page == 1 else f"{LIST_URL}&page={page}"
-        list_html = s.get(page_url, timeout=20).text
+        try:
+            list_requests += 1
+            response = s.get(page_url, timeout=REQUEST_TIMEOUT)
+            response.raise_for_status()
+            list_html = response.text
+        except requests.RequestException as exc:
+            list_failures += 1
+            print(
+                f'WARN_PPOMPPU_LIST_FAILED page={page} error={type(exc).__name__}',
+                flush=True,
+            )
+            break
         rows = parse_list_rows(list_html)
         if not rows:
+            print(f'WARN_PPOMPPU_LIST_EMPTY page={page}', flush=True)
             break
 
         new_in_page = 0
@@ -413,6 +564,7 @@ def parse_items():
         category = row['category']
 
         if apply_cached_detail_fields(row, previous_lookup):
+            cached_details += 1
             items.append({
                 "id": str(len(items) + 1),
                 "title": row.get('title') or raw_title,
@@ -438,7 +590,26 @@ def parse_items():
             })
             continue
 
-        detail = s.get(href, timeout=20).text
+        if detail_requests >= MAX_NEW_DETAILS:
+            detail_failures += 1
+            print(
+                f'WARN_PPOMPPU_DETAIL_LIMIT no={bbs_no_from_url(href) or "unknown"} limit={MAX_NEW_DETAILS}',
+                flush=True,
+            )
+            continue
+        try:
+            detail_requests += 1
+            response = s.get(href, timeout=REQUEST_TIMEOUT)
+            response.raise_for_status()
+            detail = response.text
+        except requests.RequestException as exc:
+            detail_failures += 1
+            print(
+                f'WARN_PPOMPPU_DETAIL_FAILED no={bbs_no_from_url(href) or "unknown"} '
+                f'error={type(exc).__name__}',
+                flush=True,
+            )
+            continue
         og_title = pick(r'<meta property="og:title" content="([^"]*)"', detail) or raw_title
         og_desc = pick(r'<meta property="og:description" content="([^"]*)"', detail)
         body_desc = extract_body_text(detail)
@@ -448,6 +619,13 @@ def parse_items():
         representative_img = body_img or og_img
 
         dt = parse_registered_at(detail)
+        if not dt:
+            detail_failures += 1
+            print(
+                f'WARN_PPOMPPU_DETAIL_DATE_MISSING no={bbs_no_from_url(href) or "unknown"}',
+                flush=True,
+            )
+            continue
         date_label = dt.strftime('%Y-%m-%d') if dt else ""
         registered_at = dt.isoformat() if dt else ""
         views, comments = parse_post_stats(detail)
@@ -504,19 +682,51 @@ def parse_items():
             "date": date_label,
         })
 
+    collected_keys = build_previous_link_keys(items)
+    preserved = 0
+    for previous in previous_items:
+        if (previous.get('source') or 'ppomppu') != 'ppomppu':
+            continue
+        source_link = (previous.get('sourceLink') or '').strip()
+        no = bbs_no_from_url(source_link)
+        keys = {f'source:{source_link}'} if source_link else set()
+        if no:
+            keys.add(f'no:{no}')
+        if not keys or keys & collected_keys:
+            continue
+        items.append(cached_item_to_feed_item(previous, len(items) + 1))
+        collected_keys.update(keys)
+        preserved += 1
+
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
 
     hidden = load_hidden_hotdeals()
-    filtered = [
-        it for it in items
-        if it.get('registeredAt')
-        and datetime.fromisoformat(it['registeredAt']) >= since
-        and it.get('sourceLink') not in hidden["sourceLinks"]
-        and bbs_no_from_url(it.get('sourceLink', '')) not in hidden["bbsNos"]
-    ]
+    filtered = []
+    for item in items:
+        try:
+            registered_at = datetime.fromisoformat(item.get('registeredAt') or '')
+            if registered_at.tzinfo is None:
+                registered_at = registered_at.replace(tzinfo=KST)
+        except (TypeError, ValueError):
+            continue
+        if registered_at < since:
+            continue
+        if item.get('sourceLink') in hidden['sourceLinks']:
+            continue
+        if bbs_no_from_url(item.get('sourceLink', '')) in hidden['bbsNos']:
+            continue
+        filtered.append(item)
     for i, it in enumerate(filtered, 1):
         it['id'] = str(i)
+
+    print(
+        'PPOMPPU_FETCH_SUMMARY '
+        f'lists={list_requests} list_failures={list_failures} details={detail_requests} '
+        f'detail_failures={detail_failures} cached={cached_details} preserved={preserved} '
+        f'items={len(filtered)}',
+        flush=True,
+    )
 
     grouped = {"today": filtered, "yesterday": []}
 

@@ -2,7 +2,7 @@ name: hotdeal-refresh-supabase
 
 on:
   schedule:
-    # GitHub Actions의 정각/15/30/45분 혼잡 구간을 피해서 15분 간격 유지
+    # GitHub Actions의 정각/30분 혼잡 구간을 피해서 30분 간격 유지
     - cron: "7,37 * * * *"
   workflow_dispatch:
 
@@ -26,13 +26,15 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests playwright
-
-      - name: Install Playwright Chromium
-        run: python -m playwright install --with-deps chromium
+          pip install requests
 
       - name: Refresh ppomppu feed
-        run: timeout 8m python scripts/update_ppomppu_feed.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HOTDEAL_PPOMPPU_MAX_PAGES: "1"
+          HOTDEAL_PPOMPPU_MAX_NEW_DETAILS: "15"
+        run: timeout 4m python -u scripts/update_ppomppu_feed.py
 
       - name: Upload ppomppu feed artifact
         uses: actions/upload-artifact@v4

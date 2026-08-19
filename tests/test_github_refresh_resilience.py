@@ -17,6 +17,7 @@ class GithubRefreshResilienceTests(unittest.TestCase):
 
     def test_refresh_workflow_leaves_quasar_to_the_local_collector(self):
         workflow = REFRESH_WORKFLOW.read_text(encoding="utf-8")
+        ppomppu_job = workflow.split("  refresh-ppomppu:", 1)[1].split("  refresh-fmkorea:", 1)[0]
 
         for job in ("refresh-ppomppu", "refresh-fmkorea", "refresh-ruliweb"):
             self.assertIn(f"  {job}:", workflow)
@@ -26,6 +27,10 @@ class GithubRefreshResilienceTests(unittest.TestCase):
         self.assertIn('HOTDEAL_EXPECTED_FEED_SOURCES: "ppomppu,fmkorea,ruliweb"', workflow)
         self.assertIn('HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES: "1"', workflow)
         self.assertIn('HOTDEAL_FMKOREA_BROWSER_FALLBACK_MAX_PAGES: "1"', workflow)
+        self.assertIn('HOTDEAL_PPOMPPU_MAX_PAGES: "1"', ppomppu_job)
+        self.assertIn('HOTDEAL_PPOMPPU_MAX_NEW_DETAILS: "15"', ppomppu_job)
+        self.assertIn("python -u scripts/update_ppomppu_feed.py", ppomppu_job)
+        self.assertNotIn("playwright", ppomppu_job.lower())
         self.assertIn("name: Download refreshed feed artifacts", workflow)
         self.assertIn("name: Remove checkout feed snapshots before artifact merge", workflow)
         self.assertIn("name: Copy downloaded feed artifacts into assets", workflow)
