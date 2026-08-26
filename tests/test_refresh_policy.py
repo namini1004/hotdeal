@@ -40,6 +40,7 @@ class RefreshPolicyTests(unittest.TestCase):
 
         self.assertIn("if(state.activeTab === 'popular')", html)
         self.assertIn("if(db !== da) return db - da;", html)
+        self.assertIn("const TAB_ORDER = ['all','popular','free'];", html)
         self.assertNotIn("state.sortMode", html)
         self.assertNotIn("data-tab=\"latest\"", html)
 

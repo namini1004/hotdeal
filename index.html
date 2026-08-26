@@ -251,8 +251,9 @@
       </nav>
       <div class="feed-controls">
         <div class="chips" id="tabs">
-          <button class="chip active" type="button" data-tab="all">전체순</button>
-          <button class="chip" type="button" data-tab="popular">인기순</button>
+          <button class="chip active" type="button" data-tab="all">최신</button>
+          <button class="chip" type="button" data-tab="popular">인기</button>
+          <button class="chip" type="button" data-tab="free">무료</button>
         </div>
         <div class="view-toggle" role="group" aria-label="보기 방식">
           <button class="view-btn active" id="viewGridBtn" type="button" data-view="grid" aria-label="바둑판 보기">
@@ -351,7 +352,9 @@
         dist: item.dist || '기타',
         time: item.time || item.date || '',
         relativeTime: window.TimeFormat?.toRelativeKorean(item.registeredAt || item.date || item.time || '') || '',
-        price: item.price || '가격 정보 확인',
+        price: item.price !== undefined && item.price !== null && String(item.price).trim() !== ''
+          ? String(item.price)
+          : '가격 정보 확인',
         category: item.category || '기타',
         desc: item.desc || '',
         img: item.img || '',
@@ -624,8 +627,32 @@
       return Date.now() - ms <= hours * 60 * 60 * 1000;
     }
 
+    function parseDealPriceWon(value){
+      const compact = String(value ?? '').trim().replace(/\s+/g, '');
+      if(!compact) return null;
+
+      const normalized = compact.toLowerCase();
+      const isFreeLabel = /^(?:무료|공짜|free)(?:배포|다운로드)?$/i.test(normalized);
+      if(isFreeLabel) return 0;
+
+      const wonMatch = normalized.match(/(?:₩|￦)?(\d[\d,]*)원/);
+      const currencyMatch = normalized.match(/^[₩￦](\d[\d,]*)$/);
+      const numericMatch = normalized.match(/^(\d[\d,]*)$/);
+      const amountText = wonMatch?.[1] || currencyMatch?.[1] || numericMatch?.[1] || '';
+      if(!amountText) return null;
+
+      const amount = Number(amountText.replace(/,/g, ''));
+      return Number.isFinite(amount) ? amount : null;
+    }
+
+    function isFreeDeal(item = {}){
+      const amount = parseDealPriceWon(item.price);
+      return amount !== null && amount >= 0 && amount <= 100;
+    }
+
     function getCurrentTabItems(){
-      return state.allItems;
+      if(state.activeTab === 'free') return state.allItems.filter(isFreeDeal);
+      return state.allItems.filter(item => !isFreeDeal(item));
     }
 
     function getFilteredItems(){
@@ -738,7 +765,8 @@
         return;
       }
       if(!items.length){
-        list.innerHTML = '<div class="empty">딜이 아직 없습니다.</div>';
+        const emptyMessage = state.activeTab === 'free' ? '무료 딜이 아직 없습니다.' : '딜이 아직 없습니다.';
+        list.innerHTML = `<div class="empty">${emptyMessage}</div>`;
         list.insertAdjacentHTML('beforeend', renderSyncStamp());
         return;
       }
@@ -787,7 +815,7 @@
     }
 
     function restoreLastTab(){
-      const allowed = new Set(['all','popular']);
+      const allowed = new Set(['all','popular','free']);
       const saved = localStorage.getItem(LAST_TAB_KEY);
       if(saved && allowed.has(saved)) state.activeTab = saved; else state.activeTab = 'all';
       setActiveTabUI();
@@ -797,7 +825,7 @@
       localStorage.setItem(LAST_TAB_KEY, state.activeTab || 'all');
     }
 
-    const TAB_ORDER = ['all','popular'];
+    const TAB_ORDER = ['all','popular','free'];
 
     function switchTab(nextTab){
       if(!TAB_ORDER.includes(nextTab) || state.activeTab === nextTab) return false;
