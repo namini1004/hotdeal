@@ -838,7 +838,11 @@ def open_fmkorea_browser_context(playwright, use_browser_fallback=None):
         except Exception as exc:
             print(f"WARN_FMKOREA_BROWSER_FALLBACK_CONTEXT_FAILED reason={exc}")
 
-    browser = playwright.chromium.launch(headless=True)
+    launch_options = {"headless": True}
+    channel = os.environ.get("HOTDEAL_FMKOREA_BROWSER_CHANNEL", "").strip()
+    if channel:
+        launch_options["channel"] = channel
+    browser = playwright.chromium.launch(**launch_options)
     context = browser.new_context(**context_options)
     return context, browser
 

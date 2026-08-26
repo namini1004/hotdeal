@@ -50,6 +50,10 @@ try {
         throw "SupabaseServiceRoleKeyFile not found: $SupabaseServiceRoleKeyFile"
     }
 
+    $PythonResolver = Join-Path $RepoPath "scripts\resolve_hotdeal_python.ps1"
+    . $PythonResolver
+    $PythonPath = Resolve-HotdealPython -RepoPath $RepoPath -BootstrapPythonPath $PythonPath
+
     $env:HOTDEAL_REPO_DIR = $RepoPath
     $env:HOTDEAL_FMKOREA_INGEST_TIMEOUT = [string]$TimeoutSeconds
     $env:HOTDEAL_HERMES_FMKOREA_LOG = $IngestLog
@@ -66,7 +70,7 @@ try {
     $env:HOTDEAL_FMKOREA_BROWSER_PROFILE_DIR = (Join-Path $StateDir "fmkorea-browser-profile")
 
     Set-Location $RepoPath
-    Write-TaskLog "start repo=$RepoPath timeout=$TimeoutSeconds pageDelay=$PageDelaySeconds backoffState=$BackoffState"
+    Write-TaskLog "start repo=$RepoPath python=$PythonPath timeout=$TimeoutSeconds pageDelay=$PageDelaySeconds backoffState=$BackoffState"
 
     $ScriptPath = Join-Path $RepoPath "scripts\hotdeal_fmkorea_ingest.py"
     $Output = & $PythonPath $ScriptPath 2>&1

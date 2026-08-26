@@ -15,27 +15,20 @@ class GithubRefreshResilienceTests(unittest.TestCase):
         self.assertIn('cron: "7,37 * * * *"', workflow)
         self.assertNotIn('cron: "*/15 * * * *"', workflow)
 
-    def test_refresh_workflow_leaves_quasar_to_the_local_collector(self):
+    def test_refresh_workflow_leaves_blocked_sources_to_local_collectors(self):
         workflow = REFRESH_WORKFLOW.read_text(encoding="utf-8")
-        ppomppu_job = workflow.split("  refresh-ppomppu:", 1)[1].split("  refresh-fmkorea:", 1)[0]
 
-        for job in ("refresh-ppomppu", "refresh-fmkorea", "refresh-ruliweb"):
-            self.assertIn(f"  {job}:", workflow)
-        self.assertNotIn("  refresh-quasar:", workflow)
-        self.assertNotIn("needs.refresh-quasar.result", workflow)
-        self.assertNotIn("name: feed-quasar", workflow)
-        self.assertIn('HOTDEAL_EXPECTED_FEED_SOURCES: "ppomppu,fmkorea,ruliweb"', workflow)
-        self.assertIn('HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES: "1"', workflow)
-        self.assertIn('HOTDEAL_FMKOREA_BROWSER_FALLBACK_MAX_PAGES: "1"', workflow)
-        self.assertIn('HOTDEAL_PPOMPPU_MAX_PAGES: "1"', ppomppu_job)
-        self.assertIn('HOTDEAL_PPOMPPU_MAX_NEW_DETAILS: "15"', ppomppu_job)
-        self.assertIn("python -u scripts/update_ppomppu_feed.py", ppomppu_job)
-        self.assertNotIn("playwright", ppomppu_job.lower())
+        self.assertIn("  refresh-ruliweb:", workflow)
+        for source in ("ppomppu", "fmkorea", "quasar"):
+            self.assertNotIn(f"  refresh-{source}:", workflow)
+            self.assertNotIn(f"needs.refresh-{source}.result", workflow)
+            self.assertNotIn(f"name: feed-{source}", workflow)
+        self.assertIn('HOTDEAL_EXPECTED_FEED_SOURCES: "ruliweb"', workflow)
         self.assertIn("name: Download refreshed feed artifacts", workflow)
         self.assertIn("name: Remove checkout feed snapshots before artifact merge", workflow)
         self.assertIn("name: Copy downloaded feed artifacts into assets", workflow)
         self.assertIn("cp .downloaded-feeds/*hotdeals*.json assets/", workflow)
-        self.assertIn("needs.refresh-fmkorea.result", workflow)
+        self.assertIn("needs.refresh-ruliweb.result", workflow)
         self.assertIn("PUSH_INGEST_URL: https://gaji.run/api/push/ingest", workflow)
         self.assertIn("PUSH_INGEST_SECRET: ${{ secrets.PUSH_INGEST_SECRET }}", workflow)
         self.assertIn('PUSH_INGEST_BATCH_SIZE: "10"', workflow)
@@ -53,6 +46,22 @@ class GithubRefreshResilienceTests(unittest.TestCase):
         self.assertIn("fmkorea_hotdeals_2days.json", script)
         self.assertIn("HOTDEAL_EXPECTED_FEED_SOURCES", script)
         self.assertIn("fmkorea", script)
+
+    def test_windows_collectors_use_repo_managed_python_environment(self):
+        resolver = (ROOT / "scripts" / "resolve_hotdeal_python.ps1").read_text(encoding="utf-8")
+        requirements = (ROOT / "scripts" / "requirements-hotdeal-local.txt").read_text(encoding="utf-8")
+
+        for runner_name in (
+            "run_hotdeal_fmkorea_ingest_windows.ps1",
+            "run_hotdeal_quasar_ingest_windows.ps1",
+            "run_hotdeal_ppomppu_ingest_windows.ps1",
+        ):
+            runner = (ROOT / "scripts" / runner_name).read_text(encoding="utf-8")
+            self.assertIn("Resolve-HotdealPython", runner)
+
+        self.assertIn('.tools\\hotdeal-python', resolver)
+        self.assertIn("playwright", requirements)
+        self.assertIn("requests", requirements)
 
     def test_github_watchdog_dispatches_refresh_when_refresh_workflow_is_stale(self):
         workflow = WATCHDOG_WORKFLOW.read_text(encoding="utf-8")
@@ -74,6 +83,7 @@ class GithubRefreshResilienceTests(unittest.TestCase):
         self.assertIn("write_fmkorea_diagnostics", script)
         self.assertIn("WARN_FMKOREA_ZERO_ITEMS_DIAGNOSTIC", script)
         self.assertIn("FMKOREA_DIAGNOSTIC_DIR", script)
+        self.assertIn('launch_options["channel"] = channel', script)
 
 
 if __name__ == "__main__":

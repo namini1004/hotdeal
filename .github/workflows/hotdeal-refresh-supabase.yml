@@ -11,75 +11,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  refresh-ppomppu:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
-
-      - name: Refresh ppomppu feed
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          HOTDEAL_PPOMPPU_MAX_PAGES: "1"
-          HOTDEAL_PPOMPPU_MAX_NEW_DETAILS: "15"
-        run: timeout 4m python -u scripts/update_ppomppu_feed.py
-
-      - name: Upload ppomppu feed artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: feed-ppomppu
-          path: assets/ppomppu_hotdeals_2days.json
-          if-no-files-found: error
-          retention-days: 1
-
-  refresh-fmkorea:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests playwright
-
-      - name: Install Playwright Chromium
-        run: python -m playwright install --with-deps chromium
-
-      - name: Refresh fmkorea feed
-        env:
-          HOTDEAL_FMKOREA_INCREMENTAL_MAX_PAGES: "1"
-          HOTDEAL_FMKOREA_BROWSER_FALLBACK_MAX_PAGES: "1"
-          HOTDEAL_FMKOREA_BROWSER_FALLBACK: "1"
-          HOTDEAL_FMKOREA_BACKOFF_READONLY: "1"
-        run: timeout 8m python scripts/update_fmkorea_feed.py || test -f assets/fmkorea_hotdeals_2days.json
-
-      - name: Upload fmkorea feed artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: feed-fmkorea
-          path: assets/fmkorea_hotdeals_2days.json
-          if-no-files-found: error
-          retention-days: 1
-
   refresh-ruliweb:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -115,10 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs:
-      - refresh-ppomppu
-      - refresh-fmkorea
       - refresh-ruliweb
-    if: ${{ always() && (needs.refresh-ppomppu.result == 'success' || needs.refresh-fmkorea.result == 'success' || needs.refresh-ruliweb.result == 'success') }}
+    if: ${{ always() && needs.refresh-ruliweb.result == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -172,5 +101,5 @@ jobs:
           PUSH_INGEST_SECRET: ${{ secrets.PUSH_INGEST_SECRET }}
           PUSH_INGEST_BATCH_SIZE: "10"
           PUSH_INGEST_MAX_ROWS: "50"
-          HOTDEAL_EXPECTED_FEED_SOURCES: "ppomppu,fmkorea,ruliweb"
+          HOTDEAL_EXPECTED_FEED_SOURCES: "ruliweb"
         run: python scripts/sync_hotdeals_to_supabase.py

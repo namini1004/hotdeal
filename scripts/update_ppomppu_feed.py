@@ -25,7 +25,12 @@ REQUEST_TIMEOUT = (
 REMOTE_CACHE_HOURS = max(48, int(os.environ.get("HOTDEAL_PPOMPPU_REMOTE_CACHE_HOURS", "60")))
 INCREMENTAL_TAIL_SAMPLE_SIZE = int(os.environ.get("HOTDEAL_PPOMPPU_INCREMENTAL_TAIL_SAMPLE_SIZE", "3"))
 ROOT = Path(__file__).resolve().parents[1]
-JSON_PATH = ROOT / "assets" / "ppomppu_hotdeals_2days.json"
+JSON_PATH = Path(
+    os.environ.get(
+        "HOTDEAL_PPOMPPU_JSON_PATH",
+        str(ROOT / "assets" / "ppomppu_hotdeals_2days.json"),
+    )
+)
 HIDDEN_PATH = ROOT / "assets" / "hidden_hotdeals.json"
 THUMB_DIR = ROOT / "assets" / "ppomppu_thumbs"
 KST = timezone(timedelta(hours=9))
@@ -732,6 +737,9 @@ def parse_items(session=None, previous_items=None):
 
     out = {
         "source": LIST_URL,
+        "sourceKey": "ppomppu",
+        "partialSnapshot": (os.environ.get("HOTDEAL_PPOMPPU_PARTIAL_SNAPSHOT") or "").strip().lower()
+        in {"1", "true", "yes", "on"},
         "generatedAt": now.isoformat(),
         "rangeHours": 48,
         "since": since.isoformat(),

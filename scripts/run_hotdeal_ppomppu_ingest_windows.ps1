@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $LogDir = Join-Path $RepoPath ".artifacts\logs"
-$TaskLog = Join-Path $LogDir "hotdeal_quasar_task.log"
+$TaskLog = Join-Path $LogDir "hotdeal_ppomppu_task.log"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 function Write-TaskLog($Message) {
@@ -32,12 +32,13 @@ try {
     $env:HOTDEAL_SUPABASE_URL_FILE = $SupabaseUrlFile
     $env:HOTDEAL_SUPABASE_SERVICE_ROLE_KEY_FILE = $SupabaseServiceRoleKeyFile
     $env:HOTDEAL_PUSH_INGEST_SECRET_FILE = $PushIngestSecretFile
-    $env:HOTDEAL_QUASAR_MAX_PAGES = "1"
-    $env:HOTDEAL_QUASAR_INGEST_LOG = (Join-Path $LogDir "hotdeal_quasar_ingest.log")
+    $env:HOTDEAL_PPOMPPU_MAX_PAGES = "1"
+    $env:HOTDEAL_PPOMPPU_MAX_NEW_DETAILS = "15"
+    $env:HOTDEAL_PPOMPPU_INGEST_LOG = (Join-Path $LogDir "hotdeal_ppomppu_ingest.log")
 
     Set-Location $RepoPath
     Write-TaskLog "start repo=$RepoPath python=$PythonPath pushSecret=$((Test-Path -LiteralPath $PushIngestSecretFile))"
-    $ScriptPath = Join-Path $RepoPath "scripts\local_quasar_ingest.py"
+    $ScriptPath = Join-Path $RepoPath "scripts\local_ppomppu_ingest.py"
     $Output = & $PythonPath $ScriptPath 2>&1
     $ExitCode = $LASTEXITCODE
     if ($Output) {
