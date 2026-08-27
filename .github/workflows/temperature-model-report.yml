@@ -1,6 +1,13 @@
 name: temperature-model-report
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/temperature-model-report.yml"
+      - "api/_lib/deals.js"
+      - "scripts/report_temperature_model.js"
   schedule:
     # 매일 09:20 KST. 수집 혼잡 시간과 겹치지 않게 실행한다.
     - cron: "20 0 * * *"
