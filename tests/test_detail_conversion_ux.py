@@ -71,6 +71,18 @@ class DetailConversionUxTests(unittest.TestCase):
         self.assertIn('const userReady = loadMe()', html)
         self.assertIn('? renderRichText(item.desc)', html)
 
+    def test_detail_preserves_sanitized_source_rich_text(self):
+        html = DETAIL_HTML.read_text(encoding='utf-8')
+        formatter = (ROOT / 'assets' / 'text-format.js').read_text(encoding='utf-8')
+
+        self.assertIn("var RICH_TEXT_PREFIX = '<!--gaji-rich-v1-->';", formatter)
+        self.assertIn('function sanitizeRichHtml(source)', formatter)
+        self.assertIn('if(!SAFE_RICH_TAGS[tag]) return children;', formatter)
+        self.assertIn("['script', 'style', 'noscript', 'iframe', 'object', 'svg', 'canvas', 'img']", formatter)
+        self.assertIn("target=\"_blank\" rel=\"noopener noreferrer nofollow\"", formatter)
+        self.assertIn('.desc .gaji-rich .gaji-align-center{text-align:center}', html)
+        self.assertIn('.desc .gaji-rich .gaji-text-xl{font-size:1.6em;', html)
+
     def test_detail_action_menu_reports_for_users_and_admin_controls_for_admin(self):
         html = DETAIL_HTML.read_text(encoding='utf-8')
         api = (ROOT / 'api' / 'deals.js').read_text(encoding='utf-8')

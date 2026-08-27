@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "sync_hotdeals_to_supabase.py"
+PUSH_API = ROOT / "api" / "push" / "ingest.js"
 spec = importlib.util.spec_from_file_location("sync_hotdeals_to_supabase", SCRIPT)
 assert spec and spec.loader
 sync = importlib.util.module_from_spec(spec)
@@ -14,6 +15,14 @@ spec.loader.exec_module(sync)
 
 
 class PushIngestSyncTests(unittest.TestCase):
+    def test_push_keyword_matching_ignores_rich_text_markup(self):
+        source = PUSH_API.read_text(encoding="utf-8")
+
+        self.assertIn(
+            ".replace(/<!--[\\s\\S]*?-->|<[^>]*>/g, ' ')",
+            source,
+        )
+
     def test_main_flushes_due_digests_even_without_changed_rows(self):
         source = SCRIPT.read_text(encoding="utf-8")
 

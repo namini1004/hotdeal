@@ -4,8 +4,9 @@ import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
+from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urljoin, urlparse
 
 import requests
 try:
@@ -21,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "assets" / "ruliweb_hotdeals_1day.json"
 KST = timezone(timedelta(hours=9))
 HEADERS = {"User-Agent": "Mozilla/5.0"}
+RICH_TEXT_PREFIX = "<!--gaji-rich-v1-->"
 
 
 def clean(s: str) -> str:
@@ -207,8 +209,23 @@ def parse_detail_like_count(detail_html: str) -> int:
 
 
 def get_content_chunk(detail_html: str) -> str:
-    body_m = re.search(r'<div class="view_content[\s\S]*?</div>\s*</div>', detail_html)
-    return body_m.group(0) if body_m else detail_html
+    body_m = re.search(
+        r'<div\b[^>]*\bclass\s*=\s*["\'][^"\']*\bview_content\b[^"\']*["\'][^>]*>',
+        detail_html,
+        re.I,
+    )
+    if not body_m:
+        return detail_html
+
+    depth = 1
+    for token in re.finditer(r'<div\b[^>]*>|</div\s*>', detail_html[body_m.end():], re.I):
+        if token.group(0).lower().startswith('</div'):
+            depth -= 1
+            if depth == 0:
+                return detail_html[body_m.start():body_m.end() + token.end()]
+        else:
+            depth += 1
+    return detail_html[body_m.start():]
 
 
 def extract_buy_link(detail_html: str) -> str:
@@ -240,13 +257,203 @@ def extract_price_from_detail(detail_html: str) -> str:
     return extract_best_price(text_only)
 
 
+def _safe_style_classes(tag: str, attrs: dict) -> list[str]:
+    style = str(attrs.get('style') or '')
+    classes = []
+    align_m = re.search(r'text-align\s*:\s*(center|right|justify)', style, re.I)
+    align = (align_m.group(1).lower() if align_m else str(attrs.get('align') or '').lower())
+    if align in {'center', 'right', 'justify'}:
+        classes.append(f'gaji-align-{align}')
+
+    font_size = None
+    size_m = re.search(r'font-size\s*:\s*([0-9.]+)\s*(px|pt|em|rem|%)?', style, re.I)
+    if size_m:
+        value = float(size_m.group(1))
+        unit = (size_m.group(2) or 'px').lower()
+        font_size = {
+            'px': value,
+            'pt': value * 4 / 3,
+            'em': value * 16,
+            'rem': value * 16,
+            '%': value * 0.16,
+        }.get(unit, value)
+    elif tag == 'font' and str(attrs.get('size') or '').strip().isdigit():
+        legacy_size = int(attrs['size'])
+        font_size = {1: 10, 2: 13, 3: 16, 4: 18, 5: 24, 6: 32, 7: 48}.get(legacy_size)
+
+    if font_size is not None:
+        if font_size >= 23:
+            classes.append('gaji-text-xl')
+        elif font_size >= 18:
+            classes.append('gaji-text-lg')
+        elif font_size <= 13:
+            classes.append('gaji-text-sm')
+
+    if re.search(r'font-weight\s*:\s*(?:bold|[6-9]00)', style, re.I):
+        classes.append('gaji-font-bold')
+    if re.search(r'text-decoration[^;]*\bunderline\b', style, re.I):
+        classes.append('gaji-underline')
+    return classes
+
+
+class RuliwebRichBodyParser(HTMLParser):
+    BLOCK_TAGS = {
+        'p': 'p',
+        'div': 'div',
+        'center': 'div',
+        'h1': 'h1',
+        'h2': 'h2',
+        'h3': 'h3',
+        'h4': 'h3',
+        'h5': 'h3',
+        'h6': 'h3',
+        'ul': 'ul',
+        'ol': 'ol',
+        'li': 'li',
+        'blockquote': 'blockquote',
+        'table': 'table',
+        'thead': 'thead',
+        'tbody': 'tbody',
+        'tr': 'tr',
+        'th': 'th',
+        'td': 'td',
+    }
+    INLINE_TAGS = {
+        'b': 'strong',
+        'strong': 'strong',
+        'i': 'em',
+        'em': 'em',
+    }
+    DROP_CONTENT_TAGS = {'script', 'style', 'noscript', 'iframe', 'object', 'svg', 'canvas'}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+        self.open_tags = []
+        self.drop_stack = []
+
+    def _append_open(self, source_tag: str, output_tag: str, classes=None, attrs=None):
+        attributes = []
+        safe_classes = list(dict.fromkeys(classes or []))
+        if safe_classes:
+            attributes.append(f'class="{html.escape(" ".join(safe_classes), quote=True)}"')
+        for key, value in (attrs or {}).items():
+            attributes.append(f'{key}="{html.escape(str(value), quote=True)}"')
+        suffix = f' {" ".join(attributes)}' if attributes else ''
+        self.parts.append(f'<{output_tag}{suffix}>')
+        self.open_tags.append((source_tag, output_tag))
+
+    def _close_source_tag(self, source_tag: str):
+        match_index = next(
+            (idx for idx in range(len(self.open_tags) - 1, -1, -1) if self.open_tags[idx][0] == source_tag),
+            None,
+        )
+        if match_index is None:
+            return
+        for _, output_tag in reversed(self.open_tags[match_index:]):
+            if output_tag:
+                self.parts.append(f'</{output_tag}>')
+        del self.open_tags[match_index:]
+
+    def handle_starttag(self, tag, attrs):
+        tag = str(tag or '').lower()
+        if self.drop_stack:
+            self.drop_stack.append(tag)
+            return
+        if tag in self.DROP_CONTENT_TAGS:
+            self.drop_stack.append(tag)
+            return
+        if tag in {'img', 'picture', 'source', 'video', 'audio'}:
+            return
+        if tag == 'br':
+            self.parts.append('<br>')
+            return
+        if tag == 'hr':
+            self.parts.append('<hr>')
+            return
+
+        attr_map = {str(key).lower(): value for key, value in attrs if key}
+        classes = _safe_style_classes(tag, attr_map)
+        if tag == 'center' and 'gaji-align-center' not in classes:
+            classes.append('gaji-align-center')
+        if tag == 'blockquote':
+            classes.append('gaji-quote')
+        if tag == 'table':
+            classes.append('gaji-rich-table')
+
+        if tag in self.BLOCK_TAGS:
+            self._append_open(tag, self.BLOCK_TAGS[tag], classes)
+            return
+        if tag in self.INLINE_TAGS:
+            self._append_open(tag, self.INLINE_TAGS[tag], classes)
+            return
+        if tag == 'u':
+            self._append_open(tag, 'span', classes + ['gaji-underline'])
+            return
+        if tag in {'span', 'font'}:
+            if classes:
+                self._append_open(tag, 'span', classes)
+            else:
+                self.open_tags.append((tag, ''))
+            return
+        if tag == 'a':
+            href = str(attr_map.get('href') or '').strip()
+            if href.startswith('//'):
+                href = f'https:{href}'
+            elif href.startswith('/'):
+                href = urljoin(BASE, href)
+            parsed = urlparse(href)
+            if parsed.scheme in {'http', 'https'}:
+                self._append_open(
+                    tag,
+                    'a',
+                    classes,
+                    {'href': href, 'target': '_blank', 'rel': 'noopener noreferrer nofollow'},
+                )
+            else:
+                self.open_tags.append((tag, ''))
+            return
+        self.open_tags.append((tag, ''))
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if str(tag or '').lower() not in {'br', 'hr', 'img', 'picture', 'source', 'video', 'audio'}:
+            self.handle_endtag(tag)
+
+    def handle_endtag(self, tag):
+        tag = str(tag or '').lower()
+        if self.drop_stack:
+            if tag in self.drop_stack:
+                while self.drop_stack:
+                    opened = self.drop_stack.pop()
+                    if opened == tag:
+                        break
+            return
+        self._close_source_tag(tag)
+
+    def handle_data(self, data):
+        if self.drop_stack:
+            return
+        normalized = re.sub(r'\s+', ' ', str(data or ''))
+        if normalized:
+            self.parts.append(html.escape(normalized, quote=False))
+
+    def safe_html(self) -> str:
+        for _, output_tag in reversed(self.open_tags):
+            if output_tag:
+                self.parts.append(f'</{output_tag}>')
+        self.open_tags.clear()
+        return ''.join(self.parts).strip()
+
+
 def extract_body_text(detail_html: str) -> str:
     chunk = get_content_chunk(detail_html)
-    text = re.sub(r'<br\s*/?>', '\n', chunk, flags=re.I)
-    text = re.sub(r'</p\s*>', '\n', text, flags=re.I)
-    text = re.sub(r'<[^>]+>', ' ', text)
-    text = clean(text)
-    return text
+    parser = RuliwebRichBodyParser()
+    parser.feed(chunk)
+    parser.close()
+    rich_html = parser.safe_html()
+    plain_text = clean(re.sub(r'<[^>]+>', ' ', rich_html))
+    return f'{RICH_TEXT_PREFIX}{rich_html}' if plain_text else ''
 
 
 def extract_primary_image(detail_html: str) -> str:

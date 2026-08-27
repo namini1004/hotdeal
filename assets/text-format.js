@@ -1,4 +1,25 @@
 (function(){
+  var RICH_TEXT_PREFIX = '<!--gaji-rich-v1-->';
+  var SAFE_RICH_TAGS = {
+    p: true, div: true, br: true, hr: true,
+    strong: true, em: true, span: true, a: true,
+    h1: true, h2: true, h3: true,
+    ul: true, ol: true, li: true, blockquote: true,
+    table: true, thead: true, tbody: true, tr: true, th: true, td: true
+  };
+  var SAFE_RICH_CLASSES = {
+    'gaji-align-center': true,
+    'gaji-align-right': true,
+    'gaji-align-justify': true,
+    'gaji-text-xl': true,
+    'gaji-text-lg': true,
+    'gaji-text-sm': true,
+    'gaji-font-bold': true,
+    'gaji-underline': true,
+    'gaji-quote': true,
+    'gaji-rich-table': true
+  };
+
   function escapeHtml(text){
     return String(text || '').replace(/[&<>"']/g, function(ch){
       return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch];
@@ -18,6 +39,52 @@
     }catch(_){
       return '';
     }
+  }
+
+  function richTextFallback(source){
+    var text = String(source || '')
+      .replace(/<br\s*\/?\s*>/gi, '\n')
+      .replace(/<\/(?:p|div|h[1-3]|li|blockquote|tr)>/gi, '\n')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    if(!text) return '';
+    return '<div class="gaji-rich"><p>' + linkifyText(text).replace(/\n/g, '<br>') + '</p></div>';
+  }
+
+  function sanitizeRichHtml(source){
+    if(typeof DOMParser === 'undefined') return richTextFallback(source);
+
+    var doc = new DOMParser().parseFromString(String(source || ''), 'text/html');
+
+    function sanitizeNode(node){
+      if(node.nodeType === 3) return escapeHtml(node.nodeValue || '');
+      if(node.nodeType !== 1) return '';
+
+      var tag = String(node.tagName || '').toLowerCase();
+      if(['script', 'style', 'noscript', 'iframe', 'object', 'svg', 'canvas', 'img'].indexOf(tag) >= 0){
+        return '';
+      }
+
+      var children = Array.from(node.childNodes || []).map(sanitizeNode).join('');
+      if(!SAFE_RICH_TAGS[tag]) return children;
+      if(tag === 'br' || tag === 'hr') return '<' + tag + '>';
+
+      var classes = String(node.getAttribute('class') || '')
+        .split(/\s+/)
+        .filter(function(name){ return SAFE_RICH_CLASSES[name]; });
+      var attrs = classes.length ? ' class="' + escapeAttr(classes.join(' ')) + '"' : '';
+
+      if(tag === 'a'){
+        var href = toSafeUrl(node.getAttribute('href') || '');
+        if(!href || !children.trim()) return children;
+        attrs += ' href="' + escapeAttr(href) + '" target="_blank" rel="noopener noreferrer nofollow"';
+      }
+      return '<' + tag + attrs + '>' + children + '</' + tag + '>';
+    }
+
+    var rendered = Array.from(doc.body.childNodes || []).map(sanitizeNode).join('');
+    return rendered ? '<div class="gaji-rich">' + rendered + '</div>' : '';
   }
 
   function linkifyText(text){
@@ -79,7 +146,13 @@
   }
 
   function markdownToHtml(markdown){
-    var input = String(markdown || '')
+    var rawInput = String(markdown || '');
+    var richInput = rawInput.replace(/^\s+/, '');
+    if(richInput.indexOf(RICH_TEXT_PREFIX) === 0){
+      return sanitizeRichHtml(richInput.slice(RICH_TEXT_PREFIX.length));
+    }
+
+    var input = rawInput
       .replace(/\r\n?/g, '\n')
       .replace(/\\n/g, '\n')
       .replace(/\n{3,}/g, '\n\n');
@@ -151,6 +224,7 @@
   window.TextFormat = {
     escapeHtml: escapeHtml,
     linkifyText: linkifyText,
-    markdownToHtml: markdownToHtml
+    markdownToHtml: markdownToHtml,
+    sanitizeRichHtml: sanitizeRichHtml
   };
 })();

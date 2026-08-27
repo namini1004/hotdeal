@@ -19,7 +19,7 @@ const DUE_DIGEST_LIMIT = 50;
 
 function normalizeText(...values) {
   return values
-    .map((v) => String(v || '').toLowerCase())
+    .map((v) => String(v || '').replace(/<!--[\s\S]*?-->|<[^>]*>/g, ' ').toLowerCase())
     .join(' ')
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
