@@ -66,6 +66,97 @@ def test_fmkorea_does_not_skip_when_cached_detail_is_incomplete():
     assert "buyLink" not in row
 
 
+def test_fmkorea_extracts_article_body_instead_of_first_metadata_xe_content():
+    detail_html = '''
+    <div class="xe_content"><a href="https://shop.example/deal">https://shop.example/deal</a></div>
+    <div class="xe_content">네이버멤버십</div>
+    <div class="xe_content">메가커피 아이스 아메리카노</div>
+    <div class="rd_body">
+      <article>
+        <div class="document_10263757471_7220097951 xe_content">
+          <p><img src="//image.fmkorea.com/files/body.webp"></p>
+          <p>아아 1,550원</p>
+          <p>복숭아 요거트 스무디 3,020원</p>
+          <p>매진이면 물량 다시 풀릴 때까지 존버타삼</p>
+        </div>
+      </article>
+    </div>
+    '''
+
+    desc = fmkorea.extract_fmkorea_body_text(detail_html)
+
+    assert desc == (
+        '아아 1,550원\n\n'
+        '복숭아 요거트 스무디 3,020원\n\n'
+        '매진이면 물량 다시 풀릴 때까지 존버타삼'
+    )
+    assert 'shop.example' not in desc
+    assert fmkorea.extract_primary_image(detail_html) == 'https://image.fmkorea.com/files/body.webp'
+
+
+def test_fmkorea_browser_bundle_replaces_url_only_desc_with_rendered_article():
+    detail_html = '''
+    <div class="xe_content"><a href="https://shop.example/deal">https://shop.example/deal</a></div>
+    <article><div class="document_123_456 xe_content"><p>실제 본문 첫 줄</p><p>실제 본문 둘째 줄</p></div></article>
+    '''
+
+    class FakePage:
+        def goto(self, *args, **kwargs):
+            return None
+
+        def wait_for_timeout(self, *args, **kwargs):
+            return None
+
+        def evaluate(self, *args, **kwargs):
+            return {
+                'img': '',
+                'buyLink': 'https://shop.example/deal',
+                'desc': 'https://shop.example/deal',
+                'likes': 0,
+                'commentSignalText': '',
+            }
+
+        def content(self):
+            return detail_html
+
+    bundle = fmkorea.extract_detail_bundle_in_page(FakePage(), 'https://www.fmkorea.com/123')
+
+    assert bundle['desc'] == '실제 본문 첫 줄\n\n실제 본문 둘째 줄'
+    assert bundle['bodyParsed'] is True
+
+
+def test_fmkorea_url_only_cached_desc_is_reparsed():
+    lookup = fmkorea.build_previous_detail_lookup([
+        {
+            'id': '123456',
+            'sourceLink': 'https://m.fmkorea.com/?mid=hotdeal&document_srl=123456',
+            'buyLink': 'https://shop.example/deal',
+            'desc': '<p><a href="https://shop.example/deal">https://shop.example/deal</a></p>',
+        }
+    ])
+    row = {'href': 'https://m.fmkorea.com/?mid=hotdeal&document_srl=123456'}
+
+    assert lookup == {}
+    assert fmkorea.apply_cached_detail_fields(row, lookup) is False
+    assert 'desc' not in row
+
+
+def test_fmkorea_url_only_desc_is_reused_after_current_parser_verified_it():
+    cached = {
+        'id': '123456',
+        'sourceLink': 'https://m.fmkorea.com/?mid=hotdeal&document_srl=123456',
+        'buyLink': 'https://shop.example/deal',
+        'desc': 'https://shop.example/deal',
+        'detailParserVersion': fmkorea.FMKOREA_DETAIL_PARSER_VERSION,
+    }
+    lookup = fmkorea.build_previous_detail_lookup([cached])
+    row = {'href': 'https://m.fmkorea.com/?mid=hotdeal&document_srl=123456'}
+
+    assert fmkorea.apply_cached_detail_fields(row, lookup) is True
+    assert row['desc'] == cached['desc']
+    assert row['detailParserVersion'] == fmkorea.FMKOREA_DETAIL_PARSER_VERSION
+
+
 def test_fmkorea_incremental_stops_after_page1_when_tail_is_known(monkeypatch):
     now = fmkorea.datetime(2026, 6, 3, 12, 0, tzinfo=fmkorea.KST)
     since = now - fmkorea.timedelta(hours=48)

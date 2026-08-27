@@ -45,6 +45,8 @@ const FEED_SCORE_COLUMNS = [
   'likes',
   'dislikes',
   'comment_signal_score',
+  'positive_comment_signals',
+  'negative_comment_signals',
   'registered_at',
 ].join(',');
 
@@ -54,11 +56,34 @@ const HOT_SCORE_CONFIG = {
   likeWeight: 1.2,
   dislikeWeight: 4.0,
   commentSignalWeight: 0.75,
+  metricWeights: {
+    views: 1.0,
+    comments: 1.8,
+    likes: 1.2,
+  },
+  sourceRelativeWeight: 0.85,
+  globalAbsoluteWeight: 0.15,
+  engagementTemperatureWeight: 0.88,
+  recencyTemperatureWeight: 0.12,
+  globalEliteThreshold: 95,
+  globalEliteMaxBonus: 8,
+  minimumMetricSamples: 8,
+  minimumMetricNonZero: 5,
+  minimumMetricCoverage: 0.2,
+  minimumLogStdDev: 0.08,
+  zScoreClamp: 3,
+  qualitySignalTemperatureWeight: 5,
+  qualitySignalTemperatureCap: 12,
+  dislikeTemperatureWeight: 8,
   recencyWindowHours: 48,
   hotBoostHours: 3,
   negativeSignalCapThreshold: 3,
   negativeSignalTemperatureCap: 50,
+  contaminatedNegativeSignalRate: 0.6,
 };
+
+const TEMPERATURE_MODEL_VERSION = 2;
+const TEMPERATURE_METRICS = ['views', 'comments', 'likes'];
 
 function parseNumericPriceValue(priceText = '') {
   const s = String(priceText || '').replace(/\s+/g, '');
@@ -203,6 +228,147 @@ function shouldCapNegativeTemperature(item = {}) {
   );
 }
 
+function quantile(values = [], percentile = 0.5) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const position = Math.max(0, Math.min(sorted.length - 1, (sorted.length - 1) * percentile));
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  if (lower === upper) return sorted[lower];
+  const fraction = position - lower;
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * fraction;
+}
+
+function buildMetricStats(values = []) {
+  const rawValues = values.map((value) => Math.max(0, Number(value || 0)));
+  const sampleCount = rawValues.length;
+  const nonZeroCount = rawValues.filter((value) => value > 0).length;
+  const coverage = sampleCount ? nonZeroCount / sampleCount : 0;
+  const rawMean = sampleCount
+    ? rawValues.reduce((sum, value) => sum + value, 0) / sampleCount
+    : 0;
+  const rawVariance = sampleCount
+    ? rawValues.reduce((sum, value) => sum + ((value - rawMean) ** 2), 0) / sampleCount
+    : 0;
+  const logValues = rawValues.map((value) => Math.log1p(value));
+  const logMean = sampleCount
+    ? logValues.reduce((sum, value) => sum + value, 0) / sampleCount
+    : 0;
+  const logVariance = sampleCount
+    ? logValues.reduce((sum, value) => sum + ((value - logMean) ** 2), 0) / sampleCount
+    : 0;
+  const logStdDev = Math.sqrt(logVariance);
+  const usable = (
+    sampleCount >= HOT_SCORE_CONFIG.minimumMetricSamples &&
+    nonZeroCount >= HOT_SCORE_CONFIG.minimumMetricNonZero &&
+    coverage >= HOT_SCORE_CONFIG.minimumMetricCoverage &&
+    logStdDev >= HOT_SCORE_CONFIG.minimumLogStdDev
+  );
+
+  return {
+    sampleCount,
+    nonZeroCount,
+    coverage,
+    rawMean,
+    rawVariance,
+    rawStdDev: Math.sqrt(rawVariance),
+    p50: quantile(rawValues, 0.5),
+    p75: quantile(rawValues, 0.75),
+    p90: quantile(rawValues, 0.9),
+    p95: quantile(rawValues, 0.95),
+    max: rawValues.length ? Math.max(...rawValues) : 0,
+    logMean,
+    logVariance,
+    logStdDev,
+    usable,
+  };
+}
+
+function buildSignedMetricStats(values = []) {
+  const numeric = values.map((value) => Number(value || 0)).filter(Number.isFinite);
+  const sampleCount = numeric.length;
+  const mean = sampleCount ? numeric.reduce((sum, value) => sum + value, 0) / sampleCount : 0;
+  const variance = sampleCount
+    ? numeric.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / sampleCount
+    : 0;
+  const stdDev = Math.sqrt(variance);
+  return {
+    sampleCount,
+    mean,
+    variance,
+    stdDev,
+    usable: sampleCount >= HOT_SCORE_CONFIG.minimumMetricSamples && stdDev >= 1,
+  };
+}
+
+function clampZScore(value) {
+  return Math.max(-HOT_SCORE_CONFIG.zScoreClamp, Math.min(HOT_SCORE_CONFIG.zScoreClamp, value));
+}
+
+function metricZScore(value, stats = {}) {
+  if (!stats.usable || !Number.isFinite(stats.logStdDev) || stats.logStdDev <= 0) return null;
+  return clampZScore((Math.log1p(Math.max(0, Number(value || 0))) - stats.logMean) / stats.logStdDev);
+}
+
+function normalCdf(value) {
+  const z = clampZScore(Number(value || 0)) / Math.sqrt(2);
+  const sign = z < 0 ? -1 : 1;
+  const x = Math.abs(z);
+  const t = 1 / (1 + 0.3275911 * x);
+  const polynomial = (
+    0.254829592 * t -
+    0.284496736 * (t ** 2) +
+    1.421413741 * (t ** 3) -
+    1.453152027 * (t ** 4) +
+    1.061405429 * (t ** 5)
+  );
+  const erf = sign * (1 - polynomial * Math.exp(-(x ** 2)));
+  return 0.5 * (1 + erf);
+}
+
+function percentileTemperature(zScore) {
+  return normalCdf(zScore) * 100;
+}
+
+function empiricalPercentile(value, sortedValues = []) {
+  if (sortedValues.length <= 1) return 50;
+  let lower = 0;
+  while (lower < sortedValues.length && sortedValues[lower] < value) lower += 1;
+  let upper = lower;
+  while (upper < sortedValues.length && sortedValues[upper] === value) upper += 1;
+  const midRank = (lower + Math.max(lower, upper - 1)) / 2;
+  return (midRank / (sortedValues.length - 1)) * 100;
+}
+
+function compositeMetricZ(item = {}, metricStats = {}, sourceMetricStats = null) {
+  let weightedScore = 0;
+  let squaredWeight = 0;
+  let metricCount = 0;
+
+  for (const metric of TEMPERATURE_METRICS) {
+    if (sourceMetricStats && !sourceMetricStats[metric]?.usable) continue;
+    const zScore = metricZScore(item[metric], metricStats[metric]);
+    if (zScore === null) continue;
+    const weight = HOT_SCORE_CONFIG.metricWeights[metric] || 1;
+    weightedScore += zScore * weight;
+    squaredWeight += weight ** 2;
+    metricCount += 1;
+  }
+
+  return {
+    zScore: squaredWeight > 0 ? clampZScore(weightedScore / Math.sqrt(squaredWeight)) : 0,
+    metricCount,
+  };
+}
+
+function sourceMetricAverages(list = []) {
+  const n = Math.max(1, list.length);
+  return {
+    views: list.reduce((sum, item) => sum + Math.max(0, Number(item.views || 0)), 0) / n,
+    comments: list.reduce((sum, item) => sum + Math.max(0, Number(item.comments || 0)), 0) / n,
+  };
+}
+
 function buildTemperatureProfile(items = [], nowMs = Date.now()) {
   const bySource = new Map();
 
@@ -213,53 +379,138 @@ function buildTemperatureProfile(items = [], nowMs = Date.now()) {
   }
 
   const avgBySource = new Map();
-  for (const [source, list] of bySource.entries()) {
-    const sumViews = list.reduce((acc, v) => acc + Math.max(0, Number(v.views || 0)), 0);
-    const sumComments = list.reduce((acc, v) => acc + Math.max(0, Number(v.comments || 0)), 0);
-    const n = Math.max(1, list.length);
-    avgBySource.set(source, { views: sumViews / n, comments: sumComments / n });
-  }
-
-  const scoreGroups = new Map();
-  for (const item of items) {
-    const source = item.source || 'feed';
-    const hotScore = computeHotScore(item, nowMs, avgBySource.get(source));
-    if (!scoreGroups.has(source)) scoreGroups.set(source, []);
-    scoreGroups.get(source).push(hotScore);
-  }
-
   const statsBySource = new Map();
-  for (const [source, scores] of scoreGroups.entries()) {
-    const min = Math.min(...scores);
-    const max = Math.max(...scores);
-    const span = max - min;
-    statsBySource.set(source, { min, max, span });
+  for (const [source, list] of bySource.entries()) {
+    avgBySource.set(source, sourceMetricAverages(list));
+    const metrics = {};
+    for (const metric of TEMPERATURE_METRICS) {
+      metrics[metric] = buildMetricStats(list.map((item) => item[metric]));
+    }
+    statsBySource.set(source, {
+      sampleCount: list.length,
+      metrics,
+      qualitySignal: buildSignedMetricStats(list.map((item) => item.commentSignalScore)),
+      negativeCapRate: list.length
+        ? list.filter((item) => shouldCapNegativeTemperature(item)).length / list.length
+        : 0,
+    });
+    const sourceStats = statsBySource.get(source);
+    sourceStats.qualitySignalsContaminated = (
+      list.length >= HOT_SCORE_CONFIG.minimumMetricSamples &&
+      sourceStats.negativeCapRate >= HOT_SCORE_CONFIG.contaminatedNegativeSignalRate
+    );
   }
 
-  return { nowMs, avgBySource, statsBySource };
+  const globalMetricStats = {};
+  for (const metric of TEMPERATURE_METRICS) {
+    const eligibleValues = items
+      .filter((item) => statsBySource.get(item.source || 'feed')?.metrics?.[metric]?.usable)
+      .map((item) => item[metric]);
+    globalMetricStats[metric] = buildMetricStats(eligibleValues);
+  }
+
+  for (const [source, list] of bySource.entries()) {
+    const sourceStats = statsBySource.get(source);
+    sourceStats.compositeZScores = list
+      .map((item) => compositeMetricZ(item, sourceStats.metrics).zScore)
+      .sort((a, b) => a - b);
+  }
+
+  return {
+    version: TEMPERATURE_MODEL_VERSION,
+    nowMs,
+    avgBySource,
+    statsBySource,
+    globalMetricStats,
+  };
+}
+
+function computeTemperatureComponents(item = {}, profile = buildTemperatureProfile([item])) {
+  const source = item.source || 'feed';
+  const sourceStats = profile.statsBySource.get(source) || { sampleCount: 0, metrics: {} };
+  const sourceComposite = compositeMetricZ(item, sourceStats.metrics);
+  const globalComposite = compositeMetricZ(item, profile.globalMetricStats, sourceStats.metrics);
+  const sourceRelativeTemperature = empiricalPercentile(
+    sourceComposite.zScore,
+    sourceStats.compositeZScores || [],
+  );
+  const globalAbsoluteTemperature = globalComposite.metricCount
+    ? percentileTemperature(globalComposite.zScore)
+    : sourceRelativeTemperature;
+  const engagementTemperature = (
+    sourceRelativeTemperature * HOT_SCORE_CONFIG.sourceRelativeWeight +
+    globalAbsoluteTemperature * HOT_SCORE_CONFIG.globalAbsoluteWeight
+  );
+  const globalEliteBonus = globalAbsoluteTemperature > HOT_SCORE_CONFIG.globalEliteThreshold
+    ? (
+      (globalAbsoluteTemperature - HOT_SCORE_CONFIG.globalEliteThreshold) /
+      (100 - HOT_SCORE_CONFIG.globalEliteThreshold)
+    ) * HOT_SCORE_CONFIG.globalEliteMaxBonus
+    : 0;
+
+  const registeredMs = parseDateMs(item.registeredAt || item.date || '');
+  const hoursSincePost = registeredMs
+    ? Math.max(0, (profile.nowMs - registeredMs) / (1000 * 60 * 60))
+    : HOT_SCORE_CONFIG.recencyWindowHours;
+  const freshness = Math.max(0, 1 - hoursSincePost / HOT_SCORE_CONFIG.recencyWindowHours);
+  const recencyTemperature = freshness * 100;
+  const qualityStats = sourceStats.qualitySignal || {};
+  const qualitySignalZ = qualityStats.usable
+    ? clampZScore((Number(item.commentSignalScore || 0) - qualityStats.mean) / qualityStats.stdDev)
+    : 0;
+  const commentQualityAdjustment = Math.max(
+    -HOT_SCORE_CONFIG.qualitySignalTemperatureCap,
+    Math.min(
+      HOT_SCORE_CONFIG.qualitySignalTemperatureCap,
+      qualitySignalZ * HOT_SCORE_CONFIG.qualitySignalTemperatureWeight,
+    ),
+  );
+  const qualityAdjustment = (
+    commentQualityAdjustment -
+    Math.log1p(Math.max(0, Number(item.dislikes || 0))) * HOT_SCORE_CONFIG.dislikeTemperatureWeight
+  );
+  const temperature = (
+    engagementTemperature * HOT_SCORE_CONFIG.engagementTemperatureWeight +
+    recencyTemperature * HOT_SCORE_CONFIG.recencyTemperatureWeight +
+    qualityAdjustment +
+    globalEliteBonus
+  );
+  const blendedZ = (
+    sourceComposite.zScore * HOT_SCORE_CONFIG.sourceRelativeWeight +
+    globalComposite.zScore * HOT_SCORE_CONFIG.globalAbsoluteWeight
+  );
+
+  return {
+    temperature,
+    sourceRelativeTemperature,
+    globalAbsoluteTemperature,
+    engagementTemperature,
+    recencyTemperature,
+    qualityAdjustment,
+    qualitySignalZ,
+    globalEliteBonus,
+    sourceZScore: sourceComposite.zScore,
+    globalZScore: globalComposite.zScore,
+    blendedZ,
+    metricCount: sourceComposite.metricCount,
+  };
 }
 
 function applyTemperatureProfile(items = [], profile = buildTemperatureProfile(items)) {
   return items.map((item) => {
-    const source = item.source || 'feed';
-    const hotScore = computeHotScore(item, profile.nowMs, profile.avgBySource.get(source));
-    const stats = profile.statsBySource.get(source) || { min: 0, span: 0 };
-    let temperature = 50;
-    if (stats.span > 0) {
-      temperature = ((hotScore - stats.min) / stats.span) * 100;
-    }
-
-    let clamped = Math.max(0, Math.min(100, Math.round(temperature)));
+    const sourceStats = profile.statsBySource.get(item.source || 'feed') || {};
+    const components = computeTemperatureComponents(item, profile);
+    let clamped = Math.max(0, Math.min(100, Math.round(components.temperature)));
     const isFree = String(item.price || '').trim() === '무료';
     if (isFree) {
       // 무료 딜은 0~100 정규화 결과를 80~100 구간으로 재매핑
       clamped = Math.max(80, Math.min(100, Math.round(80 + clamped * 0.2)));
     }
-    if (shouldCapNegativeTemperature(item)) {
+    if (!sourceStats.qualitySignalsContaminated && shouldCapNegativeTemperature(item)) {
       clamped = Math.min(clamped, HOT_SCORE_CONFIG.negativeSignalTemperatureCap);
     }
 
-    return { ...item, hotScore: Number(hotScore.toFixed(4)), temperature: clamped };
+    return { ...item, hotScore: Number(components.blendedZ.toFixed(4)), temperature: clamped };
   });
 }
 
@@ -362,6 +613,8 @@ function normalizeFeedScoreRow(row = {}) {
     likes: Number(row.likes || 0),
     dislikes: Number(row.dislikes || 0),
     commentSignalScore: Number(row.comment_signal_score || 0),
+    positiveCommentSignals: Number(row.positive_comment_signals || 0),
+    negativeCommentSignals: Number(row.negative_comment_signals || 0),
     registeredAt: row.registered_at || '',
   };
 }
@@ -595,9 +848,14 @@ module.exports = {
   normalizeUserRow,
   parseUserId,
   computeHotScore,
+  buildMetricStats,
   buildTemperatureProfile,
+  computeTemperatureComponents,
   applyTemperatureProfile,
   applyTemperatureNormalization,
+  HOT_SCORE_CONFIG,
+  TEMPERATURE_MODEL_VERSION,
+  TEMPERATURE_METRICS,
   normalizeUserImageUrl,
   canonicalFeedKey,
   shouldReplaceFeedDuplicate,

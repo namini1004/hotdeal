@@ -10,9 +10,17 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 import requests
 try:
-    from hotdeal_quality_signals import analyze_comment_quality
+    from hotdeal_quality_signals import (
+        QUALITY_SIGNAL_PARSER_VERSION,
+        analyze_comment_quality,
+        extract_comment_signal_text,
+    )
 except ModuleNotFoundError:
-    from scripts.hotdeal_quality_signals import analyze_comment_quality
+    from scripts.hotdeal_quality_signals import (
+        QUALITY_SIGNAL_PARSER_VERSION,
+        analyze_comment_quality,
+        extract_comment_signal_text,
+    )
 
 LIST_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=ppomppu"
 BASE = "https://www.ppomppu.co.kr"
@@ -386,12 +394,23 @@ def apply_cached_detail_fields(row: dict, lookup: dict) -> bool:
         return False
     for key in (
         'title', 'registeredAt', 'date', 'time', 'price', 'likes', 'dislikes',
-        'views', 'comments', 'commentSignalScore', 'positiveCommentSignals',
-        'negativeCommentSignals', 'desc', 'img', 'buyLink'
+        'views', 'comments', 'desc', 'img', 'buyLink'
     ):
         value = cached.get(key)
         if value not in (None, ''):
             row[key] = value
+    try:
+        quality_version = int(cached.get('qualitySignalParserVersion') or 0)
+    except (TypeError, ValueError):
+        quality_version = 0
+    if quality_version >= QUALITY_SIGNAL_PARSER_VERSION:
+        for key in ('commentSignalScore', 'positiveCommentSignals', 'negativeCommentSignals'):
+            row[key] = int(cached.get(key) or 0)
+    else:
+        row['commentSignalScore'] = 0
+        row['positiveCommentSignals'] = 0
+        row['negativeCommentSignals'] = 0
+    row['qualitySignalParserVersion'] = QUALITY_SIGNAL_PARSER_VERSION
     row['_detailCached'] = True
     return True
 
@@ -400,6 +419,11 @@ def cached_item_to_feed_item(item: dict, item_id: int) -> dict:
     registered_at = (item.get('registeredAt') or '').strip()
     date_label = (item.get('date') or '').strip() or registered_at[:10]
     category = (item.get('category') or item.get('dist') or '').strip() or '기타'
+    try:
+        quality_version = int(item.get('qualitySignalParserVersion') or 0)
+    except (TypeError, ValueError):
+        quality_version = 0
+    quality_is_current = quality_version >= QUALITY_SIGNAL_PARSER_VERSION
     return {
         'id': str(item_id),
         'title': item.get('title') or '',
@@ -412,9 +436,10 @@ def cached_item_to_feed_item(item: dict, item_id: int) -> dict:
         'dislikes': int(item.get('dislikes') or 0),
         'views': int(item.get('views') or 0),
         'comments': int(item.get('comments') or 0),
-        'commentSignalScore': int(item.get('commentSignalScore') or 0),
-        'positiveCommentSignals': int(item.get('positiveCommentSignals') or 0),
-        'negativeCommentSignals': int(item.get('negativeCommentSignals') or 0),
+        'commentSignalScore': int(item.get('commentSignalScore') or 0) if quality_is_current else 0,
+        'positiveCommentSignals': int(item.get('positiveCommentSignals') or 0) if quality_is_current else 0,
+        'negativeCommentSignals': int(item.get('negativeCommentSignals') or 0) if quality_is_current else 0,
+        'qualitySignalParserVersion': QUALITY_SIGNAL_PARSER_VERSION,
         'category': category,
         'desc': item.get('desc') or '',
         'img': item.get('img') or '',
@@ -585,6 +610,7 @@ def parse_items(session=None, previous_items=None):
                 "commentSignalScore": int(row.get('commentSignalScore') or 0),
                 "positiveCommentSignals": int(row.get('positiveCommentSignals') or 0),
                 "negativeCommentSignals": int(row.get('negativeCommentSignals') or 0),
+                "qualitySignalParserVersion": int(row.get('qualitySignalParserVersion') or QUALITY_SIGNAL_PARSER_VERSION),
                 "category": category,
                 "desc": row.get('desc') or '',
                 "img": row.get('img') or img,
@@ -639,7 +665,7 @@ def parse_items(session=None, previous_items=None):
         if not comments:
             comments = row.get('comments', 0)
         recommend_up, recommend_down = parse_recommend_counts(detail)
-        comment_quality = analyze_comment_quality(detail)
+        comment_quality = analyze_comment_quality(extract_comment_signal_text(detail))
 
         # 사러가기 URL (상단 닉네임 아래 링크의 실제 target)
         buy_link = ""
@@ -678,6 +704,7 @@ def parse_items(session=None, previous_items=None):
             "commentSignalScore": comment_quality['score'],
             "positiveCommentSignals": comment_quality['positiveCount'],
             "negativeCommentSignals": comment_quality['negativeCount'],
+            "qualitySignalParserVersion": QUALITY_SIGNAL_PARSER_VERSION,
             "category": category,
             "desc": body_desc or og_desc or "",
             "img": representative_img,

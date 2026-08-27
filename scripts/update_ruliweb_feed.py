@@ -10,9 +10,17 @@ from urllib.parse import quote, urljoin, urlparse
 
 import requests
 try:
-    from hotdeal_quality_signals import analyze_comment_quality
+    from hotdeal_quality_signals import (
+        QUALITY_SIGNAL_PARSER_VERSION,
+        analyze_comment_quality,
+        extract_comment_signal_text,
+    )
 except ModuleNotFoundError:
-    from scripts.hotdeal_quality_signals import analyze_comment_quality
+    from scripts.hotdeal_quality_signals import (
+        QUALITY_SIGNAL_PARSER_VERSION,
+        analyze_comment_quality,
+        extract_comment_signal_text,
+    )
 
 LIST_URL = "https://m.ruliweb.com/market/board/1020"
 BASE = "https://bbs.ruliweb.com"
@@ -518,10 +526,11 @@ def main():
                 detail_likes = parse_detail_like_count(detail_html)
                 if detail_likes:
                     row['likes'] = detail_likes
-                comment_quality = analyze_comment_quality(detail_html)
+                comment_quality = analyze_comment_quality(extract_comment_signal_text(detail_html))
                 row['commentSignalScore'] = comment_quality['score']
                 row['positiveCommentSignals'] = comment_quality['positiveCount']
                 row['negativeCommentSignals'] = comment_quality['negativeCount']
+                row['qualitySignalParserVersion'] = QUALITY_SIGNAL_PARSER_VERSION
                 if row.get('price') in {'', '가격 정보 확인'}:
                     body_price = extract_price_from_detail(detail_html)
                     if body_price:

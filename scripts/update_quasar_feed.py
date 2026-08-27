@@ -13,9 +13,17 @@ from urllib.parse import urljoin, urlsplit
 
 import requests
 try:
-    from hotdeal_quality_signals import analyze_comment_quality
+    from hotdeal_quality_signals import (
+        QUALITY_SIGNAL_PARSER_VERSION,
+        analyze_comment_quality,
+        extract_comment_signal_text,
+    )
 except ModuleNotFoundError:
-    from scripts.hotdeal_quality_signals import analyze_comment_quality
+    from scripts.hotdeal_quality_signals import (
+        QUALITY_SIGNAL_PARSER_VERSION,
+        analyze_comment_quality,
+        extract_comment_signal_text,
+    )
 
 LIST_URL = "https://quasarzone.com/bbs/qb_saleinfo"
 BASE = "https://quasarzone.com"
@@ -777,6 +785,10 @@ def main():
 
                 if apply_cached_detail_fields(row, previous_lookup):
                     cached_details += 1
+                    row["commentSignalScore"] = 0
+                    row["positiveCommentSignals"] = 0
+                    row["negativeCommentSignals"] = 0
+                    row["qualitySignalParserVersion"] = QUALITY_SIGNAL_PARSER_VERSION
                     try:
                         registered_dt = datetime.fromisoformat(row["registeredAt"])
                     except Exception:
@@ -820,10 +832,11 @@ def main():
                     body_img = extract_body_image_from_detail(detail_html)
                     row["buyLink"] = real_link or row["sourceLink"]
                     row["desc"] = extract_body_text_from_detail(detail_html)
-                    comment_quality = analyze_comment_quality(detail_html)
+                    comment_quality = analyze_comment_quality(extract_comment_signal_text(detail_html))
                     row["commentSignalScore"] = comment_quality["score"]
                     row["positiveCommentSignals"] = comment_quality["positiveCount"]
                     row["negativeCommentSignals"] = comment_quality["negativeCount"]
+                    row["qualitySignalParserVersion"] = QUALITY_SIGNAL_PARSER_VERSION
                     if body_img:
                         row["img"] = body_img
                     if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:

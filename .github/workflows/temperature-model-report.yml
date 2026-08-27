@@ -1,0 +1,54 @@
+name: temperature-model-report
+
+on:
+  schedule:
+    # 매일 09:20 KST. 수집 혼잡 시간과 겹치지 않게 실행한다.
+    - cron: "20 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: temperature-model-report
+  cancel-in-progress: true
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build temperature report
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/report_temperature_model.js > temperature-model-report.md
+
+      - name: Add workflow summary
+        run: cat temperature-model-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish report to one tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          gh label create temperature-model --color 7c3aed --description "가지온도 자동 보정 리포트" --force
+          issue_number="$(gh issue list --state open --label temperature-model --limit 1 --json number --jq '.[0].number // empty')"
+          if [ -z "$issue_number" ]; then
+            gh issue create \
+              --title "[자동 리포트] 가지온도 모델 점검" \
+              --body-file temperature-model-report.md \
+              --label temperature-model \
+              --assignee "$REPOSITORY_OWNER"
+          else
+            gh issue comment "$issue_number" --body-file temperature-model-report.md
+          fi

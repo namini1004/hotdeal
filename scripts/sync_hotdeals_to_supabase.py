@@ -33,6 +33,18 @@ PRUNE_FEED_AGE_HOURS = int(os.environ.get("HOTDEAL_PRUNE_FEED_AGE_HOURS", "48"))
 MAX_FUTURE_SKEW_MINUTES = int(os.environ.get("HOTDEAL_MAX_FUTURE_SKEW_MINUTES", "10"))
 MIN_SOURCE_DELETE_GUARD_EXISTING_ROWS = int(os.environ.get("HOTDEAL_MIN_SOURCE_DELETE_GUARD_EXISTING_ROWS", "10"))
 SOURCE_DELETE_GUARD_MIN_RATIO = float(os.environ.get("HOTDEAL_SOURCE_DELETE_GUARD_MIN_RATIO", "0.5"))
+TEMPERATURE_MODEL_VERSION = 2
+TEMPERATURE_SNAPSHOT_RETENTION_DAYS = max(
+    7,
+    int(os.environ.get("HOTDEAL_TEMPERATURE_SNAPSHOT_RETENTION_DAYS", "90")),
+)
+TEMPERATURE_SNAPSHOT_METRICS = (
+    "views",
+    "comments",
+    "likes",
+    "dislikes",
+    "comment_signal_score",
+)
 
 
 def _configured_feed_files():
@@ -277,6 +289,126 @@ def normalize(item: Dict) -> Dict:
 def chunked(rows: List[Dict], size: int):
     for i in range(0, len(rows), size):
         yield rows[i : i + size]
+
+
+def percentile(values: List[float], fraction: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(float(value) for value in values)
+    position = max(0.0, min(len(ordered) - 1, (len(ordered) - 1) * fraction))
+    lower = int(position)
+    upper = min(len(ordered) - 1, lower + 1)
+    if lower == upper:
+        return ordered[lower]
+    weight = position - lower
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * weight
+
+
+def summarize_numeric_values(values: List[float]) -> Dict:
+    numeric = [float(value or 0) for value in values]
+    count = len(numeric)
+    mean = sum(numeric) / count if count else 0.0
+    variance = sum((value - mean) ** 2 for value in numeric) / count if count else 0.0
+    non_zero = sum(1 for value in numeric if value != 0)
+    return {
+        "mean": round(mean, 4),
+        "variance": round(variance, 4),
+        "stddev": round(variance ** 0.5, 4),
+        "min": round(min(numeric), 4) if numeric else 0,
+        "p25": round(percentile(numeric, 0.25), 4),
+        "p50": round(percentile(numeric, 0.5), 4),
+        "p75": round(percentile(numeric, 0.75), 4),
+        "p90": round(percentile(numeric, 0.9), 4),
+        "p95": round(percentile(numeric, 0.95), 4),
+        "max": round(max(numeric), 4) if numeric else 0,
+        "nonZeroRate": round(non_zero / count, 4) if count else 0,
+    }
+
+
+def build_temperature_snapshot_rows(rows: List[Dict], captured_at: datetime) -> List[Dict]:
+    bucket_minute = 30 if captured_at.minute >= 30 else 0
+    snapshot_at = captured_at.replace(minute=bucket_minute, second=0, microsecond=0)
+    grouped: Dict[str, List[Dict]] = {}
+    for row in rows or []:
+        source = str(row.get("source") or "").strip()
+        if source not in DEFAULT_EXPECTED_FEED_SOURCES:
+            continue
+        grouped.setdefault(source, []).append(row)
+
+    snapshots = []
+    for source, source_rows in sorted(grouped.items()):
+        metrics = {
+            metric: summarize_numeric_values([row.get(metric) or 0 for row in source_rows])
+            for metric in TEMPERATURE_SNAPSHOT_METRICS
+        }
+        age_hours = []
+        for row in source_rows:
+            registered_at = parse_iso_datetime(row.get("registered_at") or "")
+            if not registered_at:
+                continue
+            if registered_at.tzinfo is None:
+                registered_at = registered_at.replace(tzinfo=timezone.utc)
+            age_hours.append(max(0.0, (captured_at - registered_at.astimezone(timezone.utc)).total_seconds() / 3600))
+        metrics["age_hours"] = summarize_numeric_values(age_hours)
+        snapshots.append(
+            {
+                "source": source,
+                "captured_at": snapshot_at.isoformat(),
+                "model_version": TEMPERATURE_MODEL_VERSION,
+                "sample_count": len(source_rows),
+                "metrics": metrics,
+            }
+        )
+    return snapshots
+
+
+def record_temperature_snapshots(
+    rows: List[Dict],
+    supabase_url: str,
+    service_key: str,
+    captured_at: datetime,
+    skip_sources: Optional[Set[str]] = None,
+) -> int:
+    skipped = set(skip_sources or set())
+    eligible_rows = [row for row in rows or [] if row.get("source") not in skipped]
+    snapshots = build_temperature_snapshot_rows(eligible_rows, captured_at)
+    if not snapshots:
+        return 0
+    headers = {
+        "apikey": service_key,
+        "Authorization": f"Bearer {service_key}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates,return=minimal",
+    }
+    endpoint = f"{supabase_url}/rest/v1/deal_temperature_snapshots?on_conflict=source,captured_at"
+    try:
+        response = requests.post(endpoint, headers=headers, json=snapshots, timeout=30)
+    except requests.RequestException as exc:
+        print(f"WARN_TEMPERATURE_SNAPSHOT_SKIPPED reason={type(exc).__name__}")
+        return 0
+    if not response.ok:
+        print(
+            "WARN_TEMPERATURE_SNAPSHOT_SKIPPED "
+            f"status={response.status_code} reason={(response.text or '')[:160]}"
+        )
+        return 0
+
+    snapshot_at = parse_iso_datetime(snapshots[0]["captured_at"])
+    if snapshot_at and snapshot_at.hour == 0 and snapshot_at.minute == 0:
+        retention_cutoff = captured_at - timedelta(days=TEMPERATURE_SNAPSHOT_RETENTION_DAYS)
+        try:
+            requests.delete(
+                f"{supabase_url}/rest/v1/deal_temperature_snapshots?captured_at=lt.{quote(retention_cutoff.isoformat(), safe='')}",
+                headers={**headers, "Prefer": "return=minimal"},
+                timeout=30,
+            )
+        except requests.RequestException:
+            pass
+    print(
+        "TEMPERATURE_SNAPSHOT_OK "
+        f"sources={','.join(snapshot['source'] for snapshot in snapshots)} rows={len(snapshots)}"
+    )
+    return len(snapshots)
 
 
 def positive_int_env(name: str, default: int) -> int:
@@ -1504,6 +1636,13 @@ def main():
     if deleted_rows:
         written += soft_delete_rows(deleted_rows, supabase_url, headers)
 
+    record_temperature_snapshots(
+        sync_rows,
+        supabase_url,
+        service_key,
+        now_dt,
+        skip_sources=skipped_delete_sources,
+    )
     purged = purge_soft_deleted_feed_rows(supabase_url, headers)
     ingest_status = send_push_ingest(push_ingest_rows)
     print(f"UPSERT_OK total={written} changed={len(changed_rows)} deleted={len(deleted_rows)} purged={purged} push_candidates={len(push_ingest_rows)} ingest={ingest_status}")

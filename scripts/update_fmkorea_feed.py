@@ -16,9 +16,17 @@ try:
 except Exception:
     sync_playwright = None
 try:
-    from hotdeal_quality_signals import analyze_comment_quality
+    from hotdeal_quality_signals import (
+        QUALITY_SIGNAL_PARSER_VERSION,
+        analyze_comment_quality,
+        extract_comment_signal_text,
+    )
 except ModuleNotFoundError:
-    from scripts.hotdeal_quality_signals import analyze_comment_quality
+    from scripts.hotdeal_quality_signals import (
+        QUALITY_SIGNAL_PARSER_VERSION,
+        analyze_comment_quality,
+        extract_comment_signal_text,
+    )
 
 LIST_URL = "https://m.fmkorea.com/index.php?mid=hotdeal&listStyle=webzine"
 LIST_URL_CANDIDATES = [
@@ -44,6 +52,7 @@ HEADERS = {
 }
 FMKOREA_DIAGNOSTIC_DIR = os.environ.get("FMKOREA_DIAGNOSTIC_DIR", "").strip()
 DEFAULT_BROWSER_PROFILE_DIR = ROOT / ".artifacts" / "fmkorea-browser-profile"
+FMKOREA_DETAIL_PARSER_VERSION = 2
 
 
 def env_bool(name: str, default: bool = True) -> bool:
@@ -486,17 +495,77 @@ def is_low_quality_fmkorea_thumbnail(src: str) -> bool:
     return bool(re.search(r'/cache/thumb/', str(src or ''), re.I))
 
 
+def _extract_balanced_element(source: str, start_match, tag: str) -> str:
+    depth = 1
+    token_pattern = re.compile(rf'<{tag}\b[^>]*>|</{tag}\s*>', re.I)
+    for token in token_pattern.finditer(source, start_match.end()):
+        if token.group(0).lower().startswith(f'</{tag}'):
+            depth -= 1
+            if depth == 0:
+                return source[start_match.start():token.end()]
+        elif not token.group(0).rstrip().endswith('/>'):
+            depth += 1
+    return source[start_match.start():]
+
+
+def _fmkorea_body_text(chunk: str) -> str:
+    value = re.sub(r'<!--[\s\S]*?-->', ' ', chunk or '')
+    value = re.sub(r'<(?:script|style|noscript|iframe|object|svg|canvas)\b[^>]*>[\s\S]*?</(?:script|style|noscript|iframe|object|svg|canvas)\s*>', ' ', value, flags=re.I)
+    value = re.sub(r'<br\s*/?>', '\n', value, flags=re.I)
+    value = re.sub(r'</(?:p|div|section|article|h[1-6]|li|blockquote|tr|table)\s*>', '\n', value, flags=re.I)
+    value = re.sub(r'<(?:p|div|section|article|h[1-6]|li|blockquote|tr|table)\b[^>]*>', '\n', value, flags=re.I)
+    value = html.unescape(re.sub(r'<[^>]+>', ' ', value))
+
+    lines = []
+    for raw_line in value.replace('\r', '').split('\n'):
+        line = re.sub(r'[ \t\f\v]+', ' ', raw_line).strip()
+        if line:
+            lines.append(line)
+        elif lines and lines[-1] != '':
+            lines.append('')
+    while lines and lines[-1] == '':
+        lines.pop()
+    return '\n'.join(lines).strip()
+
+
+def get_fmkorea_content_chunk(detail_html: str) -> str:
+    source = detail_html or ''
+    content_pattern = re.compile(
+        r'<(?P<tag>div|section)\b[^>]*\bclass\s*=\s*["\'][^"\']*\bxe_content\b[^"\']*["\'][^>]*>',
+        re.I,
+    )
+
+    article_m = re.search(r'<article\b[^>]*>', source, re.I)
+    if article_m:
+        article_chunk = _extract_balanced_element(source, article_m, 'article')
+        body_m = content_pattern.search(article_chunk)
+        if body_m:
+            return _extract_balanced_element(article_chunk, body_m, body_m.group('tag').lower())
+
+    candidates = []
+    for body_m in content_pattern.finditer(source):
+        chunk = _extract_balanced_element(source, body_m, body_m.group('tag').lower())
+        opening_tag = body_m.group(0)
+        score = len(_fmkorea_body_text(chunk))
+        if re.search(r'\bdocument_\d+', opening_tag, re.I):
+            score += 10000
+        candidates.append((score, chunk))
+    return max(candidates, key=lambda item: item[0])[1] if candidates else ''
+
+
+def extract_fmkorea_body_text(detail_html: str) -> str:
+    return _fmkorea_body_text(get_fmkorea_content_chunk(detail_html))
+
+
 def extract_primary_image(detail_html: str) -> str:
-    body_m = re.search(r'<div[^>]+class="[^"]*xe_content[^"]*"[\s\S]*?</div>\s*</div>', detail_html, re.I)
-    chunk = body_m.group(0) if body_m else detail_html
+    chunk = get_fmkorea_content_chunk(detail_html)
     low_quality_fallback = ""
 
-    for m in re.finditer(r'''<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["']''', chunk, re.I):
+    for m in re.finditer(r'''<img[^>]+(?:data-src|data-original|src)=["']([^"']+)["']''', chunk or '', re.I):
         src = (m.group(1) or "").strip()
         if not src or src.startswith('data:') or '/logos/mobile/fmkorea.png' in src or 'transparent.gif' in src or '/modules/point/icons/' in src:
             continue
-        if src.startswith("//"):
-            src = f"https:{src}"
+        src = absolutize_fmkorea_url(src, 'https://www.fmkorea.com/')
         if is_low_quality_fmkorea_thumbnail(src):
             low_quality_fallback = low_quality_fallback or src
             continue
@@ -529,22 +598,44 @@ def parse_detail_voted_count(detail_html: str) -> int:
 def extract_detail_bundle_in_page(page, url: str) -> dict:
     page.goto(url, wait_until="domcontentloaded", timeout=90000)
     page.wait_for_timeout(450)
-    return page.evaluate(r'''() => {
+    bundle = page.evaluate(r'''() => {
       const result = { img: '', buyLink: '', desc: '', likes: 0, commentSignalText: '' };
 
       const norm = (v) => (v || '').trim();
       const abs = (href) => {
         try { return new URL(href, location.href).href; } catch (_) { return ''; }
       };
+      const contentSelectors = [
+        'article .xe_content[class*="document_"]',
+        'article > .xe_content',
+        '.rd_body article .xe_content',
+        '.document-content',
+        '.document-view',
+        '.article-content',
+        'article'
+      ];
+      let contentRoot = null;
+      for (const sel of contentSelectors) {
+        contentRoot = document.querySelector(sel);
+        if (contentRoot) break;
+      }
+      if (!contentRoot) {
+        let bestScore = -1;
+        for (const candidate of document.querySelectorAll('.xe_content')) {
+          const className = String(candidate.className || '');
+          const textLength = norm(candidate.innerText).length;
+          const score = textLength
+            + (candidate.closest('article') ? 10000 : 0)
+            + (/\bdocument_\d+/.test(className) ? 10000 : 0);
+          if (score > bestScore) {
+            bestScore = score;
+            contentRoot = candidate;
+          }
+        }
+      }
 
       // 대표이미지 추출
-      const imgScopes = ['.xe_content', '.rd_body', '.document-content', '.document-view', '.article-content', 'article'];
-      let imgRoot = null;
-      for (const sel of imgScopes) {
-        imgRoot = document.querySelector(sel);
-        if (imgRoot) break;
-      }
-      if (!imgRoot) imgRoot = document;
+      const imgRoot = contentRoot || document;
       const isLowQualityFmkoreaThumb = (value) => /\/cache\/thumb\//i.test(value || '');
       let lowQualityFallback = '';
       for (const img of imgRoot.querySelectorAll('img')) {
@@ -616,22 +707,31 @@ def extract_detail_bundle_in_page(page, url: str) -> dict:
       }
 
       // 본문 텍스트
-      const scopes = ['.xe_content', '.rd_body', '.document-content', '.document-view', '.article-content', 'article', 'body'];
-      let root = null;
-      for (const sel of scopes) {
-        root = document.querySelector(sel);
-        if (root) break;
-      }
-      if (root) result.desc = (root.innerText || '').trim();
+      if (contentRoot) result.desc = (contentRoot.innerText || '').trim();
 
       const voted = document.querySelector('.btn_img.new_voted_count');
       const votedRaw = voted ? (voted.getAttribute('value') || voted.value || voted.textContent || '') : '';
       result.likes = Number(String(votedRaw).replace(/[^0-9]/g, '')) || 0;
-      const commentRoot = document.querySelector('.comment, .comment_list, .fdb_lst_ul, .xe_content') || document;
-      result.commentSignalText = (commentRoot.innerText || '').trim();
+      const commentRoots = Array.from(document.querySelectorAll('.fdb_lst_ul, .comment_list, #comment, .comment'));
+      commentRoots.sort((a, b) => (b.innerText || '').length - (a.innerText || '').length);
+      result.commentSignalText = commentRoots.length ? (commentRoots[0].innerText || '').trim() : '';
 
       return result;
     }''')
+
+    try:
+        rendered_html = page.content()
+        parsed_desc = extract_fmkorea_body_text(rendered_html)
+        if parsed_desc:
+            bundle["desc"] = parsed_desc
+            bundle["bodyParsed"] = True
+        parsed_img = extract_primary_image(rendered_html)
+        current_img = (bundle.get("img") or "").strip()
+        if parsed_img and (not current_img or is_low_quality_fmkorea_thumbnail(current_img)):
+            bundle["img"] = parsed_img
+    except Exception:
+        pass
+    return bundle
 
 
 def load_previous_items() -> List[Dict]:
@@ -737,7 +837,24 @@ def should_keep_row_by_time(row: Dict, now: datetime, since: datetime) -> bool:
 
 
 def has_reusable_detail_fields(item: Dict) -> bool:
-    return bool((item.get("buyLink") or "").strip() and (item.get("desc") or "").strip())
+    buy_link = (item.get("buyLink") or "").strip()
+    desc = (item.get("desc") or "").strip()
+    if not buy_link or not desc:
+        return False
+
+    try:
+        parser_version = int(item.get("detailParserVersion") or 0)
+    except (TypeError, ValueError):
+        parser_version = 0
+    if parser_version >= FMKOREA_DETAIL_PARSER_VERSION:
+        return True
+
+    plain_desc = strip_tags(re.sub(r'<!--[\s\S]*?-->', ' ', desc))
+    if re.fullmatch(r'쇼핑몰\s*:.*?/\s*배송\s*:.*', plain_desc, re.I):
+        return False
+    without_urls = re.sub(r'https?://[^\s<]+', ' ', plain_desc, flags=re.I)
+    meaningful = re.sub(r'[\W_]+', '', without_urls, flags=re.UNICODE)
+    return len(meaningful) >= 2
 
 
 def build_previous_detail_lookup(items: List[Dict]) -> Dict[str, Dict]:
@@ -768,7 +885,17 @@ def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
         value = (cached.get(key) or "").strip()
         if value:
             row[key] = value
+    try:
+        parser_version = int(cached.get("detailParserVersion") or 0)
+    except (TypeError, ValueError):
+        parser_version = 0
+    if parser_version:
+        row["detailParserVersion"] = parser_version
     row["_detailCached"] = True
+    row["commentSignalScore"] = 0
+    row["positiveCommentSignals"] = 0
+    row["negativeCommentSignals"] = 0
+    row["qualitySignalParserVersion"] = QUALITY_SIGNAL_PARSER_VERSION
     return not is_low_quality_fmkorea_thumbnail(row.get("img") or "")
 
 
@@ -881,10 +1008,15 @@ def main():
                 if picked and not is_low_quality_fmkorea_thumbnail(picked):
                     r["img"] = picked
                     r["detailImg"] = picked
-                comment_quality = analyze_comment_quality(strip_tags(detail_html))
+                body_text = extract_fmkorea_body_text(detail_html)
+                if body_text:
+                    r["desc"] = body_text
+                    r["detailParserVersion"] = FMKOREA_DETAIL_PARSER_VERSION
+                comment_quality = analyze_comment_quality(extract_comment_signal_text(detail_html))
                 r["commentSignalScore"] = comment_quality["score"]
                 r["positiveCommentSignals"] = comment_quality["positiveCount"]
                 r["negativeCommentSignals"] = comment_quality["negativeCount"]
+                r["qualitySignalParserVersion"] = QUALITY_SIGNAL_PARSER_VERSION
             except Exception:
                 pass
     else:
@@ -937,13 +1069,16 @@ def main():
                     body_text = (bundle.get("desc") or "").strip()
                     if body_text:
                         r["desc"] = body_text
+                    if bundle.get("bodyParsed"):
+                        r["detailParserVersion"] = FMKOREA_DETAIL_PARSER_VERSION
                     bundle_likes = int(bundle.get("likes") or 0)
                     if bundle_likes:
                         r["detailLikes"] = bundle_likes
-                    comment_quality = analyze_comment_quality(bundle.get("commentSignalText") or body_text)
+                    comment_quality = analyze_comment_quality(bundle.get("commentSignalText") or "")
                     r["commentSignalScore"] = comment_quality["score"]
                     r["positiveCommentSignals"] = comment_quality["positiveCount"]
                     r["negativeCommentSignals"] = comment_quality["negativeCount"]
+                    r["qualitySignalParserVersion"] = QUALITY_SIGNAL_PARSER_VERSION
                     doc_id = extract_document_id_from_link(r.get("href") or "")
                     source_link = canonical_fmkorea_source_link(r.get("href") or "")
                     if has_reusable_detail_fields(r):
@@ -1040,8 +1175,10 @@ def main():
                 "commentSignalScore": int(r.get("commentSignalScore") or 0),
                 "positiveCommentSignals": int(r.get("positiveCommentSignals") or 0),
                 "negativeCommentSignals": int(r.get("negativeCommentSignals") or 0),
+                "qualitySignalParserVersion": int(r.get("qualitySignalParserVersion") or QUALITY_SIGNAL_PARSER_VERSION),
                 "category": category,
                 "desc": (r.get("desc") or f"쇼핑몰: {shop} / 배송: {delivery}".strip()),
+                "detailParserVersion": int(r.get("detailParserVersion") or 0),
                 "img": img,
                 "detailImg": (r.get("detailImg") or img),
                 "buyLink": normalize_fmkorea_outbound(r.get("buyLink") or r["href"]),
