@@ -1,5 +1,8 @@
 create extension if not exists pgcrypto;
 
+-- Gaji accesses the Data API through server-side service_role credentials.
+grant usage on schema public to service_role;
+
 create table if not exists public.deals (
   id uuid primary key default gen_random_uuid(),
   source text not null default 'user',
@@ -29,6 +32,10 @@ create table if not exists public.deals (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.deals enable row level security;
+revoke all on table public.deals from public, anon, authenticated;
+grant select, insert, update, delete on table public.deals to service_role;
 
 alter table public.deals
   add column if not exists source text not null default 'user',
@@ -72,6 +79,10 @@ create table if not exists public.favorite_deals (
   unique (user_id, deal_key)
 );
 
+alter table public.favorite_deals enable row level security;
+revoke all on table public.favorite_deals from public, anon, authenticated;
+grant select, insert, update, delete on table public.favorite_deals to service_role;
+
 create table if not exists public.read_marks (
   id uuid primary key default gen_random_uuid(),
   user_id text not null,
@@ -79,6 +90,10 @@ create table if not exists public.read_marks (
   read_at timestamptz not null default now(),
   unique (user_id, deal_key)
 );
+
+alter table public.read_marks enable row level security;
+revoke all on table public.read_marks from public, anon, authenticated;
+grant select, insert, update, delete on table public.read_marks to service_role;
 
 create table if not exists public.deal_comments (
   id uuid primary key default gen_random_uuid(),
@@ -88,6 +103,10 @@ create table if not exists public.deal_comments (
   guest_key text not null default '',
   created_at timestamptz not null default now()
 );
+
+alter table public.deal_comments enable row level security;
+revoke all on table public.deal_comments from public, anon, authenticated;
+grant select, insert, update, delete on table public.deal_comments to service_role;
 
 create index if not exists idx_deal_comments_deal_key_created_at
   on public.deal_comments (deal_key, created_at desc);
@@ -103,10 +122,14 @@ create table if not exists public.deal_temperature_snapshots (
   unique (source, captured_at)
 );
 
+alter table public.deal_temperature_snapshots enable row level security;
+revoke all on table public.deal_temperature_snapshots from public, anon, authenticated;
+grant select, insert, update, delete on table public.deal_temperature_snapshots to service_role;
+revoke all on sequence public.deal_temperature_snapshots_id_seq from public, anon, authenticated;
+grant usage, select on sequence public.deal_temperature_snapshots_id_seq to service_role;
+
 create index if not exists idx_deal_temperature_snapshots_source_time
   on public.deal_temperature_snapshots (source, captured_at desc);
 
 create index if not exists idx_deal_temperature_snapshots_captured_at
   on public.deal_temperature_snapshots (captured_at desc);
-
-alter table public.deal_temperature_snapshots enable row level security;

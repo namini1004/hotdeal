@@ -1,5 +1,7 @@
 create extension if not exists pgcrypto;
 
+grant usage on schema public to service_role;
+
 create table if not exists public.board_posts (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -11,6 +13,10 @@ create table if not exists public.board_posts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.board_posts enable row level security;
+revoke all on table public.board_posts from public, anon, authenticated;
+grant select, insert, update, delete on table public.board_posts to service_role;
 
 create index if not exists idx_board_posts_created_at
   on public.board_posts (created_at desc);

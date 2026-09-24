@@ -1,5 +1,7 @@
 create extension if not exists pgcrypto;
 
+grant usage on schema public to service_role;
+
 create table if not exists public.admin_reports (
   id uuid primary key default gen_random_uuid(),
   target_type text not null default 'deal',
@@ -11,6 +13,10 @@ create table if not exists public.admin_reports (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.admin_reports enable row level security;
+revoke all on table public.admin_reports from public, anon, authenticated;
+grant select, insert, update, delete on table public.admin_reports to service_role;
 
 create index if not exists idx_admin_reports_status_created_at
   on public.admin_reports (status, created_at desc);
@@ -27,6 +33,10 @@ create table if not exists public.admin_notices (
   updated_at timestamptz not null default now()
 );
 
+alter table public.admin_notices enable row level security;
+revoke all on table public.admin_notices from public, anon, authenticated;
+grant select, insert, update, delete on table public.admin_notices to service_role;
+
 create index if not exists idx_admin_notices_published_created_at
   on public.admin_notices (published, created_at desc);
 
@@ -42,6 +52,10 @@ create table if not exists public.user_profiles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.user_profiles enable row level security;
+revoke all on table public.user_profiles from public, anon, authenticated;
+grant select, insert, update, delete on table public.user_profiles to service_role;
 
 alter table public.user_profiles
   add column if not exists provider text not null default '',
