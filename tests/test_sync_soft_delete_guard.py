@@ -71,10 +71,11 @@ class SyncSoftDeleteGuardTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with patch.object(sync, "FEED_FILES", [feed]):
-                rows, protected_sources = sync.load_feed_data()
+                rows, protected_sources, stale_sources = sync.load_feed_data()
 
         self.assertEqual(len(rows), 1)
         self.assertEqual(protected_sources, {"quasar"})
+        self.assertEqual(stale_sources, set())
 
     def test_source_post_id_extraction_supports_all_feed_sources(self):
         cases = [

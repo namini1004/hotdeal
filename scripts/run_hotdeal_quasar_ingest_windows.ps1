@@ -1,13 +1,24 @@
 Param(
-    [string]$RepoPath = "C:\p4\hotdeal",
-    [string]$PythonPath = "C:\Users\namin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe",
-    [string]$SupabaseUrlFile = "C:\p4\hotdeal\supabase_url.txt",
-    [string]$SupabaseServiceRoleKeyFile = "C:\p4\hotdeal\supabase_service_role_key.txt",
-    [string]$PushIngestSecretFile = "C:\p4\hotdeal\push_ingest_secret.txt"
+    [string]$RepoPath = (Split-Path -Parent $PSScriptRoot),
+    [string]$PythonPath = "",
+    [string]$SupabaseUrlFile = "",
+    [string]$SupabaseServiceRoleKeyFile = "",
+    [string]$PushIngestSecretFile = ""
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+
+if (-not $SupabaseUrlFile) { $SupabaseUrlFile = Join-Path $RepoPath "supabase_url.txt" }
+if (-not $SupabaseServiceRoleKeyFile) { $SupabaseServiceRoleKeyFile = Join-Path $RepoPath "supabase_service_role_key.txt" }
+if (-not $PushIngestSecretFile) { $PushIngestSecretFile = Join-Path $RepoPath "push_ingest_secret.txt" }
+if (-not $PythonPath) {
+    $PythonPath = Join-Path $RepoPath ".tools\hotdeal-python\Scripts\python.exe"
+    if (-not (Test-Path -LiteralPath $PythonPath)) {
+        $PythonCommand = Get-Command python.exe -ErrorAction SilentlyContinue
+        if ($PythonCommand) { $PythonPath = $PythonCommand.Source }
+    }
+}
 
 $LogDir = Join-Path $RepoPath ".artifacts\logs"
 $TaskLog = Join-Path $LogDir "hotdeal_quasar_task.log"
@@ -19,7 +30,7 @@ function Write-TaskLog($Message) {
 }
 
 try {
-    foreach ($RequiredPath in @($RepoPath, $PythonPath, $SupabaseUrlFile, $SupabaseServiceRoleKeyFile)) {
+    foreach ($RequiredPath in @($RepoPath, $SupabaseUrlFile, $SupabaseServiceRoleKeyFile)) {
         if (-not (Test-Path -LiteralPath $RequiredPath)) {
             throw "Required path not found: $RequiredPath"
         }
@@ -36,10 +47,17 @@ try {
     $env:HOTDEAL_QUASAR_INGEST_LOG = (Join-Path $LogDir "hotdeal_quasar_ingest.log")
 
     Set-Location $RepoPath
+    $env:PYTHONIOENCODING = "utf-8"
+    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
     Write-TaskLog "start repo=$RepoPath python=$PythonPath pushSecret=$((Test-Path -LiteralPath $PushIngestSecretFile))"
     $ScriptPath = Join-Path $RepoPath "scripts\local_quasar_ingest.py"
-    $Output = & $PythonPath $ScriptPath 2>&1
-    $ExitCode = $LASTEXITCODE
+    # Windows PowerShell must capture Python stderr without discarding the exit code.
+    $ErrorActionPreference = "Continue"
+    try {
+        $Output = & $PythonPath $ScriptPath 2>&1
+        $ExitCode = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = "Stop" }
     if ($Output) {
         Add-Content -Path $TaskLog -Value (($Output | Out-String).TrimEnd()) -Encoding UTF8
     }

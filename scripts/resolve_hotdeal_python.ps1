@@ -27,7 +27,8 @@ function Resolve-HotdealPython {
         }
     }
 
-    & $ManagedPythonPath -c "import PIL, playwright, requests" *> $null
+    # Avoid native stderr terminating PowerShell before a missing dependency can be installed.
+    & $ManagedPythonPath -c "import importlib.util, sys; sys.exit(0 if all(importlib.util.find_spec(name) for name in ['PIL', 'playwright', 'requests', 'bs4']) else 1)" *> $null
     if ($LASTEXITCODE -ne 0) {
         $InstallOutput = & $ManagedPythonPath -m pip install --disable-pip-version-check -r $RequirementsPath 2>&1
         if ($LASTEXITCODE -ne 0) {

@@ -2,8 +2,8 @@
 """Refresh and sync only Quasar deals from a local network.
 
 Quasar's image CDN currently rejects GitHub-hosted and Vercel data-center IPs.
-This entrypoint keeps the normal GitHub workflow in place while providing a
-source-scoped local fallback that writes no tracked feed snapshots.
+Quasar is collected only by this local entrypoint, independently of Actions.
+It writes a source-scoped, untracked partial snapshot for Supabase sync.
 """
 from __future__ import annotations
 
@@ -12,8 +12,9 @@ import os
 import subprocess
 import sys
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,6 +110,8 @@ def run_step(args: list[str], env: dict[str, str], timeout: int) -> str:
         cwd=ROOT,
         env=env,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         timeout=timeout,
@@ -120,15 +123,47 @@ def run_step(args: list[str], env: dict[str, str], timeout: int) -> str:
     return output
 
 
-def validate_feed(path: Path) -> int:
+def validate_feed(path: Path, now: datetime | None = None) -> int:
     data = json.loads(path.read_text(encoding="utf-8"))
     items = data.get("items")
     if not isinstance(items, list) or not items:
         raise RuntimeError("Quasar parser returned no items; existing database rows were left untouched")
-    invalid_sources = [item for item in items if str(item.get("source") or "").strip() != "quasar"]
+    invalid_sources = [item for item in items if not isinstance(item, dict) or str(item.get("source") or "").strip() != "quasar"]
     if invalid_sources:
         raise RuntimeError(f"Quasar feed contains {len(invalid_sources)} rows from another source")
-    return len(items)
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=int(os.environ.get("HOTDEAL_PRUNE_FEED_AGE_HOURS", "48")))
+    future = now + timedelta(minutes=int(os.environ.get("HOTDEAL_MAX_FUTURE_SKEW_MINUTES", "10")))
+    recent = 0
+    malformed = 0
+    for item in items:
+        try:
+            registered_at = datetime.fromisoformat(str(item.get("registeredAt", "")).replace("Z", "+00:00"))
+            source_link = urlsplit(str(item.get("sourceLink") or ""))
+        except ValueError:
+            malformed += 1
+            continue
+        if registered_at.tzinfo is None:
+            malformed += 1
+            continue
+        if (
+            source_link.scheme not in {"http", "https"}
+            or source_link.hostname not in {"quasarzone.com", "www.quasarzone.com"}
+            or not source_link.path.startswith("/bbs/qb_saleinfo/views/")
+            or not source_link.path.rsplit("/", 1)[-1].isdecimal()
+        ):
+            malformed += 1
+            continue
+        if not cutoff <= registered_at <= future:
+            continue
+        if "블라인드 처리된 글" in str(item.get("title") or ""):
+            continue
+        recent += 1
+    if not recent:
+        raise RuntimeError("Quasar feed has no valid recent rows in the sync window; database sync skipped")
+    if malformed:
+        raise RuntimeError(f"Quasar feed contains {malformed} malformed rows; database sync skipped")
+    return recent
 
 
 def main() -> int:
@@ -142,6 +177,7 @@ def main() -> int:
             return 0
 
         env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
         env["HOTDEAL_QUASAR_JSON_PATH"] = str(FEED_PATH)
         env.setdefault("HOTDEAL_QUASAR_MAX_PAGES", "1")
         env["HOTDEAL_QUASAR_PARTIAL_SNAPSHOT"] = "1"
@@ -168,6 +204,7 @@ def main() -> int:
             timeout=int(os.environ.get("HOTDEAL_QUASAR_PARSE_TIMEOUT", "720")),
         )
         item_count = validate_feed(FEED_PATH)
+        append_log(f"QUASAR_FEED_VALID recent_items={item_count}")
         sync_output = run_step(
             [sys.executable, "scripts/sync_hotdeals_to_supabase.py"],
             env,

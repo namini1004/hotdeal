@@ -175,6 +175,7 @@ _quasar_browser_fetcher = None
 
 def load_feed_data():
     merged: List[Dict] = []
+    delete_protected_sources = set()
     stale_fallback_sources = set()
     for f in FEED_FILES:
         if not f.exists():
@@ -182,13 +183,15 @@ def load_feed_data():
         data = json.loads(f.read_text(encoding="utf-8"))
         source = str(data.get("sourceKey") or "").strip()
         if (data.get("staleFallback") or data.get("partialSnapshot")) and source:
+            delete_protected_sources.add(source)
+        if data.get("staleFallback") and source:
             stale_fallback_sources.add(source)
         merged.extend(data.get("items", []))
-    return merged, stale_fallback_sources
+    return merged, delete_protected_sources, stale_fallback_sources
 
 
 def load_items() -> List[Dict]:
-    merged, _ = load_feed_data()
+    merged, _, _ = load_feed_data()
     return merged
 
 
@@ -360,6 +363,27 @@ def build_temperature_snapshot_rows(rows: List[Dict], captured_at: datetime) -> 
             }
         )
     return snapshots
+
+
+def build_temperature_snapshot_input(
+    observed_rows: List[Dict], existing_rows: List[Dict], changed_rows: List[Dict],
+    deleted_rows: List[Dict], captured_at: datetime,
+) -> List[Dict]:
+    """Use the resulting active DB population, not just page 1, for fresh sources."""
+    sources = {row.get("source") for row in observed_rows}
+    deleted_ids = {row["id"] for row in deleted_rows if row.get("id")}
+    cutoff = captured_at - timedelta(hours=PRUNE_FEED_AGE_HOURS)
+    future = captured_at + timedelta(minutes=MAX_FUTURE_SKEW_MINUTES)
+    merged = {}
+    for row in [*existing_rows, *changed_rows]:
+        if row.get("source") not in sources or row.get("deleted_at") or row.get("id") in deleted_ids:
+            continue
+        if not parse_iso_datetime(row.get("registered_at")) or is_excluded_feed_item(row):
+            continue
+        if is_older_than(row, cutoff) or is_future_dated(row, future):
+            continue
+        merged[sync_key(row)] = row
+    return list(merged.values())
 
 
 def record_temperature_snapshots(
@@ -1526,7 +1550,7 @@ def main():
         )
         return
 
-    raw_items, stale_fallback_sources = load_feed_data()
+    raw_items, delete_protected_sources, stale_fallback_sources = load_feed_data()
     use_source_post_id = database_has_source_post_id(supabase_url, service_key)
     norm_items = [
         normalize(v)
@@ -1579,7 +1603,7 @@ def main():
         sync_rows,
         existing_map,
         now_iso,
-        stale_fallback_sources,
+        delete_protected_sources,
         prune_before=prune_before,
     )
     repaired_images = append_image_repair_changes(
@@ -1637,11 +1661,11 @@ def main():
         written += soft_delete_rows(deleted_rows, supabase_url, headers)
 
     record_temperature_snapshots(
-        sync_rows,
+        build_temperature_snapshot_input(sync_rows, existing_rows, changed_rows, deleted_rows, now_dt),
         supabase_url,
         service_key,
         now_dt,
-        skip_sources=skipped_delete_sources,
+        skip_sources=stale_fallback_sources,
     )
     purged = purge_soft_deleted_feed_rows(supabase_url, headers)
     ingest_status = send_push_ingest(push_ingest_rows)

@@ -1,6 +1,8 @@
 import importlib.util
+import json
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import MagicMock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -70,3 +72,50 @@ def test_temperature_snapshot_ignores_non_feed_sources():
         datetime(2026, 8, 27, 10, 0, tzinfo=timezone.utc),
     )
     assert snapshots == []
+
+
+def test_partial_feed_is_delete_protected_but_not_a_stale_observation(tmp_path, monkeypatch):
+    sync = load_sync_module()
+    feed = tmp_path / "quasar.json"
+    monkeypatch.setattr(sync, "FEED_FILES", [feed])
+    for stale in (False, True):
+        feed.write_text(json.dumps({"sourceKey": "quasar", "partialSnapshot": True,
+                                    "staleFallback": stale, "items": [{"source": "quasar"}]}), encoding="utf-8")
+        _, protected, stale_sources = sync.load_feed_data()
+        assert protected == {"quasar"}
+        assert stale_sources == ({"quasar"} if stale else set())
+
+
+def test_partial_snapshot_uses_active_48_hour_population_after_writes():
+    sync = load_sync_module()
+    now = datetime(2026, 9, 27, 3, tzinfo=timezone.utc)
+
+    def row(post_id, **extra):
+        return {"id": post_id, "source": "quasar", "source_post_id": post_id,
+                "source_link": f"https://quasarzone.com/bbs/qb_saleinfo/views/{post_id}",
+                "registered_at": "2026-09-27T01:00:00Z", "views": 100, **extra}
+
+    existing = [row("1"), row("2"), row("3", deleted_at="2026-09-27T01:00:00Z"),
+                row("4", registered_at="2026-09-01T00:00:00Z"),
+                row("5", registered_at="2026-09-29T00:00:00Z"), row("6"),
+                row("7", source="ruliweb"), row("8", registered_at=None)]
+    changed = [row("1", views=900), row("9", views=500)]
+    rows = sync.build_temperature_snapshot_input(changed, existing, changed, [{"id": "6"}], now)
+    assert {item["id"] for item in rows} == {"1", "2", "9"}
+    snapshot = sync.build_temperature_snapshot_rows(rows, now)[0]
+    assert snapshot["sample_count"] == 3
+    assert snapshot["metrics"]["views"]["mean"] == 500
+    assert sync.build_temperature_snapshot_input([], existing, [], [], now) == []
+
+
+def test_genuinely_stale_fallback_still_cannot_write_snapshots(monkeypatch):
+    sync = load_sync_module()
+    post = MagicMock()
+    monkeypatch.setattr(sync.requests, "post", post)
+    written = sync.record_temperature_snapshots(
+        [{"source": "quasar", "registered_at": "2026-09-27T01:00:00Z"}],
+        "https://example.test", "test", datetime(2026, 9, 27, 3, tzinfo=timezone.utc),
+        skip_sources={"quasar"},
+    )
+    assert written == 0
+    post.assert_not_called()

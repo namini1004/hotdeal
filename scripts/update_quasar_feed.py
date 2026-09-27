@@ -12,6 +12,7 @@ from typing import Dict, List
 from urllib.parse import urljoin, urlsplit
 
 import requests
+from bs4 import BeautifulSoup, SoupStrainer
 try:
     from hotdeal_quality_signals import (
         QUALITY_SIGNAL_PARSER_VERSION,
@@ -53,19 +54,21 @@ def clean(text: str) -> str:
 
 
 def parse_time_to_datetime(time_text: str, now: datetime) -> datetime:
-    text = (time_text or "").strip()
-    if text in {"방금", "조금 전"}:
+    text = clean(time_text)
+    if text in {"방금", "방금 전", "조금 전"}:
         return now
 
-    minute_m = re.search(r"(\d+)\s*분 전", text)
-    if minute_m:
-        return now - timedelta(minutes=int(minute_m.group(1)))
+    relative = re.fullmatch(r"(\d+)\s*(초|분|시간|일)\s*전", text)
+    if relative:
+        seconds = {"초": 1, "분": 60, "시간": 3600, "일": 86400}
+        return now - timedelta(seconds=int(relative.group(1)) * seconds[relative.group(2)])
 
-    hour_m = re.search(r"(\d+)\s*시간 전", text)
-    if hour_m:
-        return now - timedelta(hours=int(hour_m.group(1)))
+    dated = re.fullmatch(r"(\d{4}|\d{2})[.-](\d{2})[.-](\d{2})", text)
+    if dated:
+        year, month, day = map(int, dated.groups())
+        return datetime(year + 2000 if year < 100 else year, month, day, tzinfo=KST)
 
-    m = re.search(r"(\d{2})-(\d{2})", text)
+    m = re.fullmatch(r"(\d{2})[.-](\d{2})", text)
     if m:
         mm, dd = int(m.group(1)), int(m.group(2))
         year = now.year
@@ -74,7 +77,7 @@ def parse_time_to_datetime(time_text: str, now: datetime) -> datetime:
             year -= 1
         return datetime(year, mm, dd, 0, 0, tzinfo=KST)
 
-    return now
+    raise ValueError(f"Unknown Quasar list timestamp: {text!r}")
 
 
 def parse_time_to_date_label(time_text: str, now: datetime) -> str:
@@ -274,7 +277,34 @@ def extract_body_image_from_detail(detail_html: str) -> str:
     return ''
 
 
+def iter_structured_detail_nodes(detail_html: str):
+    scripts = BeautifulSoup(
+        detail_html, "html.parser",
+        parse_only=SoupStrainer("script", attrs={"type": "application/ld+json"}),
+    )
+    for script in scripts.find_all("script"):
+        try:
+            data = json.loads(script.get_text())
+        except (ValueError, TypeError):
+            continue
+        nodes = data if isinstance(data, list) else [data]
+        for node in nodes:
+            if isinstance(node, dict):
+                if isinstance(node.get("@graph"), list):
+                    nodes.extend(node["@graph"])
+                yield node
+
+
 def extract_buy_link_from_detail(detail_html: str) -> str:
+    for node in iter_structured_detail_nodes(detail_html):
+        if node.get("@type") != "Product":
+            continue
+        offers = node.get("offers", [])
+        for offer in offers if isinstance(offers, list) else [offers]:
+            candidate = str(offer.get("url", "")) if isinstance(offer, dict) else ""
+            if urlsplit(candidate).scheme in {"http", "https"}:
+                return candidate
+
     # 0) r.jina.ai 마크다운 렌더: 상세 표의 링크 행
     m = re.search(r'\|\s*링크[\s\S]*?\|\s*\[(https?://[^\]\s]+)\]\(', detail_html, re.I)
     if m:
@@ -342,13 +372,27 @@ def extract_body_text_from_detail(detail_html: str) -> str:
     return html.unescape(og_desc_m.group(1)).strip() if og_desc_m else ''
 
 
-def extract_registered_at_from_detail(detail_html: str, fallback_date_label: str, now: datetime | None = None) -> str:
+def extract_registered_at_from_detail(
+    detail_html: str, fallback_date_label: str, now: datetime | None = None,
+    fallback_datetime: datetime | None = None,
+) -> str:
     """상세 작성시각을 추출하되, 상품 행사일/배송일 같은 미래 날짜 오검출은 버린다."""
     try:
         fallback_dt = datetime.strptime(fallback_date_label, '%Y-%m-%d').replace(tzinfo=KST)
     except Exception:
         fallback_dt = None
     now = now or datetime.now(KST)
+
+    # The v2 page exposes the original post time in JSON-LD; visible times are relative.
+    for node in iter_structured_detail_nodes(detail_html):
+        if node.get("@type") != "DiscussionForumPosting":
+            continue
+        try:
+            candidate = datetime.fromisoformat(str(node.get("datePublished", "")).replace("Z", "+00:00"))
+            if candidate.tzinfo is not None and candidate <= now + timedelta(minutes=5):
+                return candidate.astimezone(KST).isoformat()
+        except ValueError:
+            continue
 
     patterns = [
         r'(20\d{2})[./-](\d{2})[./-](\d{2})\s+(\d{2}):(\d{2})',
@@ -370,74 +414,82 @@ def extract_registered_at_from_detail(detail_html: str, fallback_date_label: str
 
     if candidates:
         return candidates[0].isoformat()
+    if fallback_datetime is not None:
+        return fallback_datetime.isoformat()
     return f"{fallback_date_label}T00:00:00+09:00"
 
 
+def parse_count(text: str) -> int:
+    value = clean(text).lower().replace(",", "")
+    match = re.fullmatch(r"(\d+(?:\.\d+)?)\s*([k천만]?)", value)
+    if not match:
+        return 0
+    return int(float(match.group(1)) * {"": 1, "k": 1000, "천": 1000, "만": 10000}[match.group(2)])
+
+
 def parse_list_items(page_html: str, seen=None):
-    rows = re.findall(r"<tr>[\s\S]*?<\/tr>", page_html)
+    soup = BeautifulSoup(page_html, "html.parser")
+    rows = soup.select(".v2-list > .v2-list-row, tr")
     items = []
     if seen is None:
         seen = set()
 
     for row in rows:
-        link_m = re.search(r'href="(/bbs/qb_saleinfo/views/(\d+)(?:\?[^\"]*)?)"', row)
+        title_node = row.select_one("a.subject-link[href]")
+        if title_node is None:
+            continue
+        rel_link = str(title_node.get("href", ""))
+        link_m = re.fullmatch(r'(?:https?://(?:www\.)?quasarzone\.com)?/bbs/qb_saleinfo/views/(\d+)(?:\?[^#]*)?', rel_link)
         if not link_m:
             continue
 
-        rel_link, post_id = link_m.group(1), link_m.group(2)
+        post_id = link_m.group(1)
         if post_id in seen:
             continue
-        seen.add(post_id)
-
-        title_m = re.search(r'class="subject-link[^\"]*"[^>]*>\s*([\s\S]*?)\s*</a>', row)
-        if not title_m:
+        comment_node = row.select_one(".ctn-count")
+        comments = parse_count(comment_node.get_text() if comment_node is not None else "")
+        for comment in title_node.select(".board-list-comment"):
+            comment.decompose()
+        title = clean(title_node.get_text(" ", strip=True))
+        if not title or is_blinded_item({"title": title}):
             continue
-        raw_title_html = re.sub(r'<span class="board-list-comment">[\s\S]*?</span>', '', title_m.group(1))
-        raw_title = re.sub(r"<[^>]+>", "", raw_title_html)
-        title = clean(raw_title)
-
-        if "공지" in row[:400] or "핫딜 게시판 규정" in title:
+        if "공지" in str(row)[:400] or "핫딜 게시판 규정" in title:
             continue
 
-        category_m = re.search(r'<span class="category">([\s\S]*?)</span>', row)
-        category = clean(category_m.group(1)) if category_m else "기타"
+        def text_at(selector, default=""):
+            node = row.select_one(selector)
+            return clean(node.get_text(" ", strip=True)) if node is not None else default
 
-        price_m = re.search(r'<span class="text-orange">([\s\S]*?)</span>', row)
-        price = clean_price(price_m.group(1)) if price_m else "가격 정보 확인"
-
-        comments_m = re.search(r'class="ctn-count\s*">\s*([0-9,]+)\s*</span>', row)
-        comments = int((comments_m.group(1).replace(',', '') if comments_m else '0') or '0')
-
-        count_matches = re.findall(r'<span class="count">\s*([0-9.,kK]+)\s*</span>', row)
-        likes_text = count_matches[0] if len(count_matches) >= 2 else '0'
-        views_text = count_matches[-1] if count_matches else '0'
+        category = text_at(".v2-badge, .category", "기타")
+        price = clean_price(text_at(".v2-list-row__price, .text-orange", "가격 정보 확인"))
+        counts = row.select(".count")
+        views = parse_count(text_at(".qc-count-hit") or (counts[-1].get_text() if counts else ""))
 
         # 퀘이사는 현재 신뢰 가능한 추천 점수를 제공하지 않으므로 온도 계산에서 추천 가중치를 쓰지 않는다.
         likes = 0
 
-        v = views_text.lower().replace(',', '').strip()
-        if v.endswith('k'):
-            try:
-                views = int(float(v[:-1]) * 1000)
-            except Exception:
-                views = 0
-        else:
-            try:
-                views = int(float(v))
-            except Exception:
-                views = 0
-
-        date_m = re.search(r'<span class="date">\s*([\s\S]*?)\s*</span>', row)
-        time_text = clean(date_m.group(1)) if date_m else ''
+        time_text = text_at(".v2-list-row__time, .date")
+        if not time_text:
+            continue
 
         img = ''
-        img_m = re.search(r'<img[^>]+class="maxImg"[^>]+src="([^"]+)"', row)
-        if img_m:
-            img_tag = img_m.group(0)
-            candidate = normalize_image_url(img_m.group(1))
-            if is_body_image_candidate(candidate) and not is_too_small_image(img_tag, candidate):
+        # v2 thumbnails use data-preview / CSS backgrounds, not an img element.
+        candidates = [str(row.get("data-preview", ""))]
+        thumb = row.select_one(".v2-list-row__thumb")
+        if thumb is not None:
+            background = re.search(r"url\(['\"]?([^)'\"]+)['\"]?\)", str(thumb.get("style", "")))
+            if background:
+                candidates.append(background.group(1))
+        legacy_img = row.select_one("img.maxImg")
+        if legacy_img is not None:
+            candidates.append(get_img_src_from_tag(str(legacy_img)))
+        for src in candidates:
+            candidate = normalize_image_url(src)
+            if is_body_image_candidate(candidate) and not is_too_small_image('', candidate):
                 img = candidate
+                break
 
+        seen.add(post_id)
         items.append(
             {
                 "id": post_id,
@@ -542,14 +594,18 @@ def parse_jina_list_items(markdown_text: str, seen=None):
     return items
 
 
-def load_previous_items() -> List[Dict]:
+def load_previous_feed() -> Dict:
     if not JSON_PATH.exists():
-        return []
+        return {}
     try:
         data = json.loads(JSON_PATH.read_text(encoding="utf-8"))
-        return list(data.get("items") or [])
+        return data if isinstance(data, dict) else {}
     except Exception:
-        return []
+        return {}
+
+
+def load_previous_items() -> List[Dict]:
+    return list(load_previous_feed().get("items") or [])
 
 
 def extract_post_id_from_link(link: str) -> str:
@@ -568,7 +624,7 @@ def has_reusable_detail_fields(item: Dict) -> bool:
         return False
     return bool(
         (item.get("buyLink") or "").strip()
-        and (item.get("desc") or "").strip()
+        and ((item.get("desc") or "").strip() or item.get("detailParsed") is True)
     )
 
 
@@ -640,6 +696,8 @@ def apply_cached_detail_fields(row: Dict, lookup: Dict[str, Dict]) -> bool:
         value = (cached.get(key) or "").strip()
         if value:
             row[key] = value
+    if cached.get("detailParsed") is True:
+        row["detailParsed"] = True
     row["_detailCached"] = True
     return True
 
@@ -665,7 +723,9 @@ def is_blinded_item(item: Dict) -> bool:
 def main():
     now = datetime.now(KST)
     since = now - timedelta(hours=48)
-    previous_items = [item for item in load_previous_items() if not is_blinded_item(item)]
+    previous_feed = load_previous_feed()
+    previous_items = [item for item in previous_feed.get("items", []) if not is_blinded_item(item)]
+    expired_ids = {str(value) for value in previous_feed.get("expiredPostIds", [])}
     previous_lookup = build_previous_detail_lookup(previous_items)
     previous_keys = build_previous_link_keys(previous_items)
     sess = requests.Session()
@@ -752,7 +812,11 @@ def main():
     def fetch_jina_html(url: str, timeout: int) -> str:
         nonlocal jina_fetches
         jina_fetches += 1
-        return sess.get(to_jina_url(url), timeout=timeout).text
+        response = sess.get(to_jina_url(url), timeout=timeout)
+        response.raise_for_status()
+        if re.search(r"^(?:Title: Just a moment|Warning: Target URL returned error [45]\d\d)", response.text, re.M):
+            raise RuntimeError("Quasar Jina response contains an upstream block/error page")
+        return response.text
 
     print(f"QUASAR_FETCH_MODE {fetch_mode}{' requests-first' if fetch_mode == 'hybrid' else ''}")
 
@@ -760,26 +824,42 @@ def main():
         for page in range(1, MAX_PAGES + 1):
             page_url = LIST_URL if page == 1 else f"{LIST_URL}?page={page}"
             list_fetches += 1
-            html_text = fetch_source_html(page_url)
-            rows = parse_list_items(html_text, seen)
-            if not rows and fetch_mode == "hybrid" and last_transport != "browser":
+            browsers_before = browser_fetches
+            rows = []
+            try:
+                html_text = fetch_source_html(page_url)
+                rows = parse_list_items(html_text, seen)
+            except Exception as exc:
+                print(f"WARN_QUASAR_LIST_FETCH reason={exc} url={page_url}")
+            if not rows and fetch_mode == "hybrid" and browser_fetches == browsers_before:
                 try:
                     browser_text = retry_in_browser(page_url, "list_parse_empty")
                     rows = parse_list_items(browser_text, seen) if browser_text else []
                 except Exception as exc:
                     print(f"WARN_QUASAR_BROWSER_LIST_PARSE reason={exc} url={page_url}")
             if not rows:
-                jina_text = fetch_jina_html(page_url, 45)
-                rows = parse_jina_list_items(jina_text, seen)
+                try:
+                    jina_text = fetch_jina_html(page_url, 45)
+                    rows = parse_jina_list_items(jina_text, seen)
+                except Exception as exc:
+                    print(f"WARN_QUASAR_JINA_LIST_FETCH reason={exc} url={page_url}")
             rows = [row for row in rows if not is_blinded_item(row)]
             if not rows:
-                continue
+                raise RuntimeError(f"Quasar list returned no usable rows on page {page}; previous feed preserved")
 
             old_count = 0
             for row in rows:
-                dt = parse_time_to_datetime(row.get("time", ""), now)
-                date_label = parse_time_to_date_label(row.get("time", ""), now)
+                if row["id"] in expired_ids:
+                    old_count += 1
+                    continue
+                try:
+                    dt = parse_time_to_datetime(row.get("time", ""), now)
+                except ValueError as exc:
+                    print(f"WARN_QUASAR_INVALID_TIME id={row['id']} reason={exc}")
+                    continue
+                date_label = dt.strftime("%Y-%m-%d")
                 if dt < since and dt.date() != since.date():
+                    expired_ids.add(row["id"])
                     old_count += 1
                     continue
 
@@ -794,6 +874,7 @@ def main():
                     except Exception:
                         registered_dt = dt
                     if registered_dt < since:
+                        expired_ids.add(row["id"])
                         old_count += 1
                         continue
                     row["date"] = registered_dt.strftime("%Y-%m-%d")
@@ -812,7 +893,7 @@ def main():
                         detail_html = fetch_jina_html(row["sourceLink"], 25)
                     else:
                         detail_html = fetch_source_html(row["sourceLink"])
-                        has_timestamp = re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}', detail_html)
+                        has_timestamp = re.search(r'20\d{2}[./-]\d{2}[./-]\d{2}[T\s]+\d{2}:\d{2}', detail_html)
                         if (
                             fetch_mode == "hybrid"
                             and last_transport != "browser"
@@ -823,7 +904,7 @@ def main():
                             if browser_text:
                                 detail_html = browser_text
                                 has_timestamp = re.search(
-                                    r'20\d{2}[./-]\d{2}[./-]\d{2}\s+\d{2}:\d{2}',
+                                    r'20\d{2}[./-]\d{2}[./-]\d{2}[T\s]+\d{2}:\d{2}',
                                     detail_html,
                                 )
                         if not extract_buy_link_from_detail(detail_html) and not has_timestamp:
@@ -832,6 +913,7 @@ def main():
                     body_img = extract_body_image_from_detail(detail_html)
                     row["buyLink"] = real_link or row["sourceLink"]
                     row["desc"] = extract_body_text_from_detail(detail_html)
+                    row["detailParsed"] = bool(re.search(r'<textarea[^>]+id=[\"\']org_contents[\"\']', detail_html, re.I))
                     comment_quality = analyze_comment_quality(extract_comment_signal_text(detail_html))
                     row["commentSignalScore"] = comment_quality["score"]
                     row["positiveCommentSignals"] = comment_quality["positiveCount"]
@@ -841,23 +923,31 @@ def main():
                         row["img"] = body_img
                     if 'quasarzone.com/' in row["buyLink"] and '/bbs/qb_saleinfo/views/' not in row["buyLink"]:
                         row["buyLink"] = row["sourceLink"]
-                except Exception:
+                except Exception as exc:
+                    print(f"WARN_QUASAR_DETAIL_FETCH id={row['id']} reason={exc}")
                     row["buyLink"] = row["sourceLink"]
 
                 row["date"] = date_label
                 try:
-                    row["registeredAt"] = extract_registered_at_from_detail(detail_html, date_label, now=now)
+                    row["registeredAt"] = extract_registered_at_from_detail(
+                        detail_html, date_label, now=now, fallback_datetime=dt,
+                    )
                 except Exception:
-                    row["registeredAt"] = f"{date_label}T00:00:00+09:00"
+                    row["registeredAt"] = dt.isoformat()
 
                 try:
                     registered_dt = datetime.fromisoformat(row["registeredAt"])
                 except Exception:
                     registered_dt = dt
                 if registered_dt < since:
+                    # Date-only list labels otherwise re-fetch the same expired detail every run.
+                    expired_ids.add(row["id"])
                     old_count += 1
                     continue
+                if registered_dt > now + timedelta(minutes=5):
+                    continue
 
+                row["date"] = registered_dt.strftime("%Y-%m-%d")
                 row.pop("_detailViaJina", None)
                 filtered.append(row)
 
@@ -869,15 +959,16 @@ def main():
     finally:
         if browser is not None:
             browser.close()
-
-    print(
-        "QUASAR_FETCH_SUMMARY "
-        f"mode={fetch_mode} lists={list_fetches} details={detail_fetches} cached={cached_details} "
-        f"requests={request_fetches} browser={browser_fetches} browser_fallbacks={browser_fallbacks} "
-        f"browser_failures={browser_failures} jina={jina_fetches}"
-    )
+        print(
+            "QUASAR_FETCH_SUMMARY "
+            f"mode={fetch_mode} lists={list_fetches} details={detail_fetches} cached={cached_details} "
+            f"requests={request_fetches} browser={browser_fetches} browser_fallbacks={browser_fallbacks} "
+            f"browser_failures={browser_failures} jina={jina_fetches}"
+        )
 
     filtered = dedupe_items_by_title(filtered)
+    if not filtered:
+        raise RuntimeError("Quasar feed has no valid recent rows; previous feed preserved")
 
     today_label = str(now.date())
     yesterday_label = str((now - timedelta(days=1)).date())
@@ -899,11 +990,14 @@ def main():
             "total": len(filtered),
         },
         "items": filtered,
+        "expiredPostIds": sorted(expired_ids & seen),
         "grouped": {"today": today_items, "yesterday": yesterday_items},
     }
 
     JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
-    JSON_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    staged_path = JSON_PATH.with_suffix(".json.tmp")
+    staged_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    staged_path.replace(JSON_PATH)
     print(f"saved: {JSON_PATH} ({len(filtered)} items)")
 
 
